@@ -15,7 +15,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <SidebarInset>
           {process.env.NEXT_PUBLIC_DEMO_MODE === "true" && <DemoDisclaimer />}
           <AppHeader />
-          <div className="flex min-h-[calc(100svh-3.5rem)] flex-col gap-4 p-4">{children}</div>
+          <main className="panel-enter flex min-h-[calc(100svh-4rem)] flex-col gap-5 p-4 md:p-6 xl:p-8">{children}</main>
         </SidebarInset>
       </SidebarProvider>
     </SimulationRunStatusProvider>

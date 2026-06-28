@@ -59,7 +59,7 @@ export function AppHeader() {
   }
 
   return (
-    <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-border bg-background/90 px-4 backdrop-blur-xs">
+    <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-border/70 bg-background/75 px-4 backdrop-blur-xl md:px-6">
       <SidebarTrigger />
 
       <Breadcrumb>
@@ -87,7 +87,10 @@ export function AppHeader() {
         </BreadcrumbList>
       </Breadcrumb>
 
-      <div className="ml-auto flex items-center gap-2">
+      <div className="ml-auto flex items-center gap-3">
+        <div className="hidden items-center gap-2 font-mono text-[10px] font-medium tracking-wider text-muted-foreground sm:flex">
+          <span className="status-dot text-[var(--status-healthy)]" /> LIVE MONITORING
+        </div>
         <Button variant="outline" size="sm" onClick={() => void onLogout()}>
           <SignOutIcon data-icon="inline-start" />
           Sign out

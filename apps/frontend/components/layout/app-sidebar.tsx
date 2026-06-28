@@ -55,14 +55,18 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon" variant="inset">
-      <SidebarHeader>
-        <div className="flex items-center gap-2 border border-sidebar-border p-2">
-          <GearIcon />
-          <div className="flex flex-col">
-            <span className="text-xs font-semibold">
-              Predictive Digital Twin
+      <SidebarHeader className="p-3">
+        <div className="flex items-center gap-3 rounded-xl border border-sidebar-border/80 bg-sidebar-accent/35 p-2.5 shadow-sm">
+          <div className="grid size-9 shrink-0 place-items-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground shadow-sm">
+            <GearIcon className="size-5" weight="duotone" />
+          </div>
+          <div className="flex min-w-0 flex-col group-data-[collapsible=icon]:hidden">
+            <span className="display-mark truncate text-[13px] font-semibold">
+              Predictive Twin
             </span>
-            <span className="text-xs text-sidebar-foreground/70">v0.1.0</span>
+            <span className="mt-0.5 flex items-center gap-1.5 font-mono text-[9px] font-semibold tracking-[0.12em] text-[var(--status-healthy)]">
+              <span className="status-dot size-1.5" /> SYSTEM ONLINE
+            </span>
           </div>
         </div>
       </SidebarHeader>
@@ -70,7 +74,8 @@ export function AppSidebar() {
       <SidebarSeparator />
 
       <SidebarContent>
-        <SidebarGroup>
+        <SidebarGroup className="px-3 py-4">
+          <div className="instrument-label mb-2 px-2 group-data-[collapsible=icon]:hidden">Operations</div>
           <SidebarGroupContent>
             <SidebarMenu>
               {visibleNavigation.map((item) => {
@@ -119,7 +124,7 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter>
-        <div className="flex items-center justify-between border border-sidebar-border p-2 text-xs">
+        <div className="flex items-center justify-between rounded-xl border border-sidebar-border/80 bg-sidebar-accent/30 p-2.5 text-xs shadow-sm">
           <div className="flex flex-col">
             <span className="font-medium">
               {activePersona?.name ?? "No User"}
@@ -132,7 +137,7 @@ export function AppSidebar() {
               {activePersona?.role ?? "guest"}
             </Badge>
           </div>
-          <CirclesThreePlusIcon />
+          <CirclesThreePlusIcon className="text-sidebar-foreground/45" />
         </div>
       </SidebarFooter>
     </Sidebar>
