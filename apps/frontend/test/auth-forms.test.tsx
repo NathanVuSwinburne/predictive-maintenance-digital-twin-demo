@@ -27,6 +27,26 @@ describe("auth forms", () => {
     authMock.pendingMfaMethods = [];
     authMock.login.mockReset();
     authMock.verifyMfa.mockReset();
+    delete process.env.NEXT_PUBLIC_DEMO_MODE;
+  });
+
+  it("offers one-click access in portfolio demo mode", async () => {
+    process.env.NEXT_PUBLIC_DEMO_MODE = "true";
+    authMock.login.mockResolvedValue({
+      requiresMfa: false,
+      session: testSessions.admin,
+      mfaToken: null,
+      availableMethods: [],
+    });
+
+    render(<LoginForm nextPath="/dashboard" />);
+    await userEvent.click(screen.getByRole("button", { name: /explore live demo/i }));
+
+    await waitFor(() => expect(authMock.login).toHaveBeenCalledWith({
+      email: "demo@portfolio.local",
+      password: "demo",
+    }));
+    expect(globalThis.__nextNavigationMock.router.push).toHaveBeenCalledWith("/dashboard");
   });
 
   it("logs in a non-MFA user and refreshes the requested route", async () => {

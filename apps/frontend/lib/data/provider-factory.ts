@@ -1,5 +1,6 @@
 import type { DigitalTwinDataProvider } from "@/lib/data/provider"
 import { FastApiDigitalTwinProvider } from "@/lib/data/fastapi-provider"
+import { DemoDigitalTwinProvider } from "@/lib/data/demo-provider"
 
 let provider: DigitalTwinDataProvider | null = null
 
@@ -16,6 +17,9 @@ function resolveApiBaseUrl() {
 }
 
 function resolveProvider(): DigitalTwinDataProvider {
+  if (process.env.NEXT_PUBLIC_DEMO_MODE === "true") {
+    return new DemoDigitalTwinProvider()
+  }
   return new FastApiDigitalTwinProvider(resolveApiBaseUrl())
 }
 
