@@ -1,0 +1,176 @@
+{
+  "68": {
+    "n_rows": 9766,
+    "n_steps_evaluated": 7200,
+    "horizons": {
+      "5min": {
+        "VibrationX": {
+          "mae": 0.056916,
+          "rmse": 0.058022
+        },
+        "VibrationY": {
+          "mae": 0.060729,
+          "rmse": 0.061423
+        },
+        "VibrationZ": {
+          "mae": 0.050151,
+          "rmse": 0.05248
+        },
+        "Temperature": {
+          "mae": 0.561313,
+          "rmse": 0.622188
+        }
+      },
+      "10min": {
+        "VibrationX": {
+          "mae": 0.055084,
+          "rmse": 0.056223
+        },
+        "VibrationY": {
+          "mae": 0.060166,
+          "rmse": 0.060879
+        },
+        "VibrationZ": {
+          "mae": 0.049028,
+          "rmse": 0.050689
+        },
+        "Temperature": {
+          "mae": 0.97485,
+          "rmse": 1.086211
+        }
+      },
+      "20min": {
+        "VibrationX": {
+          "mae": 0.054545,
+          "rmse": 0.055614
+        },
+        "VibrationY": {
+          "mae": 0.059337,
+          "rmse": 0.060117
+        },
+        "VibrationZ": {
+          "mae": 0.047342,
+          "rmse": 0.04875
+        },
+        "Temperature": {
+          "mae": 1.650206,
+          "rmse": 1.830414
+        }
+      },
+      "30min": {
+        "VibrationX": {
+          "mae": 0.054123,
+          "rmse": 0.055502
+        },
+        "VibrationY": {
+          "mae": 0.059243,
+          "rmse": 0.060023
+        },
+        "VibrationZ": {
+          "mae": 0.045795,
+          "rmse": 0.047176
+        },
+        "Temperature": {
+          "mae": 2.20417,
+          "rmse": 2.430412
+        }
+      },
+      "60min": {
+        "VibrationX": {
+          "mae": 0.058859,
+          "rmse": 0.088471
+        },
+        "VibrationY": {
+          "mae": 0.061207,
+          "rmse": 0.076515
+        },
+        "VibrationZ": {
+          "mae": 0.049975,
+          "rmse": 0.172596
+        },
+        "Temperature": {
+          "mae": 3.510946,
+          "rmse": 3.850003
+        }
+      }
+    }
+  },
+  "12": {
+    "n_rows": 7200,
+    "n_steps_evaluated": 6600,
+    "horizons": {
+      "5min": {
+        "VibrationX": {
+          "mae": 0.09134,
+          "rmse": 0.09734
+        },
+        "VibrationY": {
+          "mae": 0.099473,
+          "rmse": 0.118293
+        },
+        "VibrationZ": {
+          "mae": 0.059977,
+          "rmse": 0.061535
+        },
+        "Temperature": {
+          "mae": 0.062942,
+          "rmse": 0.076832
+        }
+      },
+      "10min": {
+        "VibrationX": {
+          "mae": 0.18214,
+          "rmse": 1.028347
+        },
+        "VibrationY": {
+          "mae": 0.166215,
+          "rmse": 0.838762
+        },
+        "VibrationZ": {
+          "mae": 0.139715,
+          "rmse": 1.104062
+        },
+        "Temperature": {
+          "mae": 0.067974,
+          "rmse": 0.083009
+        }
+      },
+      "20min": {
+        "VibrationX": {
+          "mae": 0.145565,
+          "rmse": 0.731314
+        },
+        "VibrationY": {
+          "mae": 0.136387,
+          "rmse": 0.597964
+        },
+        "VibrationZ": {
+          "mae": 0.097978,
+          "rmse": 0.781724
+        },
+        "Temperature": {
+          "mae": 0.153157,
+          "rmse": 0.19139
+        }
+      },
+      "30min": {
+        "VibrationX": {
+          "mae": 0.136323,
+          "rmse": 0.601001
+        },
+        "VibrationY": {
+          "mae": 0.12856,
+          "rmse": 0.492605
+        },
+        "VibrationZ": {
+          "mae": 0.083302,
+          "rmse": 0.639054
+        },
+        "Temperature": {
+          "mae": 0.193876,
+          "rmse": 0.224224
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,55 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.Python
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+env/
+*.egg
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# ML artifacts (large binaries — tracked explicitly where needed)
+*.pt
+*.h5
+*.pkl
+# Note: .joblib files are intentionally included for demo inference
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+.cache/
+
+# Testing
+.pytest_cache/
+htmlcov/
+.coverage
+coverage.json
+playwright-report/
+
+# Docker
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Data — never commit real sensor data
+ml/data/raw_data/sensordata*.csv
+!ml/data/raw_data/sensordata_demo.csv

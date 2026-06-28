@@ -1,0 +1,138 @@
+# EDA: Why `machine_failure_data.csv` Cannot Support State Prediction or Binary Classification
+
+## Dataset at a Glance
+
+| Property | Value |
+|---|---|
+| Rows | 3,000 |
+| Columns | 8 (`Machine_ID`, `Timestamp`, 5 sensors, `Failure_Status`) |
+| Failure rate | 298 / 3,000 = **9.9%** |
+| Time span | 2025-01-01 → 2025-01-21 (21 days, 10-min intervals) |
+| Unique Machine IDs | **3,000** |
+
+---
+
+## Problem 1: There Is No Time Series
+
+The most fundamental issue: **every `Machine_ID` appears exactly once**.
+
+```
+Rows per machine: min=1, max=1, mean=1.0
+```
+
+The 3,000 rows are not readings from a small fleet of machines tracked over time. They are 3,000 one-off snapshots — each row is a different machine with a single observation.
+
+**Why this kills state prediction entirely:**
+A state/temporal model (LSTM, Transformer, AR) needs a sequence of readings from the *same* machine to learn how state evolves. With one row per machine there is nothing to sequence. "Predicting the next timestep" is meaningless when there is no next timestep.
+
+**Why the Timestamp column is misleading:**
+The timestamps are evenly spaced at 10-minute intervals across the 21-day window, which creates the illusion of a continuous log. In reality the spacing reflects when each *independent* machine was sampled, not the temporal history of any single machine.
+
+---
+
+## Problem 2: Features Carry No Signal for Failure
+
+Even setting aside the time-series issue, the 5 sensor features have **zero statistical relationship** with `Failure_Status`.
+
+### t-test: failure vs non-failure groups
+
+| Feature | Mean (no failure) | Mean (failure) | p-value |
+|---|---|---|---|
+| Temperature | 50.27 | 49.58 | 0.515 |
+| Pressure | 299.75 | 296.87 | 0.686 |
+| Vibration_Level | 5.05 | 5.09 | 0.812 |
+| Humidity | 60.03 | 60.54 | 0.631 |
+| Power_Consumption | 52.30 | 52.22 | 0.963 |
+
+All p-values are far above 0.05. Failed rows are statistically indistinguishable from healthy rows on every feature. No threshold, combination, or transformation of these sensors predicts failure.
+
+**Root cause:** `Failure_Status` was assigned independently from the sensor values when the data was generated. The label is random noise relative to the features.
+
+---
+
+## Problem 3: Binary Classifiers Perform Worse Than Guessing
+
+Cross-validated (5-fold, stratified) benchmark on all 5 sensor features:
+
+| Model | ROC-AUC | F1 |
+|---|---|---|
+| DummyClassifier (majority class) | 0.500 ± 0.000 | 0.000 ± 0.000 |
+| DummyClassifier (stratified) | 0.507 ± 0.028 | 0.070 ± 0.028 |
+| Logistic Regression | 0.474 ± 0.030 | 0.000 ± 0.000 |
+| Random Forest (class_weight=balanced) | 0.478 ± 0.011 | 0.000 ± 0.000 |
+| Gradient Boosting | 0.479 ± 0.021 | 0.006 ± 0.012 |
+
+All real classifiers score **below** the dummy baseline. A ROC-AUC < 0.5 means the model has learned an inverse relationship — which is worse than no model at all. F1 = 0.000 for Logistic Regression and Random Forest means they collapse entirely to predicting the majority class (no failure) because there is nothing to separate.
+
+### Random Forest feature importances
+
+| Feature | Importance |
+|---|---|
+| Power_Consumption | 0.2121 |
+| Vibration_Level | 0.1998 |
+| Temperature | 0.1997 |
+| Humidity | 0.1943 |
+| Pressure | 0.1941 |
+
+Perfectly uniform at ~0.20 each. This is the exact signature of a model that has found no discriminative signal and is splitting on random noise equally across all features.
+
+---
+
+## Problem 4: Failures Are Not Temporally Clustered
+
+Even if we ignore the per-machine identity and treat the full dataset as a single timeline, failure events do not cluster:
+
+| Run length | Count |
+|---|---|
+| 1 (isolated) | 237 runs |
+| 2 | 26 runs |
+| 3 | 3 runs |
+
+89% of failure events are isolated single-row spikes with no preceding or following failure. A real degrading machine produces runs of escalating readings before failure. These failures appear and disappear in one step, consistent with random label assignment.
+
+---
+
+## Problem 5: No Temporal Autocorrelation
+
+Lag-1 autocorrelation treating the full dataset as one ordered series:
+
+| Feature | Lag-1 autocorr |
+|---|---|
+| Temperature | 0.0084 |
+| Pressure | -0.0036 |
+| Vibration_Level | -0.0214 |
+| Humidity | 0.0032 |
+| Power_Consumption | 0.0362 |
+
+All values are indistinguishable from zero. Since each row is a different machine, this is expected — consecutive rows have no physical relationship with each other. This confirms there is no temporal structure anywhere in the dataset.
+
+---
+
+## Summary: What Is Wrong and Why
+
+| Failure Mode | Evidence |
+|---|---|
+| No time series (1 row per machine) | `rows_per_machine.max() == 1` |
+| Labels independent of features | All p-values > 0.5 |
+| Classifiers below dummy baseline | ROC-AUC < 0.5 for all real models |
+| No degradation ramp-up | 89% of failure runs are length-1 |
+| No temporal autocorrelation | All lag-1 values ≈ 0 |
+
+The dataset was generated by sampling each row independently from a fixed distribution and assigning `Failure_Status` with a fixed ~10% probability, with no coupling between sensor values and failure probability, and no continuity between consecutive rows.
+
+---
+
+## What a Usable Dataset Would Need
+
+For **state prediction** (LSTM / sequence model):
+1. Multiple consecutive readings per machine (at least 50–200 per machine)
+2. Lag-1 autocorrelation > 0.7 on all sensors
+3. Cross-sensor correlations (e.g. vibration rise → temperature rise after 2–3 steps)
+4. Smooth physical transitions between consecutive readings
+
+For **binary failure classifier**:
+1. Sensor features statistically different between failure and non-failure groups (p < 0.05)
+2. Ideally: pre-failure ramp-up window so the classifier can detect degradation before `Failure_Status=1`
+3. Sufficient failure examples — 9.9% is workable if the signal exists
+
+Neither requirement is met by `machine_failure_data.csv`.

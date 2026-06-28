@@ -1,0 +1,49 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: predictive_maintenance
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./apps/backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./apps/backend/.env
+    environment:
+      # Override DATABASE_URL so the backend connects to the db service, not localhost
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/predictive_maintenance
+      # Docker Compose is the local demo/dev environment, so keep seeded test data enabled.
+      TESTING: "true"
+    volumes:
+      - ./ml:/app/ml:ro
+      - ./logs:/app/logs
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./apps/frontend
+      args:
+        SERVER_API_BASE_URL: http://backend:8000
+    ports:
+      - "3000:3000"
+    environment:
+      SERVER_API_BASE_URL: http://backend:8000
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
