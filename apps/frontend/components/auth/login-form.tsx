@@ -28,6 +28,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { getValidErrorMessage } from "@/lib/utils";
 import { DemoDisclaimer } from "@/components/demo/demo-disclaimer";
+import { ThemeToggle } from "@/components/layout/theme-toggle";
 
 type LoginFormProps = {
   nextPath: string;
@@ -83,7 +84,8 @@ export function LoginForm({ nextPath }: LoginFormProps) {
     <div className="flex min-h-screen flex-col">
       {isDemoMode && <DemoDisclaimer />}
       <div className="grid flex-1 place-items-center p-4 md:p-8">
-      <Card className="panel-enter w-full max-w-6xl border-white/70 bg-card/90 dark:border-border/80">
+      <Card className="panel-enter relative w-full max-w-6xl border-white/70 bg-card/90 dark:border-border/80">
+        <div className="absolute top-4 right-4 z-10"><ThemeToggle /></div>
         <div className="grid gap-0 lg:min-h-[620px] lg:grid-cols-[1.08fr_0.92fr]">
           <section className="relative flex flex-col justify-between overflow-hidden border-b border-border/70 bg-[linear-gradient(145deg,color-mix(in_srgb,var(--primary)_10%,var(--card)),var(--card)_58%)] p-7 lg:border-r lg:border-b-0 lg:p-12">
             <div className="pointer-events-none absolute -top-24 -right-24 size-72 rounded-full border border-primary/10 bg-primary/[0.04]" />

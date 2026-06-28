@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { toast } from "sonner";
 
 const pageLabelMap: Record<string, string> = {
@@ -91,6 +92,7 @@ export function AppHeader() {
         <div className="hidden items-center gap-2 font-mono text-[10px] font-medium tracking-wider text-muted-foreground sm:flex">
           <span className="status-dot text-[var(--status-healthy)]" /> LIVE MONITORING
         </div>
+        <ThemeToggle />
         <Button variant="outline" size="sm" onClick={() => void onLogout()}>
           <SignOutIcon data-icon="inline-start" />
           Sign out
