@@ -1,6 +1,6 @@
 # Predictive Maintenance Digital Twin
 
-[**Open the frontend-only Vercel demo →**](https://predictive-maintenance-digital-twin-demo.vercel.app)
+[**Open the frontend-only Vercel demo →**](https://predictive-maintenance-digital-twin.vercel.app/dashboard)
 
 > **Portfolio demo notice:** All displayed “live” metrics are deterministic simulations. Machine A’s model foundation uses the public AI4I dataset. Machine C’s public demonstration uses synthetic/sanitized data. No backend, database, API key, or real client data is used by the hosted demo.
 
