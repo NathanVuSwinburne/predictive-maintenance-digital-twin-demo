@@ -37,6 +37,7 @@ htmlcov/
 .coverage
 coverage.json
 playwright-report/
+test-results/
 
 # Docker
 *.log
