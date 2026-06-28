@@ -6,7 +6,9 @@ test("visitor enters the demo and receives a traced chat response", async ({ pag
 
   await page.getByRole("button", { name: /explore live demo/i }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
-  await expect(page.getByText(/portfolio demo:/i).first()).toBeVisible();
+  await expect(page.getByLabel("Portfolio demo data notice")).toContainText(
+    /all displayed live metrics are simulated/i,
+  );
 
   await page.goto("/chat");
   await page.getByLabel("Prompt").fill("Summarize the fleet risk");
