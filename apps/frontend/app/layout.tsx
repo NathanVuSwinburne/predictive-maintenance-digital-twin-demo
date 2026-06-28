@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { GeistMono } from "geist/font/mono";
+import { GeistPixelSquare } from "geist/font/pixel";
 import { GeistSans } from "geist/font/sans";
 
 import { AppProviders } from "@/components/providers/app-providers";
@@ -17,7 +19,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${GeistSans.className} antialiased`}>
+      <body className={`${GeistSans.variable} ${GeistMono.variable} ${GeistPixelSquare.variable} antialiased`}>
         <AppProviders>{children}</AppProviders>
       </body>
     </html>
