@@ -13,5 +13,6 @@ test("visitor enters the demo and receives a traced chat response", async ({ pag
   await page.getByRole("button", { name: "Send" }).click();
 
   await expect(page.getByText(/10 fictional assets/i)).toBeVisible();
+  await page.getByRole("button", { name: /agent trace.*2 steps/i }).click();
   await expect(page.getByText("Demo tool call")).toBeVisible();
 });
