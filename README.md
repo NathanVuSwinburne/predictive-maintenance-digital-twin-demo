@@ -1,237 +1,287 @@
-# Predictive Maintenance Digital Twin — Portfolio Demo
+# Predictive Maintenance Digital Twin
 
-> **Sanitization notice:** This repository is a sanitized public portfolio version of a university capstone project originally developed for an industry-style client brief. Private client data, credentials, internal documents, and proprietary materials have been removed or replaced with synthetic/demo data.
+[**Open the frontend-only Vercel demo →**](https://predictive-maintenance-digital-twin-demo.vercel.app)
 
-## Project Overview
+> **Portfolio demo notice:** All displayed “live” metrics are deterministic simulations. Machine A’s model foundation uses the public AI4I dataset. Machine C’s public demonstration uses synthetic/sanitized data. No backend, database, API key, or real client data is used by the hosted demo.
 
-A full-stack predictive maintenance platform that monitors industrial equipment through a real-time dashboard, runs ML-based failure prediction and forecasting, and provides an agentic AI chatbot capable of querying the database, running predictions, and recommending maintenance actions.
+A university capstone that turns industrial telemetry into fleet health views, failure forecasts, what-if simulations, and traceable maintenance conversations. The hosted experience contains ten fictional fleet instances derived from three model profiles; these are demo assets, not ten independently trained models.
 
-Built as a university capstone (Swinburne COS40005) for an industry client with real manufacturing equipment.
+## What you can explore
 
-## Why This Project Matters
+- Fleet health, risk, uptime, weekly events, and machine-level telemetry
+- Random Forest classification and an autoregressive LSTM forecasting workflow
+- What-if simulations with baseline/intervention comparisons
+- A supervisor-style chatbot with scripted tool calls and visible traces
+- Role and machine-access administration, history, and account-security screens
+- A full FastAPI/PostgreSQL mode for local development
 
-Manufacturing downtime costs industry billions annually. This platform turns raw machine telemetry into actionable maintenance intelligence — moving from reactive ("fix it when it breaks") to predictive ("fix it before it breaks") maintenance.
+## How the system evolved
 
-## Key Features
+1. **Source data.** Machine A established the classification baseline on the public AI4I 2020 predictive-maintenance dataset. Additional sensor profiles explored multi-sensor failure classification and high-frequency vibration forecasting.
+2. **Coverage gap.** The available Machine C client samples were too limited and imbalanced to support a credible public training story. Raw client readings were therefore excluded from this repository and from the hosted demo.
+3. **TSGM augmentation.** Time-series generative modelling expanded the Machine C development set. Frequency-domain checks compared real and synthetic vibration/temperature characteristics before augmented data was accepted for experimentation.
+4. **Autoresearch tuning.** A constrained autonomous experiment loop varied the LSTM architecture, optimisation, regularisation, and preprocessing while retaining explicit long-horizon evaluation criteria.
+5. **Forecasting pipeline.** The retained LSTM consumes **20 minutes** (2,400 samples at 500 ms), predicts the next **10 minutes** (1,200 samples), and creates training windows on a **5-minute stride** (600 samples). Six autoregressive 10-minute chunks roll the forecast forward to **one hour**.
+6. **Operational persistence.** PostgreSQL/SQLAlchemy added machines, telemetry profiles, predictions, recommendations, history, simulations, user access, sessions, chat memory, and security state.
+7. **Chatbot redesign.** A fixed router evolved into a supervisor using native tool calls for database lookup, prediction, simulation, knowledge retrieval, maintenance proposals, and complaint extraction. The team observed roughly a **75% improvement in typical response time** after this redesign; this is a team-observed estimate, not a controlled benchmark.
+8. **Authentication and access.** Session authentication, optional TOTP/backup codes, roles, and per-machine user access were added for the full-stack deployment.
+9. **Dashboard feedback.** Operator feedback drove the fleet posture view, summary metrics, machine cards, event breakdown, trace presentation, and clearer simulation controls.
+10. **Public demo.** A deterministic provider now exercises the same frontend data contract on Vercel without deploying private data or operational services.
 
-- **Fleet dashboard** — real-time health scores, risk classifications, anomaly scores, and failure probability per machine
-- **ML inference pipeline** — failure classification (Random Forest), LSTM time-series forecasting, and simulation serving
-- **Agentic AI chatbot** — supervisor agent with 6 callable tools, RAG knowledge base, session memory, and trace logging
-- **Simulation pane** — what-if scenario testing for operating conditions and maintenance actions
-- **Docker Compose** — one-command local deployment of frontend, backend, and database
+## Retained evaluation results
+
+The checked-in Machine C artifacts report the following held-out results. They describe the retained experimental artifacts, not the fictional live values shown by Vercel.
+
+| Artifact | Retained result |
+|---|---:|
+| Machine C risk classifier | 91.28% accuracy; 0.9631 macro one-vs-rest AUC |
+| Low-risk class | F1 0.9502 (107 samples) |
+| High-risk class | F1 0.8333 (39 samples) |
+| 10-minute LSTM — Vibration X | MAE 0.0479; RMSE 0.1262 |
+| 10-minute LSTM — Vibration Y | MAE 0.1102; RMSE 0.2335 |
+| 10-minute LSTM — Vibration Z | MAE 0.0612; RMSE 0.1301 |
+| 10-minute LSTM — Temperature | MAE 0.2425; RMSE 0.3123 |
+
+The medium-risk test subset contains only three samples (F1 0.4000), so the aggregate classifier score should not be read as uniform class performance.
 
 ## Architecture
 
-```
-+----------------------------------------------------------+
-|                    Next.js Frontend                       |
-|   Dashboard | Chat UI | Simulation Pane | Auth            |
-+------------------------------+---------------------------+
-                               | REST API
-+------------------------------v---------------------------+
-|                  FastAPI Backend                          |
-|                                                          |
-|  +--------------+  +---------------+  +-------------+   |
-|  | ML Inference |  | Agent System  |  | Auth/Users  |   |
-|  | prediction   |  | supervisor    |  | JWT sessions|   |
-|  | forecasting  |  | SQL agent     |  +-------------+   |
-|  | simulation   |  | RAG / Wiki    |                    |
-|  +--------------+  +---------------+                    |
-+------------------------------+---------------------------+
-                               |
-+------------------------------v---------------------------+
-|              PostgreSQL Database                          |
-|  machines | telemetry | predictions | chat_history        |
-|  simulations | agent_traces | users                      |
-+----------------------------------------------------------+
+```mermaid
+flowchart LR
+    V["Vercel portfolio demo<br/>Next.js + deterministic provider"]
+    UI["Next.js application<br/>dashboard · chat · simulation · auth"]
+    API["FastAPI<br/>REST · agents · inference"]
+    ML["Model services<br/>RF classification · LSTM forecast"]
+    DB[(PostgreSQL)]
+
+    V --> UI
+    UI -->|local full-stack mode| API
+    API --> ML
+    API --> DB
 ```
 
-## Dashboard
+The `DigitalTwinDataProvider` interface is the seam between both deployment modes:
 
-The client-facing dashboard provides:
-- **Fleet posture view** — risk vs. health scatter plot for all machines
-- **Machine status cards** — health %, risk %, uptime, failure probability, risk classification
-- **Weekly event breakdown** — fault predictions, anomalies, maintenance actions by day
-- **Summary metrics** — fleet size, at-risk count, average risk score, recent simulation count
+- `NEXT_PUBLIC_DEMO_MODE=true` → deterministic, frontend-only provider
+- unset/`false` → FastAPI provider, preserving the Docker workflow
 
-## Real-Time MLOps Pipeline
+## Database model
 
-Three machine types each have dedicated ML pipelines:
+This ER diagram mirrors every ORM table currently declared in `apps/backend/app/db/models.py`. `chat_messages.thread_id` is relationship-defining application data but is not declared as a database `ForeignKey` in the current model.
 
-| Machine | Model Type | Task |
-|---------|-----------|------|
-| Machine A | Random Forest (scikit-learn) | Binary failure classification |
-| Machine B | Random Forest + feature engineering | Multi-label failure type classification |
-| Machine C | LSTM (PyTorch) + Random Forest | Time-series forecasting + failure classification |
+```mermaid
+erDiagram
+    PERSONAS {
+        string id PK
+        string name
+        string role
+        string shift
+        string plant
+    }
+    USERS {
+        string id PK
+        string email
+        string password
+        string persona_id FK
+        string access_role
+        string totp_secret
+    }
+    USER_MACHINE_ACCESS {
+        int id PK
+        string user_id FK
+        string machine_id FK
+    }
+    MACHINES {
+        string id PK
+        string name
+        string line
+        string model
+        string machine_type
+        string status
+        float health_score
+        float risk_score
+    }
+    MACHINE_A_TELEMETRY {
+        int id PK
+        string machine_id FK
+        int udi
+        string product_id
+        float air_temp_k
+        float process_temp_k
+    }
+    MACHINE_B_TELEMETRY {
+        int id PK
+        string machine_id FK
+        string timestamp
+        float temperature
+        float vibration_level
+    }
+    MACHINE_C_TELEMETRY {
+        int id PK
+        string machine_id FK
+        int session_id
+        string time_collected
+        string risk_label
+    }
+    MACHINE_C_SIMULATION_TELEMETRY {
+        int id PK
+        string machine_id FK
+        int session_id
+        string time_collected
+        boolean synthetic
+    }
+    PREDICTIONS {
+        string id PK
+        string machine_id FK
+        datetime generated_at
+        int horizon_hours
+        float probability
+    }
+    RECOMMENDATIONS {
+        string id PK
+        string machine_id FK
+        string action_type
+        string priority
+    }
+    HISTORY_EVENTS {
+        string id PK
+        string machine_id FK
+        string user_id FK
+        string timestamp
+        string type
+    }
+    CHAT_THREADS {
+        string id PK
+        string machine_id FK
+        string user_id FK
+        string title
+        string updated_at
+    }
+    CHAT_MESSAGES {
+        string id PK
+        string thread_id "relationship field"
+        string role
+        string created_at
+    }
+    MFA_TOKENS {
+        string token PK
+        string user_id FK
+    }
+    PENDING_TOTP_SETUPS {
+        string token PK
+        string user_id FK
+        string secret
+        datetime created_at
+    }
+    MFA_BACKUP_CODES {
+        int id PK
+        string user_id FK
+        string code
+        boolean used
+    }
+    SESSIONS {
+        string token PK
+        string user_id FK
+        string active_persona_id FK
+        string authenticated_at
+    }
+    SIMULATIONS {
+        string id PK
+        string machine_id FK
+        string user_id FK
+        string created_at
+        float projected_risk
+    }
 
-The backend exposes inference as REST endpoints, with model input profiles and feature mapping allowing different sensor schemas to be served without code changes.
+    PERSONAS ||--o{ USERS : persona_id
+    PERSONAS ||--o{ SESSIONS : active_persona_id
+    USERS ||--o{ USER_MACHINE_ACCESS : user_id
+    MACHINES ||--o{ USER_MACHINE_ACCESS : machine_id
+    MACHINES ||--o{ MACHINE_A_TELEMETRY : machine_id
+    MACHINES ||--o{ MACHINE_B_TELEMETRY : machine_id
+    MACHINES ||--o{ MACHINE_C_TELEMETRY : machine_id
+    MACHINES ||--o{ MACHINE_C_SIMULATION_TELEMETRY : machine_id
+    MACHINES ||--o{ PREDICTIONS : machine_id
+    MACHINES ||--o{ RECOMMENDATIONS : machine_id
+    MACHINES ||--o{ HISTORY_EVENTS : machine_id
+    USERS ||--o{ HISTORY_EVENTS : user_id
+    MACHINES ||--o{ CHAT_THREADS : machine_id
+    USERS ||--o{ CHAT_THREADS : user_id
+    CHAT_THREADS ||--o{ CHAT_MESSAGES : thread_id
+    USERS ||--o{ MFA_TOKENS : user_id
+    USERS ||--o{ PENDING_TOTP_SETUPS : user_id
+    USERS ||--o{ MFA_BACKUP_CODES : user_id
+    USERS ||--o{ SESSIONS : user_id
+    MACHINES ||--o{ SIMULATIONS : machine_id
+    USERS ||--o{ SIMULATIONS : user_id
+```
 
-## Agentic AI Chatbot
+## Visual record
 
-The chatbot uses a **supervisor agent architecture** built on the OpenAI Agents SDK.
+### Machine learning and data augmentation
 
-### Tool Calling
+| Pipeline | Synthetic-data validation |
+|---|---|
+| ![Machine learning architecture](assets/ml_architecture.png) | ![Real and synthetic Machine C data comparison](assets/real_synthetic_data_example_with_tsgm.png) |
+| ![LSTM training results](assets/lstm_model_training.png) | ![Expanded model architecture](assets/ml_architecture_2.png) |
 
-The supervisor dynamically routes user intent to one of 6 tools:
+### Chatbot and tool tracing
 
-| Tool | What it does |
-|------|-------------|
-| `query_database` | SQL sub-agent with read-only enforcement; schema injected at startup |
-| `run_prediction` | Calls ML inference pipeline for a given machine |
-| `run_simulation` | Executes simulation scenarios and returns forecast results |
-| `lookup_knowledge` | RAG retrieval from the LLM Wiki (Obsidian vault) |
-| `propose_maintenance` | Generates structured maintenance recommendations |
-| `extract_complaint` | Extracts structured fault signals from natural language |
+| Supervisor design | Trace visibility |
+|---|---|
+| ![Chatbot supervisor architecture](assets/chatbot_architecture.png) | ![Chatbot tool trace](assets/chatbot_tracing.png) |
+| ![Telemetry retrieval response](assets/chatbot_telemetry_retrieval.png) | ![Example chatbot response](assets/chatbot_example_message_2.png) |
 
-### RAG / LLM Wiki
+### Simulation
 
-The agent's knowledge layer uses an **Obsidian vault** as a structured wiki rather than a flat document store. At startup, the vault is indexed and made available for semantic retrieval. This gives the agent grounded domain knowledge about machine types, maintenance procedures, and failure modes.
+![Simulation pane using mock data](assets/similation_pane_with_mockdata.png)
 
-### Agent Tracing
+### Future MQTT ingestion
 
-Every reasoning step the agent takes is persisted to the database and surfaced in the chat UI — giving operators full transparency into how the agent reached its recommendation.
+| Subscription mapping | Topic assignment prototype |
+|---|---|
+| ![MQTT subscription interface](assets/MQTT_subscription.png) | ![MQTT topic subscription mapping](assets/MQTT_subscription_2.png) |
 
-### Session Memory
+## Run locally
 
-The agent maintains working memory across conversation turns within a session, so follow-up questions resolve correctly without re-stating context.
+### Hosted-demo behavior only
 
-## Simulation Pane
-
-The simulation pane allows users to test what-if scenarios:
-- Adjust operating parameters (temperature, load, speed)
-- Apply simulated maintenance actions
-- View forecast risk changes over a time horizon
-- Compare baseline vs. intervention outcomes
-
-Simulation uses the Machine C LSTM model served through the backend inference API.
-
-## Tech Stack
-
-**Frontend:** Next.js 14, TypeScript, Tailwind CSS, shadcn/ui, Vitest, Playwright
-
-**Backend:** Python 3.11, FastAPI, SQLAlchemy, Pydantic, OpenAI Agents SDK, LangChain (RAG)
-
-**ML:** scikit-learn, PyTorch, joblib, pandas, numpy
-
-**Database:** PostgreSQL 16
-
-**Infrastructure:** Docker, Docker Compose
-
-**LLM:** DeepSeek (default) | OpenAI GPT-4o-mini | Ollama (local) | Google Gemini
-
-## Demo Data
-
-This repo uses synthetic/demo data in place of private client sensor readings:
-
-- `ml/data/raw_data/ai4i2020.csv` — public UCI AI4I 2020 Predictive Maintenance dataset (10,000 records)
-- `ml/data/raw_data/machine_failure_data.csv` — synthetic telemetry simulation dataset
-- `ml/data/raw_data/sensordata_demo.csv` — synthetic Machine C sensor data generated to match original schema (VibrationX/Y/Z, Temperature, session, label)
-
-To regenerate demo sensor data:
 ```bash
-python ml/machine_c/scripts/generate_demo_data.py
+cd apps/frontend
+npm ci
+cp .env.example .env.local
+# Set NEXT_PUBLIC_DEMO_MODE=true
+npm run dev
 ```
 
-ML models for Machine C were trained on proprietary sensor data from the capstone client engagement and are included as pre-trained binaries for demo inference.
-
-## API Overview
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/v1/auth/login` | Authenticate and get JWT |
-| GET | `/api/v1/machines/` | List all machines with status |
-| GET | `/api/v1/machines/{id}/telemetry` | Recent telemetry for a machine |
-| POST | `/api/v1/chat/` | Send message to agent |
-| GET | `/api/v1/history/` | Chat history for session |
-| POST | `/api/v1/simulations/` | Run a simulation scenario |
-| GET | `/api/v1/simulations/{id}` | Get simulation result |
-
-Full API docs available at `http://localhost:8000/docs` when running locally.
-
-## How to Run Locally
-
-### Prerequisites
-- Docker and Docker Compose
-- A DeepSeek API key (free tier available at platform.deepseek.com)
-
-### Steps
+### Full stack
 
 ```bash
-# 1. Clone the repo
-git clone https://github.com/NathanVuSwinburne/predictive-maintenance-digital-twin-demo
-cd predictive-maintenance-digital-twin-demo
-
-# 2. Set up environment
 cp apps/backend/.env.example apps/backend/.env
-# Edit apps/backend/.env and add your DEEPSEEK_API_KEY
-
-# 3. Start all services
 docker compose up --build
-
-# 4. Open the dashboard
-# Frontend: http://localhost:3000
-# API docs: http://localhost:8000/docs
 ```
 
-Default login credentials (seeded demo data):
-- Username: `admin` / Password: `admin`
+Open `http://localhost:3000`. FastAPI documentation is at `http://localhost:8000/docs`. The seeded local full-stack account is `admin` / `admin`; the Vercel demo uses its **Explore live demo** button and requires no credentials.
 
-## Screenshots
+## Deploy on Vercel
 
-### Synthetic Data Evaluation — Machine C Vibration & Temperature PSD Analysis
+Import this repository and set **Root Directory** to `apps/frontend`. The included `vercel.json` enables `NEXT_PUBLIC_DEMO_MODE=true`; no other environment variables or services are required.
 
-Power Spectral Density plots from the TSGM synthetic data generation process, used to validate that generated Machine C training data preserves real frequency-domain characteristics:
+## Tests
 
-![VibrationX PSD](ml/machine_c/tsgm_data_generate/figures/mean_psd_0_VibrationX.png)
-![VibrationY PSD](ml/machine_c/tsgm_data_generate/figures/mean_psd_1_VibrationY.png)
-![VibrationZ PSD](ml/machine_c/tsgm_data_generate/figures/mean_psd_2_VibrationZ.png)
-![Temperature PSD](ml/machine_c/tsgm_data_generate/figures/mean_psd_3_Temperature.png)
-![PSD Band Powers](ml/machine_c/tsgm_data_generate/figures/psd_band_powers.png)
+```bash
+cd apps/frontend
+npm run test:unit
+npm run lint
+npm run build
+npm run test:e2e
+```
 
-### LSTM Forecast Model Training
+## Stack and scope
 
-![Training Curves](ml/machine_c/models/training_curves.png)
-![Long Horizon Evaluation](ml/machine_c/models/long_horizon_eval.png)
+- Frontend: Next.js 16, React 19, TypeScript, Tailwind CSS, Recharts, Vitest, Playwright
+- Backend: FastAPI, SQLAlchemy, Pydantic, PostgreSQL
+- ML: PyTorch LSTM, XGBoost/Random Forest workflows, scikit-learn, pandas, NumPy
+- Agent system: supervisor, six domain tools, working memory, RAG/wiki retrieval, persisted traces
 
-> Dashboard and chat UI screenshots to be added. Run locally to see the live interface.
-
-## My Contribution (Thanh Nam Vu)
-
-- Analysed limitations of the existing LangGraph router-based architecture and led migration to a native tool-calling architecture using the OpenAI Agents SDK
-- Designed and implemented the supervisor agent with dynamic routing across 6 tools
-- Built a dedicated SQL sub-agent with read-only enforcement and schema/routing documentation injected via `agent_wiki/` at startup
-- Replaced the FAISS/RAG knowledge layer with an Obsidian wiki integration as the agent's second brain for domain knowledge lookups
-- Added agent trace persistence so internal reasoning steps are stored in the database and surfaced in the chat UI
-- Implemented session-level working memory so the agent retains context across conversation turns
-- Wrote unit tests for tool imports, complaint extraction, and proposal management
-- Contributed to model input profiles and sensor-feature mapping for multi-machine schema support
-
-## Team & Contributions
-
-| Name | Role | Key Contributions |
-|------|------|-------------------|
-| **Thanh Nam Vu** | ML/AI Engineer | Agentic supervisor, tool calling, RAG/wiki integration, agent tracing, session memory |
-| Sy Dam Viet Nguyen | Frontend Engineer | Dashboard redesign, fleet posture scatter plot, weekly event chart, status cards |
-| Nathan Wijaya | Full-Stack / DevOps | Intent parsing, mock data removal, Docker containerisation, Vitest/Playwright testing, MQTT ingestion framework |
-| Alexander Rigato | IoT / Backend | gRPC/MQTT sensor framework, MQTT subscription-based assignment manager, live data integration prototype |
-| Hoang Trang Anh Pham | AI / Project | Tool-calling agent contribution, agent trace support, sprint planning, synthetic data reporting |
-| Andy Truong | ML Research / PM | TSGM LSTM evaluation, synthetic data quality assessment, sprint Gantt chart, team progress tracking |
-
-## Limitations
-
-- Live MQTT sensor integration is a prototype; the dashboard currently uses seeded demo data
-- ML models for Machine C were trained on proprietary client data; retraining on public datasets is a future goal
-- Per-user API rate limiting for the chatbot is not yet implemented
-- Dashboard and chat UI screenshots not yet included in this README
-
-## Future Improvements
-
-- Live sensor ingestion via MQTT with configurable topic routing
-- Per-user chatbot rate limiting (planned: 5 calls per session)
-- Retrain Machine C models on fully public datasets
-- Grafana/Prometheus monitoring for model drift and API latency
-- CI/CD pipeline for model retraining and deployment
-
-## Confidentiality Note
-
-This repository is a sanitized public portfolio version of a university capstone project (Swinburne COS40005) originally developed for an industry-style client brief. Private client sensor data, credentials, internal documents, university submission files, and proprietary materials have been removed or replaced with synthetic/demo data. The original repository remains private.
+This is a sanitized portfolio repository from Swinburne COS40005. Private client readings, credentials, internal documents, and proprietary materials are excluded. See [CONTRIBUTORS.md](CONTRIBUTORS.md) for team contributions.
