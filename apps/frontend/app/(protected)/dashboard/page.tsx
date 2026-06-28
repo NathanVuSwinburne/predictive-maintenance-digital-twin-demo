@@ -186,12 +186,17 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-1">
+        <p className="instrument-label">Fleet command</p>
+        <h1 className="text-2xl font-semibold tracking-[-0.04em] md:text-3xl">Operations overview</h1>
+        <p className="max-w-2xl text-sm text-muted-foreground">Monitor fleet condition, emerging risk, and recent maintenance activity from one clear operational view.</p>
+      </div>
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Card>
           <CardHeader className="pb-2">
             <CardDescription className="text-sm">Fleet Size</CardDescription>
-            <CardTitle className="text-lg">{machines.length}</CardTitle>
+            <CardTitle className="data-value text-2xl">{machines.length}</CardTitle>
           </CardHeader>
           <CardContent className="flex items-center gap-2 text-sm text-muted-foreground">
             <CpuIcon />
@@ -204,7 +209,7 @@ export default function DashboardPage() {
             <CardDescription className="text-sm">
               At-risk Machines
             </CardDescription>
-            <CardTitle className="text-lg">{atRiskMachines.length}</CardTitle>
+            <CardTitle className="data-value text-2xl">{atRiskMachines.length}</CardTitle>
           </CardHeader>
           <CardContent className="flex items-center gap-2 text-sm text-muted-foreground">
             <WarningDiamondIcon />
@@ -217,7 +222,7 @@ export default function DashboardPage() {
             <CardDescription className="text-sm">
               Average Risk Score
             </CardDescription>
-            <CardTitle className="text-lg">{averageRisk}%</CardTitle>
+            <CardTitle className="data-value text-2xl">{averageRisk}%</CardTitle>
           </CardHeader>
           <CardContent className="flex items-center gap-2 text-sm text-muted-foreground">
             <TrendUpIcon />
@@ -230,7 +235,7 @@ export default function DashboardPage() {
             <CardDescription className="text-sm">
               Recent Simulations
             </CardDescription>
-            <CardTitle className="text-lg">{simulationRuns.length}</CardTitle>
+            <CardTitle className="data-value text-2xl">{simulationRuns.length}</CardTitle>
           </CardHeader>
           <CardContent className="flex items-center gap-2 text-sm text-muted-foreground">
             <FlaskIcon />

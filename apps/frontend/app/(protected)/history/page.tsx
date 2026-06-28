@@ -164,7 +164,12 @@ export default function HistoryPage() {
   }, [events]);
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-1">
+        <p className="instrument-label">Operational record</p>
+        <h1 className="text-2xl font-semibold tracking-[-0.04em] md:text-3xl">History and events</h1>
+        <p className="max-w-2xl text-sm text-muted-foreground">Review anomalies, predictions, simulations, and maintenance decisions across the fleet.</p>
+      </div>
       <Card>
         <CardHeader>
           <CardTitle className="text-sm">Operations History</CardTitle>

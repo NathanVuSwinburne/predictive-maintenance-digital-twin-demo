@@ -561,7 +561,7 @@ function ChatGaugeChart({ block }: { block: ChatChartBlock }) {
           </div>
 
           <div className="grid gap-3">
-            <div className="rounded-none border border-border bg-muted/30 p-3">
+            <div className="rounded-lg border border-border/70 bg-muted/30 p-3">
               <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
                 <span>Operating scale</span>
                 <span>
@@ -909,7 +909,7 @@ function MessageBlocks({ blocks }: { blocks: ChatContentBlock[] }) {
       renderedBlocks.push(
         <div
           key={index}
-          className="overflow-x-auto rounded-none border border-border"
+          className="overflow-x-auto rounded-lg border border-border/70"
         >
           <Table>
             <TableHeader>
@@ -952,7 +952,7 @@ function MessageBlocks({ blocks }: { blocks: ChatContentBlock[] }) {
             <Link
               key={`${item.href}-${linkIndex}`}
               href={item.href}
-              className="flex flex-col gap-1 rounded-none border border-border p-2 hover:bg-muted"
+              className="flex flex-col gap-1 rounded-lg border border-border/70 p-2 transition-colors hover:bg-muted"
             >
               <span className="text-sm font-medium text-primary">
                 {item.label}
@@ -1369,7 +1369,7 @@ export function ChatWorkspace({ className }: ChatWorkspaceProps) {
                 <div
                   key={thread.id}
                   className={cn(
-                    "group flex items-start gap-1 rounded-none border border-border text-sm hover:bg-muted",
+                    "group flex items-start gap-1 rounded-lg border border-border/70 text-sm transition-colors hover:bg-muted",
                     thread.id === activeThreadId && "border-primary",
                   )}
                 >
@@ -1458,7 +1458,7 @@ export function ChatWorkspace({ className }: ChatWorkspaceProps) {
 
           <div
             ref={messageScrollAreaRef}
-            className="h-[60rem] overflow-y-auto rounded-none border border-border p-3"
+            className="h-[60rem] overflow-y-auto rounded-xl border border-border/70 bg-background/45 p-4"
           >
             <div className="flex flex-col gap-3 pr-3">
               {isLoadingMessages && (
@@ -1486,7 +1486,7 @@ export function ChatWorkspace({ className }: ChatWorkspaceProps) {
                 <div
                   key={message.id}
                   className={cn(
-                    "flex max-w-[95%] flex-col gap-2 rounded-none border border-border p-3 text-sm",
+                    "flex max-w-[88%] flex-col gap-2 rounded-xl border border-border/70 p-3.5 text-sm shadow-sm",
                     message.role === "assistant"
                       ? "self-start bg-card"
                       : "self-end bg-primary/10",
@@ -1510,11 +1510,11 @@ export function ChatWorkspace({ className }: ChatWorkspaceProps) {
               ))}
 
               {isSending && (
-                <div className="flex max-w-[95%] flex-col gap-2 self-start rounded-none border border-border bg-card p-3 text-sm">
+                <div className="flex max-w-[88%] flex-col gap-2 self-start rounded-xl border border-border/70 bg-card p-3.5 text-sm shadow-sm">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <RobotIcon />
                     AI Assistant
-                    <span className="ml-1 rounded-none border-l border-border/70 pl-2 text-[11px] font-normal text-muted-foreground">
+                    <span className="ml-1 border-l border-border/70 pl-2 text-[11px] font-normal text-muted-foreground">
                       {pendingRouteLabel(pendingToolKind, queryMode)}
                     </span>
                   </div>
@@ -1607,7 +1607,7 @@ export function ChatWorkspace({ className }: ChatWorkspaceProps) {
                         >
                           <SelectTrigger
                             id="llm-provider-select"
-                            className="h-8 rounded-none text-xs"
+                            className="h-8 rounded-lg text-xs"
                           >
                             <SelectValue />
                           </SelectTrigger>
@@ -1640,7 +1640,7 @@ export function ChatWorkspace({ className }: ChatWorkspaceProps) {
                             }
                             value={apiKeyDraft}
                             onChange={(e) => setApiKeyDraft(e.target.value)}
-                            className="h-8 rounded-none text-xs font-mono"
+                            className="h-8 rounded-lg text-xs font-mono"
                           />
                         </div>
                       )}
@@ -1696,7 +1696,7 @@ export function ChatWorkspace({ className }: ChatWorkspaceProps) {
                         >
                           <SelectTrigger
                             id="chat-mode-select"
-                            className="h-8 rounded-none text-xs"
+                            className="h-8 rounded-lg text-xs"
                           >
                             <SelectValue />
                           </SelectTrigger>
@@ -1730,7 +1730,7 @@ export function ChatWorkspace({ className }: ChatWorkspaceProps) {
                         >
                           <SelectTrigger
                             id="chat-machine-select"
-                            className="h-8 rounded-none text-xs"
+                            className="h-8 rounded-lg text-xs"
                           >
                             <SelectValue />
                           </SelectTrigger>

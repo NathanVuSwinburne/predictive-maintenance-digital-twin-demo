@@ -53,7 +53,7 @@ export function SimulationParameterField({
       <Field
         orientation="responsive"
         data-invalid={error ? true : undefined}
-        className="rounded-none border border-border p-3"
+        className="rounded-lg border border-border/70 bg-muted/20 p-3"
       >
         <FieldLabel htmlFor={parameter.key}>{parameter.label}</FieldLabel>
         <FieldContent>

@@ -116,10 +116,15 @@ export default function MachinesPage() {
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-1">
+        <p className="instrument-label">Asset registry</p>
+        <h1 className="text-2xl font-semibold tracking-[-0.04em] md:text-3xl">Machine fleet</h1>
+        <p className="max-w-2xl text-sm text-muted-foreground">Search, filter, and compare the current condition of every monitored asset.</p>
+      </div>
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm">Machine Fleet</CardTitle>
+          <CardTitle className="text-sm">Fleet filters</CardTitle>
         </CardHeader>
 
         <CardContent className="flex flex-col gap-3">
