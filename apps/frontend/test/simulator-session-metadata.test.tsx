@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { SimulationSessionMetadata } from "@/app/(protected)/simulator/page";
+import { SimulationSessionMetadata } from "@/components/simulator/simulation-session-metadata";
 
 describe("SimulationSessionMetadata", () => {
   it("shows collection timing and provenance", () => {

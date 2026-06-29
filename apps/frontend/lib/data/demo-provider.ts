@@ -4,7 +4,7 @@ import type {
   MachineDetail, MachineSummary, MachinesQuery, ManualPredictionInput,
   ManualPredictionResult, MaintenanceRecommendation, Prediction, PredictionConfig,
   Session, SendMessageInput, SimulationConfig,
-  SimulationRun, SimulationScenarioInput, SimulationSessionPreview, TelemetryPoint,
+  SimulationRun, SimulationScenarioInput, SimulationSessionPreview,
   TotpBackupCodesResult, TotpSetupResult, TotpStatus, UserPersona, UserRole,
   VerifyMfaInput,
 } from "@/lib/domain/types";

@@ -81,6 +81,7 @@ export function ManualPredictionPanel({
       machines.filter(
         (machine) =>
           machine.machineType === "ai4i" ||
+          machine.machineType === "sensor" ||
           machine.machineType === "real-sensor" ||
           machine.machineType === "kaggle",
       ),
