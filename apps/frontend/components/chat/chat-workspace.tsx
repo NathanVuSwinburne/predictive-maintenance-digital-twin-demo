@@ -1439,8 +1439,11 @@ export function ChatWorkspace({ className }: ChatWorkspaceProps) {
 
         <CardContent className="flex h-full min-h-0 flex-col gap-3">
           {activeThread && (
-            <div className="flex flex-wrap gap-2">
-              {activeThread.promptSuggestions.map((suggestion) => (
+            <div>
+              {process.env.NEXT_PUBLIC_DEMO_MODE === "true" && (
+                <p className="mb-2 text-xs text-muted-foreground">Try a suggested prompt to see telemetry tables, charts, prediction, or simulation.</p>
+              )}
+              <div className="flex flex-wrap gap-2">{activeThread.promptSuggestions.map((suggestion) => (
                 <Button
                   key={suggestion}
                   variant="outline"
@@ -1450,7 +1453,7 @@ export function ChatWorkspace({ className }: ChatWorkspaceProps) {
                   <LightningIcon data-icon="inline-start" />
                   {suggestion}
                 </Button>
-              ))}
+              ))}</div>
             </div>
           )}
 
