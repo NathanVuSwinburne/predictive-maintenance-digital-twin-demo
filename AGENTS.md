@@ -18,6 +18,7 @@ This repository is maintained for Codex-first workflows. Use the local context f
 2. Open only the smallest set of files needed for the task.
 3. Verify current behavior in code instead of assuming context files are fully current.
 4. Before finishing any non-trivial task, update relevant docs if behavior, interfaces, or architecture intent changed.
+5. Commit every important change using a Conventional Commit-style subject, such as `feat:`, `fix:`, or `refactor:`.
 
 ## Context Usage Rules
 

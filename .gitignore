@@ -52,6 +52,7 @@ Thumbs.db
 .vscode/
 .idea/
 .worktrees/
+.superpowers
 
 # Data — never commit real sensor data
 ml/data/raw_data/sensordata*.csv
