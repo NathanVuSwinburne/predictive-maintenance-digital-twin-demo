@@ -68,7 +68,7 @@ describe("DemoDigitalTwinProvider", () => {
     const assistant = response.messages.at(-1);
 
     expect(assistant?.role).toBe("assistant");
-    expect(assistant?.agentTrace?.map((step) => step.tool)).toContain("query_database");
+    expect(assistant?.agentTrace?.map((step) => step.tool)).toContain("query_telemetry");
     expect(JSON.stringify(assistant?.contentBlocks)).toMatch(/fleet/i);
   });
 

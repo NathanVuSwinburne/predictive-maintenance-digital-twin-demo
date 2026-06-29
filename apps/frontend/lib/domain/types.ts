@@ -313,6 +313,9 @@ export type SimulationSessionOption = {
   durationMinutes: number;
   usesSyntheticContinuation: boolean;
   label?: string | null;
+  sampleIntervalMs?: number | null;
+  gapFromPreviousMinutes?: number | null;
+  provenance?: "observed" | "curated-observed-fixture" | "synthetic" | null;
 };
 
 export type SimulationSensorChartGroup = {

@@ -2,7 +2,7 @@
 
 [**Open the frontend-only Vercel demo →**](https://predictive-maintenance-digital-twin.vercel.app/dashboard)
 
-> **Portfolio demo notice:** All displayed “live” metrics are deterministic simulations. Machine A’s model foundation uses the public AI4I dataset. Machine C’s public demonstration uses synthetic/sanitized data. No backend, database, API key, or real client data is used by the hosted demo.
+> **Portfolio demo notice:** All displayed “live” metrics are deterministic demo data. Machine A’s model foundation uses the public AI4I dataset. Machine C uses sanitized, deterministic client-derived fixtures and separately labelled synthetic continuations. Private raw client readings remain excluded; the hosted demo uses no backend, database, API key, or private data.
 
 A university capstone that turns industrial telemetry into fleet health views, failure forecasts, what-if simulations, and traceable maintenance conversations. The hosted experience contains ten fictional fleet instances derived from three model profiles; these are demo assets, not ten independently trained models.
 
@@ -245,6 +245,10 @@ erDiagram
 ## Run locally
 
 ### Hosted-demo behavior only
+
+Demo mode uses one deterministic engineering registry across Machines, History, Predict, Simulation, and the Assistant. Machine C sessions model intermittent supervisor captures lasting one to five hours, with multi-day gaps between collection visits; they are not continuous plant telemetry or fault labels. Public observed fixtures preserve sanitized session structure without publishing private raw client rows. Any future continuation is generated deterministically and labelled `Synthetic forecast`, separately from `Observed/client-derived fixture` data.
+
+The Assistant’s tables, charts, status cards, comparisons, and visible tool traces are scripted demonstrations of response formats that a production agent may select. Demo prediction scores are bounded engineering calculations, not validated production inference. FastAPI-backed behavior is unchanged by demo mode.
 
 ```bash
 cd apps/frontend
