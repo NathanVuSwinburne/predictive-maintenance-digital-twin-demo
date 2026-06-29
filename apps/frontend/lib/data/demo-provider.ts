@@ -9,6 +9,7 @@ import type {
   VerifyMfaInput,
 } from "@/lib/domain/types";
 import { getSimulationSchemaForMachineType } from "@/lib/simulation/schemas";
+import { generateDriveReadings, generateTelemetry } from "@/lib/demo-engineering/signals";
 
 const NOW = "2026-06-28T08:00:00.000Z";
 const DEMO_TOKEN = "portfolio-demo-session";
@@ -46,22 +47,11 @@ const machineById = (id: string) => {
   return machine;
 };
 
-function readings(machineId: string, count = 48): TelemetryPoint[] {
-  const index = machines.findIndex((item) => item.id === machineId);
-  return Array.from({ length: count }, (_, offset) => ({
-    timestamp: new Date(Date.parse(NOW) - (count - offset) * 5 * 60_000).toISOString(),
-    temperature: Number((52 + index * 1.8 + Math.sin(offset / 4) * 3).toFixed(2)),
-    vibration: Number((0.22 + index * 0.035 + Math.sin(offset / 3) * 0.04).toFixed(3)),
-    pressure: Number((4.8 + index * 0.12 + Math.cos(offset / 5) * 0.3).toFixed(2)),
-    power: Number((42 + index * 3 + Math.sin(offset / 6) * 4).toFixed(2)),
-  }));
-}
-
 function forecast(machineId: string, minutes = 30): SimulationGeneratedReading[] {
-  const source = readings(machineId, Math.max(6, Math.floor(minutes / 5)));
+  const source = generateDriveReadings(machineId, Math.max(6, Math.floor(minutes / 5)), NOW, 5 * 60_000);
   return source.map((point, index) => ({
     timestamp: new Date(Date.parse(NOW) + (index + 1) * 5 * 60_000).toISOString(),
-    values: { vibrationX: point.vibration, vibrationY: point.vibration * 0.91, vibrationZ: point.vibration * 1.08, temperature: point.temperature },
+    values: point.values,
     synthetic: true,
   }));
 }
@@ -111,7 +101,7 @@ export class DemoDigitalTwinProvider implements DigitalTwinDataProvider {
   async updateUserRole(userId: string, role: UserRole) { const user = users.find((item) => item.id === userId); if (!user) throw new Error("Unknown user"); user.role = role; return { ...user }; }
   async userHasMachineAccess(userId: string, machineId: string) { return (await this.getUserMachineAccess(userId)).includes(machineId); }
   async getMachineDetail(machineId: string): Promise<MachineDetail> { const machine = machineById(machineId); return { ...machine, location: `${machine.line} / Bay ${machineId.at(-1)}`, operatingHours: 8420 + machines.indexOf(machine) * 317, primaryFailureModes: ["Bearing wear", "Thermal drift"], notes: "Fictional portfolio-demo asset. Metrics are deterministic simulations." }; }
-  async getMachineTelemetry(machineId: string) { machineById(machineId); return readings(machineId); }
+  async getMachineTelemetry(machineId: string) { machineById(machineId); return generateTelemetry(machineId); }
   async getMachinePredictions(machineId: string): Promise<Prediction[]> { const machine = machineById(machineId); return [{ id: `prediction-${machineId}`, machineId, generatedAt: NOW, horizonHours: 1, failureMode: machine.machineType === "real-sensor" ? "Bearing imbalance" : "Thermal overload", probability: machine.riskScore / 100, confidence: 0.89, severity: machine.riskScore > 70 ? "high" : machine.riskScore > 35 ? "medium" : "low" }]; }
   async getPredictionConfig(machineId: string): Promise<PredictionConfig> { const machine = machineById(machineId); return { machineId, machineType: machine.machineType ?? "ai4i", title: `${machine.name} manual prediction`, description: "Evaluate a deterministic demo scenario.", failureThreshold: 0.5, warnings: ["Portfolio demo: no production inference is performed."], fields: [{ key: "temperature", label: "Temperature", type: "number", unit: "°C", required: true, step: 0.1, range: { observedMin: 25, observedMax: 90, recommendedMin: 35, recommendedMax: 70, typicalValue: 55 }, options: null }] }; }
   async predictMachine(machineId: string, input: ManualPredictionInput): Promise<ManualPredictionResult> { machineById(machineId); const temperature = Number(input.values.temperature ?? 55); const probability = Math.min(0.96, Math.max(0.04, (temperature - 25) / 70)); return { machineId, machineType: machineById(machineId).machineType ?? "ai4i", predictedLabel: probability >= 0.5 ? "Elevated risk" : "Normal", failureProbability: probability, confidence: 0.88, severity: probability > 0.7 ? "high" : probability > 0.4 ? "medium" : "low", thresholdTriggered: probability >= 0.5, warnings: ["Simulated result"], breachedFields: temperature > 70 ? ["temperature"] : [], generatedAt: NOW }; }
