@@ -3,14 +3,15 @@ import type {
   ChatMessage, ChatThread, HistoryEvent, HistoryQuery, LoginInput, LoginResult,
   MachineDetail, MachineSummary, MachinesQuery, ManualPredictionInput,
   ManualPredictionResult, MaintenanceRecommendation, Prediction, PredictionConfig,
-  Session, SendMessageInput, SimulationConfig, SimulationGeneratedReading,
+  Session, SendMessageInput, SimulationConfig,
   SimulationRun, SimulationScenarioInput, SimulationSessionPreview, TelemetryPoint,
   TotpBackupCodesResult, TotpSetupResult, TotpStatus, UserPersona, UserRole,
   VerifyMfaInput,
 } from "@/lib/domain/types";
 import { getSimulationSchemaForMachineType } from "@/lib/simulation/schemas";
-import { generateDriveReadings, generateTelemetry } from "@/lib/demo-engineering/signals";
+import { generateTelemetry } from "@/lib/demo-engineering/signals";
 import { createPredictionConfig, scorePrediction } from "@/lib/demo-engineering/prediction";
+import { createSessionPreview, createSimulationConfig, createSimulationRun } from "@/lib/demo-engineering/sessions";
 
 const NOW = "2026-06-28T08:00:00.000Z";
 const DEMO_TOKEN = "portfolio-demo-session";
@@ -47,15 +48,6 @@ const machineById = (id: string) => {
   if (!machine) throw new Error(`Unknown demo machine: ${id}`);
   return machine;
 };
-
-function forecast(machineId: string, minutes = 30): SimulationGeneratedReading[] {
-  const source = generateDriveReadings(machineId, Math.max(6, Math.floor(minutes / 5)), NOW, 5 * 60_000);
-  return source.map((point, index) => ({
-    timestamp: new Date(Date.parse(NOW) + (index + 1) * 5 * 60_000).toISOString(),
-    values: point.values,
-    synthetic: true,
-  }));
-}
 
 export class DemoDigitalTwinProvider implements DigitalTwinDataProvider {
   private sessions = new Map<string, Session>();
@@ -106,8 +98,8 @@ export class DemoDigitalTwinProvider implements DigitalTwinDataProvider {
   async getMachinePredictions(machineId: string): Promise<Prediction[]> { const machine = machineById(machineId); return [{ id: `prediction-${machineId}`, machineId, generatedAt: NOW, horizonHours: 1, failureMode: machine.machineType === "real-sensor" ? "Bearing imbalance" : "Thermal overload", probability: machine.riskScore / 100, confidence: 0.89, severity: machine.riskScore > 70 ? "high" : machine.riskScore > 35 ? "medium" : "low" }]; }
   async getPredictionConfig(machineId: string): Promise<PredictionConfig> { return createPredictionConfig(machineId); }
   async predictMachine(machineId: string, input: ManualPredictionInput): Promise<ManualPredictionResult> { return scorePrediction(machineId, input.values); }
-  async getSimulationConfig(machineId: string): Promise<SimulationConfig> { const machine = machineById(machineId); return { machineId, machineType: machine.machineType ?? "ai4i", title: `${machine.name} forecast simulation`, description: "20-minute context with deterministic autoregressive demo forecasting.", contextWindowMinutes: 20, contextWindowRows: 40, forecastChunkMinutes: 10, sampleIntervalMs: 30_000, warnings: ["All forecast values are simulated."], sessions: [{ sessionId: 301, start: "2026-06-28T07:40:00.000Z", end: NOW, totalRows: 40, realRows: 0, syntheticRows: 40, durationMinutes: 20, usesSyntheticContinuation: true, label: "Demo session 301" }], sensorChartGroups: [{ id: "vibration", label: "Vibration", unit: "g", fields: ["vibrationX", "vibrationY", "vibrationZ"] }, { id: "temperature", label: "Temperature", unit: "°C", fields: ["temperature"] }] }; }
-  async getSimulationSessionPreview(machineId: string, sessionId: number): Promise<SimulationSessionPreview> { const config = await this.getSimulationConfig(machineId); const values = forecast(machineId, 20); return { machineId, machineType: config.machineType, sessionId, sensorFields: ["vibrationX", "vibrationY", "vibrationZ", "temperature"], sensorChartGroups: config.sensorChartGroups, sourceWindow: { start: "2026-06-28T07:40:00.000Z", end: NOW, points: values.length, sessionId, realPoints: 0, syntheticPoints: values.length }, readings: values }; }
+  async getSimulationConfig(machineId: string): Promise<SimulationConfig> { return createSimulationConfig(machineId); }
+  async getSimulationSessionPreview(machineId: string, sessionId: number): Promise<SimulationSessionPreview> { return createSessionPreview(machineId, sessionId); }
   async getMaintenanceRecommendations(machineId: string): Promise<MaintenanceRecommendation[]> { const machine = machineById(machineId); return [{ id: `recommendation-${machineId}`, machineId, title: machine.riskScore > 70 ? "Inspect bearing assembly" : "Continue condition monitoring", detail: "Review the simulated vibration trend before the next planned service window.", actionType: machine.riskScore > 70 ? "inspect" : "parameter", priority: machine.riskScore > 70 ? "high" : "low", etaMinutes: 30, estimatedDowntimeHours: machine.riskScore > 70 ? 1.5 : 0 }]; }
 
   async listHistoryEvents(query: HistoryQuery = {}): Promise<HistoryEvent[]> { return machines.flatMap((machine, index) => [{ id: `history-${index}`, timestamp: new Date(Date.parse(NOW) - index * 6 * 60 * 60_000).toISOString(), type: index % 3 === 0 ? "fault-prediction" as const : "telemetry-anomaly" as const, machineId: machine.id, userId: "demo-admin", title: index % 3 === 0 ? "Forecast risk reviewed" : "Telemetry deviation observed", description: `Simulated event for ${machine.name}.`, severity: machine.riskScore > 70 ? "high" as const : "low" as const }]).filter((event) => (!query.machineId || event.machineId === query.machineId) && (!query.machineIds || query.machineIds.includes(event.machineId)) && (!query.type || query.type === "all" || event.type === query.type)); }
@@ -120,5 +112,5 @@ export class DemoDigitalTwinProvider implements DigitalTwinDataProvider {
   async sendMessage(input: SendMessageInput) { const thread = this.threads.get(input.threadId); if (!thread) throw new Error("Unknown thread"); const history = this.messages.get(input.threadId) ?? []; const userMessage: ChatMessage = { id: `demo-message-${++this.counter}`, threadId: input.threadId, role: "user", createdAt: NOW, contentBlocks: [{ type: "text", content: input.text }] }; const normalized = input.text.toLowerCase(); const supported = /fleet|risk|machine|packaging|telemetry|maintenance|simulation|forecast/.test(normalized); const content = supported ? (normalized.includes("maintenance") ? "Packaging Drive 01 has elevated simulated vibration. Inspect its bearing assembly during the next planned service window." : "The demo fleet has 10 fictional assets: 2 are currently at high risk, led by Packaging Drive 01 at 84% simulated risk.") : "That request is outside this scripted portfolio experience. Try one of the supported demo prompts: fleet risk, machine telemetry, maintenance recommendations, or simulation."; const assistant: ChatMessage = { id: `demo-message-${++this.counter}`, threadId: input.threadId, role: "assistant", createdAt: NOW, contentBlocks: [{ type: "text", content }], agentTrace: supported ? [{ step: 1, tool: normalized.includes("simulation") ? "run_simulation" : normalized.includes("maintenance") ? "propose_maintenance" : "query_database", label: "Demo tool call", summary: "Resolved against deterministic portfolio data." }, { step: 2, tool: "compose_response", label: "Response synthesis", summary: "Formatted a scripted, traceable response." }] : [] }; const next = [...history, userMessage, assistant]; this.messages.set(input.threadId, next); thread.updatedAt = NOW; return { thread: { ...thread }, messages: next }; }
 
   async listSimulationRuns(userId?: string) { return this.runs.filter((run) => !userId || run.userId === userId); }
-  async runSimulation(input: SimulationScenarioInput, userId: string): Promise<SimulationRun> { const machine = machineById(input.machineId); const generated = forecast(input.machineId, input.simulationHorizonMinutes ?? 30); const run: SimulationRun = { id: `demo-run-${++this.counter}`, machineId: input.machineId, userId, createdAt: NOW, scenarioName: input.scenarioName, projectedRisk: Math.min(96, machine.riskScore + 4), projectedDowntimeHours: machine.riskScore > 70 ? 2.1 : 0.4, summary: `Deterministic forecast completed for ${machine.name}.`, recommendations: ["Inspect vibration mounts", "Review bearing lubrication"], projectedLabel: machine.riskScore > 70 ? "high" : "medium", failureProbability: Math.min(0.96, (machine.riskScore + 4) / 100), selectedSessionId: input.sessionId, syntheticContinuationUsed: true, generatedReadings: generated, sourceReadings: generated.slice(0, 4), sourceWindow: { start: "2026-06-28T07:40:00.000Z", end: NOW, points: 40, sessionId: input.sessionId, realPoints: 0, syntheticPoints: 40 }, sensorFields: ["vibrationX", "vibrationY", "vibrationZ", "temperature"], sensorChartGroups: (await this.getSimulationConfig(input.machineId)).sensorChartGroups, simulationHorizonMinutes: input.simulationHorizonMinutes ?? 30, simulationStatus: "completed", simulationMessage: null, classificationWindows: [] }; this.runs.unshift(run); return run; }
+  async runSimulation(input: SimulationScenarioInput, userId: string): Promise<SimulationRun> { const run = createSimulationRun(createSessionPreview(input.machineId, input.sessionId), input.simulationHorizonMinutes ?? 30, userId, input.scenarioName); this.runs.unshift(run); return run; }
 }
