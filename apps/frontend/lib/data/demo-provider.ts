@@ -12,6 +12,7 @@ import { getSimulationSchemaForMachineType } from "@/lib/simulation/schemas";
 import { generateTelemetry } from "@/lib/demo-engineering/signals";
 import { createPredictionConfig, scorePrediction } from "@/lib/demo-engineering/prediction";
 import { createSessionPreview, createSimulationConfig, createSimulationRun } from "@/lib/demo-engineering/sessions";
+import { createDemoHistory } from "@/lib/demo-engineering/history";
 
 const NOW = "2026-06-28T08:00:00.000Z";
 const DEMO_TOKEN = "portfolio-demo-session";
@@ -102,7 +103,7 @@ export class DemoDigitalTwinProvider implements DigitalTwinDataProvider {
   async getSimulationSessionPreview(machineId: string, sessionId: number): Promise<SimulationSessionPreview> { return createSessionPreview(machineId, sessionId); }
   async getMaintenanceRecommendations(machineId: string): Promise<MaintenanceRecommendation[]> { const machine = machineById(machineId); return [{ id: `recommendation-${machineId}`, machineId, title: machine.riskScore > 70 ? "Inspect bearing assembly" : "Continue condition monitoring", detail: "Review the simulated vibration trend before the next planned service window.", actionType: machine.riskScore > 70 ? "inspect" : "parameter", priority: machine.riskScore > 70 ? "high" : "low", etaMinutes: 30, estimatedDowntimeHours: machine.riskScore > 70 ? 1.5 : 0 }]; }
 
-  async listHistoryEvents(query: HistoryQuery = {}): Promise<HistoryEvent[]> { return machines.flatMap((machine, index) => [{ id: `history-${index}`, timestamp: new Date(Date.parse(NOW) - index * 6 * 60 * 60_000).toISOString(), type: index % 3 === 0 ? "fault-prediction" as const : "telemetry-anomaly" as const, machineId: machine.id, userId: "demo-admin", title: index % 3 === 0 ? "Forecast risk reviewed" : "Telemetry deviation observed", description: `Simulated event for ${machine.name}.`, severity: machine.riskScore > 70 ? "high" as const : "low" as const }]).filter((event) => (!query.machineId || event.machineId === query.machineId) && (!query.machineIds || query.machineIds.includes(event.machineId)) && (!query.type || query.type === "all" || event.type === query.type)); }
+  async listHistoryEvents(query: HistoryQuery = {}): Promise<HistoryEvent[]> { return createDemoHistory().filter((event) => (!query.userId || event.userId === query.userId) && (!query.machineId || event.machineId === query.machineId) && (!query.machineIds || (event.machineId && query.machineIds.includes(event.machineId))) && (!query.type || query.type === "all" || event.type === query.type) && (!query.dateFrom || event.timestamp >= query.dateFrom) && (!query.dateTo || event.timestamp <= query.dateTo)); }
 
   async listThreads(userId: string) { return [...this.threads.values()].filter((thread) => thread.userId === userId); }
   async createThread(input: { userId: string; title?: string }) { const id = `demo-thread-${++this.counter}`; const thread: ChatThread = { id, title: input.title ?? "Fleet briefing", updatedAt: NOW, userId: input.userId, promptSuggestions: ["Summarize the fleet risk", "Why is Packaging Drive 01 at risk?", "Recommend maintenance for Packaging Drive 01"], followUpSuggestions: ["Show the supporting telemetry", "Run a 30-minute simulation"] }; this.threads.set(id, thread); this.messages.set(id, []); return { ...thread }; }
