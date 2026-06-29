@@ -71,6 +71,7 @@ import type {
   MachineSummary,
   SimulationConfig,
   SimulationSensorChartGroup,
+  SimulationSessionOption,
   SimulationSessionPreview,
   SimulationRun,
 } from "@/lib/domain/types";
@@ -116,6 +117,23 @@ const workflowSteps = [
     tone: "success",
   },
 ];
+
+export function SimulationSessionMetadata({ session }: { session: SimulationSessionOption }) {
+  const hours = Math.floor(session.durationMinutes / 60);
+  const minutes = session.durationMinutes % 60;
+  const gapDays = session.gapFromPreviousMinutes ? Math.round(session.gapFromPreviousMinutes / 1440) : null;
+  const provenance = session.provenance === "curated-observed-fixture" ? "Observed client-derived fixture" : session.provenance === "observed" ? "Observed" : "Synthetic forecast";
+  return (
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <div><p className="text-xs text-muted-foreground">Selected session</p><p className="font-medium">Session {session.sessionId}</p></div>
+      <div><p className="text-xs text-muted-foreground">Collection range</p><p className="font-medium">{session.start} – {session.end}</p></div>
+      <div><p className="text-xs text-muted-foreground">Duration</p><p className="font-medium">{hours} h {minutes} min</p></div>
+      {session.sampleIntervalMs != null && <div><p className="text-xs text-muted-foreground">Cadence</p><p className="font-medium">{session.sampleIntervalMs} ms source cadence</p></div>}
+      {gapDays != null && <div><p className="text-xs text-muted-foreground">Previous capture</p><p className="font-medium">{gapDays} day gap</p></div>}
+      {session.provenance && <div><p className="text-xs text-muted-foreground">Provenance</p><p className="font-medium">{provenance}</p></div>}
+    </div>
+  );
+}
 
 const simulationHorizons = [
   {
@@ -503,9 +521,9 @@ function sortReadingsByNewest<T extends { timestamp: string }>(readings: T[]) {
 }
 
 function legendSensorLabel(dataKey: unknown) {
-  return typeof dataKey === "string"
-    ? metricLabel(dataKey.replace(/(Actual|Generated)$/, ""))
-    : "Sensor";
+  if (typeof dataKey !== "string") return "Sensor";
+  const sensor = metricLabel(dataKey.replace(/(Actual|Generated)$/, ""));
+  return `${sensor} — ${dataKey.endsWith("Actual") ? "Observed/client-derived fixture" : "Synthetic forecast"}`;
 }
 
 function SensorChartLegend({
@@ -651,7 +669,7 @@ function buildMachineCSimulationSchema(
         type: "select",
         required: true,
         description:
-          "Select the augmented Machine C session that will provide the final context window for forecasting.",
+          "Select the client monitoring session that will provide the final context window for forecasting.",
         category: "Session Selection",
         displayOrder: 10,
         options: config.sessions.map((session) => ({
@@ -1415,7 +1433,7 @@ export default function SimulatorPage() {
           <>
             <div className="mb-4 border border-primary/30 bg-primary/5 p-3 text-sm text-muted-foreground">
               Session-driven simulation is currently available for Machine C
-              only. It uses augmented session context for the LSTM forecast and
+              only. It uses client monitoring session context for the LSTM forecast and
               the classifier&apos;s high-risk probability as the projected
               failure probability.
             </div>
@@ -1481,7 +1499,7 @@ export default function SimulatorPage() {
                     <StepHeader
                       step={2}
                       title="Select simulation session"
-                      description="Choose the augmented Machine C session that will provide the final context window for forecasting."
+                      description="Choose the client monitoring session that will provide the final context window for forecasting."
                       complete={validation.isValid}
                     />
                   </CardHeader>
@@ -1531,7 +1549,7 @@ export default function SimulatorPage() {
                   </CardHeader>
                   <CardContent className="flex flex-col gap-3 text-sm">
                     <p className="text-muted-foreground">
-                      This simulation will use the selected augmented Machine C
+                      This simulation will use the selected client monitoring
                       session as the starting point for generating future
                       machine behaviour.
                     </p>
@@ -1595,6 +1613,8 @@ export default function SimulatorPage() {
                       </div>
                     </div>
 
+                    {selectedSessionMeta && <SimulationSessionMetadata session={selectedSessionMeta} />}
+
                     <div className="flex flex-col gap-2 border border-primary/30 bg-background/70 p-3">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <p className="font-medium">Available sensor fields</p>
@@ -1626,7 +1646,7 @@ export default function SimulatorPage() {
 
                     {isSimulationConfigLoading ? (
                       <div className="min-h-28 border border-dashed border-primary/40 bg-background/60 p-4 text-muted-foreground">
-                        Loading augmented Machine C sessions for simulation.
+                        Loading client monitoring sessions for simulation.
                       </div>
                     ) : simulationConfigError ? (
                       <div className="min-h-28 border border-dashed border-destructive/50 bg-destructive/5 p-4 text-muted-foreground">
