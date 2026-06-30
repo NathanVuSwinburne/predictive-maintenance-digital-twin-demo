@@ -37,8 +37,20 @@ Answering it pulled the project through three disciplines I wanted to connect in
 
 The result is not just a notebook and not just a dashboard. It is a working digital-twin demo where a user can inspect fleet health, forecast risk, test interventions, and ask an AI assistant to investigate the system with visible tool traces.
 
+### Three data sources, three machine profiles
+
+To make different datasets easier to understand, we treat each source as a machine:
+
+| Machine | Data source | Role in the system |
+|---|---|---|
+| **Machine A** | Public AI4I dataset | Snapshot failure classification |
+| **Machine B** | Public synthetic multi-sensor dataset | Telemetry and interface testing |
+| **Machine C** | Private client sensor dataset | Vibration forecasting and simulation |
+
+These names identify data profiles, not three physical machines connected to the hosted demo.
+
 > [!IMPORTANT]
-> The public Vercel experience is a **sanitized portfolio demo**. Its displayed “live” values are deterministic demo data. The classification workflow is grounded in the public AI4I dataset. The vibration forecasting workflow uses sanitized client-derived fixtures plus clearly labelled synthetic continuations. No private raw readings, backend, database, or API key are deployed in the hosted demo.
+> The public Vercel experience is a **sanitized portfolio demo**. Its “live” values are deterministic demo data. Machine C uses sanitized client-derived fixtures and clearly labelled synthetic continuations. Private raw readings, backend services, databases, and API keys are not deployed.
 
 ---
 
@@ -46,9 +58,9 @@ The result is not just a notebook and not just a dashboard. It is a working digi
 
 Before training anything, we had to work out what each dataset could actually tell us.
 
-- The **public AI4I dataset** gave us a classification baseline.
-- Other profiles introduced multi-sensor failure classification.
-- A **sanitized condition-monitoring dataset** brought high-frequency vibration and temperature sequences. It also brought the awkward reality of limited, imbalanced samples.
+- **Machine A** gave us a public classification baseline.
+- **Machine B** let us test multi-sensor telemetry and interface behaviour.
+- **Machine C** brought high-frequency vibration and temperature data from the client. It also brought limited and imbalanced samples.
 
 That last point mattered. A small dataset can still produce an impressive-looking metric. It cannot automatically produce a credible model story. So we treated the coverage gap as a data problem first, not something to hide behind a neural network.
 
@@ -69,7 +81,7 @@ That last point mattered. A small dataset can still produce an impressive-lookin
 
 ### The synthetic-data decision
 
-We used time-series generative modelling (TSGM) to expand the condition-monitoring development set. But “the generator ran” was not our acceptance criterion. We compared real and synthetic vibration and temperature behaviour, including frequency-domain characteristics, before using augmented data for experiments.
+We used time-series generative modelling (TSGM) to expand the Machine C development set. We compared real and synthetic vibration and temperature behaviour, including frequency-domain characteristics, before using augmented data for experiments.
 
 The public repository keeps those boundaries explicit: observed fixture, synthetic continuation, and deterministic demo state are separate concepts.
 
@@ -106,7 +118,7 @@ We also built a constrained autoresearch loop to vary architecture, optimization
 
 ## What survived the experiments
 
-These are held-out results from checked-in condition-monitoring artifacts. They are not the fictional live values displayed by the Vercel demo.
+These are held-out results from checked-in Machine C artifacts. They are not the fictional live values displayed by the Vercel demo.
 
 | Retained artifact | Result |
 |---|---:|
@@ -153,7 +165,7 @@ The supervisor can choose between failure prediction, simulation, maintenance pr
 <table>
   <tr>
     <td width="50%">
-      <img src="assets/chatbot_telemetry_retrieval.png" alt="Assistant retrieving and summarizing vibration telemetry" />
+      <img src="assets/chatbot_telemetry_retrieval.png" alt="Assistant retrieving and summarizing Machine C vibration telemetry" />
       <br />
       <strong>Ask in plain English.</strong> The assistant turns telemetry into a readable operational summary.
     </td>
