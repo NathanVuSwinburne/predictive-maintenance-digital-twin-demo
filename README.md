@@ -97,20 +97,13 @@ The system combines classification and forecasting because maintenance needs bot
 - **Forecasting:** where are the sensor readings heading next?
 - **Simulation:** what changes if an operator adjusts the conditions?
 
-<table>
-  <tr>
-    <td width="50%">
-      <img src="assets/ml_architecture_2.png" alt="Expanded hybrid classification and time-series forecasting architecture" />
-      <br />
-      <strong>Two paths, one decision:</strong> state simulation on the left, failure-type prediction on the right.
-    </td>
-    <td width="50%">
-      <img src="assets/lstm_model_training.png" alt="Autoregressive LSTM training and validation curves" />
-      <br />
-      <strong>Training reality:</strong> validation movement stays visible instead of being cropped out of the story.
-    </td>
-  </tr>
-</table>
+<div align="center">
+
+<img src="assets/ml_architecture_2.png" alt="Expanded hybrid classification and time-series forecasting architecture" width="850" />
+
+<strong>Two paths, one decision:</strong> state simulation on the left, failure-type prediction on the right.
+
+</div>
 
 The retained LSTM reads **20 minutes** of telemetry (2,400 samples at 500 ms), predicts the next **10 minutes** (1,200 samples), and builds windows on a **5-minute stride**. Six autoregressive chunks extend that view to one hour.
 
