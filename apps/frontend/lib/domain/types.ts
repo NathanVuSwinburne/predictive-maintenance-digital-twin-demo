@@ -258,6 +258,8 @@ export type AgentTraceStep = {
   tool: string;
   label: string;
   summary: string;
+  actor?: string;
+  target?: string;
 };
 
 export type ChatMessage = {

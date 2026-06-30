@@ -333,7 +333,7 @@ def _summarise_tool_output(tool: str, output: str) -> str:
 def _build_agent_trace(run_result) -> list[dict]:
     """Extract the sequence of tool calls the supervisor made into a client-readable trace."""
     _LABELS = {
-        "query_database": "Queried the database",
+        "query_database": "Delegated a read-only data lookup",
         "run_failure_prediction": "Ran failure prediction",
         "run_simulation": "Ran simulation",
         "extract_signal_from_complaint": "Analysed complaint",
@@ -365,11 +365,22 @@ def _build_agent_trace(run_result) -> list[dict]:
     trace = []
     for step, (call_id, tool) in enumerate(calls, 1):
         output = outputs.get(call_id, "")
+        target = {
+            "query_database": "SQL sub-agent",
+            "run_failure_prediction": "Prediction tool",
+            "run_simulation": "Simulation tool",
+            "extract_signal_from_complaint": "Complaint analysis tool",
+            "propose_recommendation": "Maintenance tool",
+            "list_knowledge_notes": "Obsidian LLM wiki",
+            "read_knowledge_note": "Obsidian LLM wiki",
+        }.get(tool)
         trace.append({
             "step": step,
             "tool": tool,
             "label": _LABELS.get(tool, tool.replace("_", " ").title()),
             "summary": _summarise_tool_output(tool, output),
+            "actor": "Supervisor",
+            "target": target,
         })
     return trace
 

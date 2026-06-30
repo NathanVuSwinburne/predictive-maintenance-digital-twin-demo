@@ -147,20 +147,37 @@ That changed the product question from **“Will it fail?”** to **“What can 
 
 ## Chapter 4: The dashboard needed a brain
 
-The first chatbot used a fixed router. It worked, but every new intent made the routing tree more brittle. We replaced it with a supervisor agent using native tool calls.
+The first chatbot used a fixed router. Every new intent made it more brittle, so we replaced it with a **supervisor agent** that can choose tools and delegate work.
 
-The supervisor can choose between failure prediction, simulation, maintenance proposals, complaint extraction, knowledge retrieval, and database investigation. A dedicated SQL sub-agent is read-only, and the assistant’s working memory carries context across turns.
+The supervisor does more than answer questions. It can:
+
+- run failure predictions and what-if simulations
+- extract useful signals from operator complaints
+- create maintenance proposals
+- delegate database questions to a read-only SQL sub-agent
+- read machine and maintenance knowledge from a Karpathy-style LLM wiki stored in an Obsidian vault
+- keep working memory across conversation turns
 
 ![Supervisor agent architecture with action tools, a read-only SQL sub-agent, and a knowledge wiki](assets/chatbot_architecture.png)
 
-### From “chat” to investigation
+### From a complaint to an investigation
+
+An operator can ask, **“Why was this machine so noisy yesterday?”** The supervisor turns that informal complaint into an investigation:
+
+1. Read the machine capabilities and maintenance guidance from the Obsidian LLM wiki.
+2. Identify noise as a possible vibration signal.
+3. Delegate a read-only historical telemetry query to the SQL sub-agent.
+4. Pass the retrieved row or time window to the prediction tool.
+5. Combine the evidence into a clear explanation and useful next action.
+
+This lets the agent interact with each machine through the same tools used by the application, instead of generating an answer from the prompt alone.
 
 <table>
   <tr>
     <td width="50%">
       <img src="assets/chatbot_telemetry_retrieval.png" alt="Assistant retrieving and summarizing Machine C vibration telemetry" />
       <br />
-      <strong>Ask in plain English.</strong> The assistant turns telemetry into a readable operational summary.
+      <strong>Ask in plain English.</strong> The supervisor retrieves evidence and turns it into an operational summary.
     </td>
     <td width="50%">
       <img src="assets/chatbot_example_message_2.png" alt="AI assistant rendering machine telemetry as dashboard components" />
@@ -175,7 +192,7 @@ The supervisor can choose between failure prediction, simulation, maintenance pr
     <td width="50%">
       <img src="assets/chatbot_tracing.png" alt="Visible four-step agent tool trace" />
       <br />
-      <strong>Show the work.</strong> Tool traces expose the path through lookup, correction, retrieval, and simulation.
+      <strong>Show the actions.</strong> The trace shows which tool the supervisor selected, what it delegated to the SQL sub-agent, and how the result reached the final response.
     </td>
     <td width="50%">
       <img src="assets/chatbot_example_message.png" alt="Assistant recalling earlier maintenance context from working memory" />
@@ -188,7 +205,7 @@ The supervisor can choose between failure prediction, simulation, maintenance pr
 The team observed roughly a **75% improvement in typical response time** after the redesign. That is an internal estimate, not a controlled benchmark. It matched the architectural improvement we could see: less rigid routing, fewer unnecessary hops, and tools selected at runtime.
 
 > [!NOTE]
-> In the frontend-only demo, assistant cards, charts, and traces are scripted demonstrations of the response contract. In full-stack mode, FastAPI connects the agent workflow to persisted data and model services.
+> The trace shows tool calls, delegations, and results at a high level. It does not expose hidden chain-of-thought. In the frontend-only demo these actions are scripted examples of the response contract. Full-stack mode connects the same workflow to FastAPI, PostgreSQL, model services, and the Obsidian knowledge vault.
 
 ---
 

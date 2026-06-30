@@ -12,4 +12,17 @@ describe("demo assistant", () => {
     expect(response.contentBlocks.map((block) => block.type)).toContain(blockType);
     expect(response.agentTrace.length).toBeGreaterThanOrEqual(2);
   });
+
+  it("shows how the supervisor delegates a noise complaint", () => {
+    const response = composeDemoAssistantResponse({
+      prompt: "Why was this machine so noisy yesterday?",
+      threadId: "t1",
+      machineId: "machine-c-01",
+    });
+
+    expect(response.contentBlocks.map((block) => block.type)).toContain("status-card");
+    expect(response.agentTrace.map((step) => step.target)).toEqual(
+      expect.arrayContaining(["Obsidian LLM wiki", "SQL sub-agent", "Prediction tool"]),
+    );
+  });
 });

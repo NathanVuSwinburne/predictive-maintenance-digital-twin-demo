@@ -127,19 +127,26 @@ function AgentTracePanel({ trace }: { trace: AgentTraceStep[] }) {
         className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
       >
         {open ? <CaretDownIcon size={11} /> : <CaretRightIcon size={11} />}
-        Agent trace · {trace.length} step{trace.length !== 1 ? "s" : ""}
+        Agent trace · {trace.length} action{trace.length !== 1 ? "s" : ""}
       </button>
       {open && (
-        <ol className="mt-2 space-y-1.5">
+        <ol className="mt-2 space-y-2">
           {trace.map((s) => (
-            <li key={s.step} className="flex gap-2 text-[11px] leading-snug">
-              <span className="shrink-0 w-4 text-right text-muted-foreground/50 tabular-nums">
-                {s.step}.
+            <li key={s.step} className="flex gap-2.5 text-[11px] leading-snug">
+              <span className="flex size-5 shrink-0 items-center justify-center rounded-full border border-border bg-muted/50 text-[10px] font-medium text-muted-foreground tabular-nums">
+                {s.step}
               </span>
-              <div className="min-w-0">
-                <span className="font-medium text-foreground/75">{s.label}</span>
+              <div className="min-w-0 flex-1 rounded-md border border-border/60 bg-muted/20 px-2.5 py-2">
+                {(s.actor || s.target) && (
+                  <div className="mb-1 flex flex-wrap items-center gap-1 text-[10px] font-medium uppercase tracking-wide text-primary/80">
+                    <span>{s.actor ?? "Supervisor"}</span>
+                    {s.target && <span aria-hidden="true">→</span>}
+                    {s.target && <span>{s.target}</span>}
+                  </div>
+                )}
+                <span className="font-semibold text-foreground/80">{s.label}</span>
                 {s.summary && (
-                  <span className="ml-1.5 text-muted-foreground">{s.summary}</span>
+                  <span className="mt-0.5 block text-muted-foreground">{s.summary}</span>
                 )}
               </div>
             </li>

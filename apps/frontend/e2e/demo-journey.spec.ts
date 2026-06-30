@@ -14,8 +14,9 @@ test("plots session telemetry with a visible tool trace", async ({ page }) => {
   await page.getByRole("button", { name: "Plot session 78 telemetry" }).click();
   await page.getByRole("button", { name: "Send" }).click();
   await expect(page.getByText("Packaging Drive 01 vibration telemetry")).toBeVisible();
-  await page.getByRole("button", { name: /agent trace.*2 steps/i }).click();
-  await expect(page.getByText("Demo engineering tool")).toBeVisible();
+  await page.getByRole("button", { name: /agent trace.*actions/i }).click();
+  await expect(page.getByText("Supervisor", { exact: true }).first()).toBeVisible();
+  await expect(page.getByText("SQL sub-agent", { exact: true }).first()).toBeVisible();
 });
 
 test("predicts Process Pump 02 with machine-specific fields", async ({ page }) => {
