@@ -21,7 +21,7 @@
 
 ## The short version
 
-Industrial machines rarely fail with a polite calendar invite. They drift: vibration changes, temperature moves, risk quietly accumulates—and someone has to notice before downtime becomes expensive.
+Industrial machines rarely fail with a polite calendar invite. They drift. Vibration changes, temperature moves, and risk quietly accumulates. Someone has to notice before downtime becomes expensive.
 
 This capstone began with a simple question:
 
@@ -38,17 +38,17 @@ Answering it pulled the project through three disciplines I wanted to connect in
 The result is not just a notebook and not just a dashboard. It is a working digital-twin demo where a user can inspect fleet health, forecast risk, test interventions, and ask an AI assistant to investigate the system with visible tool traces.
 
 > [!IMPORTANT]
-> The public Vercel experience is a **sanitized portfolio demo**. Its displayed “live” values are deterministic demo data. Machine A is grounded in the public AI4I dataset; Machine C uses sanitized client-derived fixtures plus clearly labelled synthetic continuations. No private raw readings, backend, database, or API key are deployed in the hosted demo.
+> The public Vercel experience is a **sanitized portfolio demo**. Its displayed “live” values are deterministic demo data. The classification workflow is grounded in the public AI4I dataset. The vibration forecasting workflow uses sanitized client-derived fixtures plus clearly labelled synthetic continuations. No private raw readings, backend, database, or API key are deployed in the hosted demo.
 
 ---
 
-## Chapter 1 — First, understand the machines
+## Chapter 1: First, understand the machines
 
 Before training anything, we had to work out what each dataset could actually tell us.
 
-- **Machine A** gave us a public AI4I classification baseline.
+- The **public AI4I dataset** gave us a classification baseline.
 - Other profiles introduced multi-sensor failure classification.
-- **Machine C** brought high-frequency vibration and temperature sequences—but also the awkward reality of limited, imbalanced samples.
+- A **sanitized condition-monitoring dataset** brought high-frequency vibration and temperature sequences. It also brought the awkward reality of limited, imbalanced samples.
 
 That last point mattered. A small dataset can still produce an impressive-looking metric. It cannot automatically produce a credible model story. So we treated the coverage gap as a data problem first, not something to hide behind a neural network.
 
@@ -69,13 +69,13 @@ That last point mattered. A small dataset can still produce an impressive-lookin
 
 ### The synthetic-data decision
 
-We used time-series generative modelling (TSGM) to expand the Machine C development set. But “the generator ran” was not our acceptance criterion. We compared real and synthetic vibration and temperature behaviour—including frequency-domain characteristics—before using augmented data for experiments.
+We used time-series generative modelling (TSGM) to expand the condition-monitoring development set. But “the generator ran” was not our acceptance criterion. We compared real and synthetic vibration and temperature behaviour, including frequency-domain characteristics, before using augmented data for experiments.
 
 The public repository keeps those boundaries explicit: observed fixture, synthetic continuation, and deterministic demo state are separate concepts.
 
 ---
 
-## Chapter 2 — Then make the signal predictive
+## Chapter 2: Then make the signal predictive
 
 Once the data story was defensible, the project moved from analysis into modelling.
 
@@ -106,7 +106,7 @@ We also built a constrained autoresearch loop to vary architecture, optimization
 
 ## What survived the experiments
 
-These are held-out results from checked-in Machine C artifacts—not the fictional live values displayed by the Vercel demo.
+These are held-out results from checked-in condition-monitoring artifacts. They are not the fictional live values displayed by the Vercel demo.
 
 | Retained artifact | Result |
 |---|---:|
@@ -122,7 +122,7 @@ These are held-out results from checked-in Machine C artifacts—not the fiction
 
 ---
 
-## Chapter 3 — A prediction is more useful when you can challenge it
+## Chapter 3: A prediction is more useful when you can challenge it
 
 A probability alone does not tell an operator what to do next. So the models became a digital twin: a place to compare current conditions with a simulated intervention.
 
@@ -140,7 +140,7 @@ That changed the product question from **“Will it fail?”** to **“What can 
 
 ---
 
-## Chapter 4 — The dashboard needed a brain
+## Chapter 4: The dashboard needed a brain
 
 The first chatbot used a fixed router. It worked, but every new intent made the routing tree more brittle. We replaced it with a supervisor agent using native tool calls.
 
@@ -153,7 +153,7 @@ The supervisor can choose between failure prediction, simulation, maintenance pr
 <table>
   <tr>
     <td width="50%">
-      <img src="assets/chatbot_telemetry_retrieval.png" alt="Assistant retrieving and summarizing Machine C telemetry" />
+      <img src="assets/chatbot_telemetry_retrieval.png" alt="Assistant retrieving and summarizing vibration telemetry" />
       <br />
       <strong>Ask in plain English.</strong> The assistant turns telemetry into a readable operational summary.
     </td>
@@ -180,14 +180,14 @@ The supervisor can choose between failure prediction, simulation, maintenance pr
   </tr>
 </table>
 
-The team observed roughly a **75% improvement in typical response time** after the redesign. That is a team-observed estimate, not a controlled benchmark—but it matched the architectural improvement we could see: less rigid routing, fewer unnecessary hops, and tools selected at runtime.
+The team observed roughly a **75% improvement in typical response time** after the redesign. That is an internal estimate, not a controlled benchmark. It matched the architectural improvement we could see: less rigid routing, fewer unnecessary hops, and tools selected at runtime.
 
 > [!NOTE]
 > In the frontend-only demo, assistant cards, charts, and traces are scripted demonstrations of the response contract. In full-stack mode, FastAPI connects the agent workflow to persisted data and model services.
 
 ---
 
-## Chapter 5 — Close the loop with live ingestion
+## Chapter 5: Close the loop with live ingestion
 
 The final step is the bridge back to the physical machines. We prototyped configurable MQTT subscriptions so telemetry sources can be mapped without hard-coding one broker or one machine.
 
