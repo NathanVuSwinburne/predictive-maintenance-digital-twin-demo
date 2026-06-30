@@ -1,254 +1,269 @@
+<div align="center">
+
+<img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&amp;weight=700&amp;size=28&amp;duration=2600&amp;pause=700&amp;color=2563EB&amp;center=true&amp;vCenter=true&amp;multiline=true&amp;width=850&amp;height=130&amp;lines=From+raw+sensor+data...;to+failure+forecasts...;to+an+AI-powered+digital+twin." alt="From raw sensor data to an AI-powered predictive maintenance digital twin" />
+
 # Predictive Maintenance Digital Twin
 
-[**Open the frontend-only Vercel demo →**](https://predictive-maintenance-digital-twin.vercel.app/dashboard)
+**The story of how a data problem grew into a full-stack AI engineering system.**
 
-> **Portfolio demo notice:** All displayed “live” metrics are deterministic demo data. Machine A’s model foundation uses the public AI4I dataset. Machine C uses sanitized, deterministic client-derived fixtures and separately labelled synthetic continuations. Private raw client readings remain excluded; the hosted demo uses no backend, database, API key, or private data.
+[![Live Demo](https://img.shields.io/badge/Explore_the_live_demo-2563EB?style=for-the-badge&logo=vercel&logoColor=white)](https://predictive-maintenance-digital-twin.vercel.app/dashboard)
+[![Next.js](https://img.shields.io/badge/Next.js_16-111827?style=for-the-badge&logo=nextdotjs&logoColor=white)](apps/frontend)
+[![FastAPI](https://img.shields.io/badge/FastAPI-059669?style=for-the-badge&logo=fastapi&logoColor=white)](apps/backend)
+[![AI Agents](https://img.shields.io/badge/Agentic_AI-7C3AED?style=for-the-badge&logo=openai&logoColor=white)](#chapter-4--the-dashboard-needed-a-brain)
 
-A university capstone that turns industrial telemetry into fleet health views, failure forecasts, what-if simulations, and traceable maintenance conversations. The hosted experience contains ten fictional fleet instances derived from three model profiles; these are demo assets, not ten independently trained models.
+`DATA ANALYSIS` → `DATA SCIENCE` → `DIGITAL TWIN` → `AI ENGINEERING`
 
-## What you can explore
+[The story](#the-short-version) · [Results](#what-survived-the-experiments) · [Architecture](#under-the-hood) · [Run locally](#run-it-yourself)
 
-- Fleet health, risk, uptime, weekly events, and machine-level telemetry
-- Random Forest classification and an autoregressive LSTM forecasting workflow
-- What-if simulations with baseline/intervention comparisons
-- A supervisor-style chatbot with scripted tool calls and visible traces
-- Role and machine-access administration, history, and account-security screens
-- A full FastAPI/PostgreSQL mode for local development
+</div>
 
-## How the system evolved
+---
 
-1. **Source data.** Machine A established the classification baseline on the public AI4I 2020 predictive-maintenance dataset. Additional sensor profiles explored multi-sensor failure classification and high-frequency vibration forecasting.
-2. **Coverage gap.** The available Machine C client samples were too limited and imbalanced to support a credible public training story. Raw client readings were therefore excluded from this repository and from the hosted demo.
-3. **TSGM augmentation.** Time-series generative modelling expanded the Machine C development set. Frequency-domain checks compared real and synthetic vibration/temperature characteristics before augmented data was accepted for experimentation.
-4. **Autoresearch tuning.** A constrained autonomous experiment loop varied the LSTM architecture, optimisation, regularisation, and preprocessing while retaining explicit long-horizon evaluation criteria.
-5. **Forecasting pipeline.** The retained LSTM consumes **20 minutes** (2,400 samples at 500 ms), predicts the next **10 minutes** (1,200 samples), and creates training windows on a **5-minute stride** (600 samples). Six autoregressive 10-minute chunks roll the forecast forward to **one hour**.
-6. **Operational persistence.** PostgreSQL/SQLAlchemy added machines, telemetry profiles, predictions, recommendations, history, simulations, user access, sessions, chat memory, and security state.
-7. **Chatbot redesign.** A fixed router evolved into a supervisor using native tool calls for database lookup, prediction, simulation, knowledge retrieval, maintenance proposals, and complaint extraction. The team observed roughly a **75% improvement in typical response time** after this redesign; this is a team-observed estimate, not a controlled benchmark.
-8. **Authentication and access.** Session authentication, optional TOTP/backup codes, roles, and per-machine user access were added for the full-stack deployment.
-9. **Dashboard feedback.** Operator feedback drove the fleet posture view, summary metrics, machine cards, event breakdown, trace presentation, and clearer simulation controls.
-10. **Public demo.** A deterministic provider now exercises the same frontend data contract on Vercel without deploying private data or operational services.
+## The short version
 
-## Retained evaluation results
+Industrial machines rarely fail with a polite calendar invite. They drift: vibration changes, temperature moves, risk quietly accumulates—and someone has to notice before downtime becomes expensive.
 
-The checked-in Machine C artifacts report the following held-out results. They describe the retained experimental artifacts, not the fictional live values shown by Vercel.
+This capstone began with a simple question:
 
-| Artifact | Retained result |
+> **Can we turn noisy machine telemetry into a useful maintenance decision before the machine fails?**
+
+Answering it pulled the project through three disciplines I wanted to connect in one system:
+
+| Hat I had to wear | The actual job |
+|---|---|
+| **Data analyst** | Understand sensor behaviour, data quality, imbalance, gaps, and what the numbers can honestly support. |
+| **Data scientist** | Build classification and time-series forecasting workflows, test synthetic augmentation, and keep weak classes visible. |
+| **AI engineer** | Put models behind APIs, persist operational state, add simulations, and build an agent that can use tools and explain what it did. |
+
+The result is not just a notebook and not just a dashboard. It is a working digital-twin demo where a user can inspect fleet health, forecast risk, test interventions, and ask an AI assistant to investigate the system with visible tool traces.
+
+> [!IMPORTANT]
+> The public Vercel experience is a **sanitized portfolio demo**. Its displayed “live” values are deterministic demo data. Machine A is grounded in the public AI4I dataset; Machine C uses sanitized client-derived fixtures plus clearly labelled synthetic continuations. No private raw readings, backend, database, or API key are deployed in the hosted demo.
+
+---
+
+## Chapter 1 — First, understand the machines
+
+Before training anything, we had to work out what each dataset could actually tell us.
+
+- **Machine A** gave us a public AI4I classification baseline.
+- Other profiles introduced multi-sensor failure classification.
+- **Machine C** brought high-frequency vibration and temperature sequences—but also the awkward reality of limited, imbalanced samples.
+
+That last point mattered. A small dataset can still produce an impressive-looking metric. It cannot automatically produce a credible model story. So we treated the coverage gap as a data problem first, not something to hide behind a neural network.
+
+<table>
+  <tr>
+    <td width="55%">
+      <img src="assets/ml_architecture.png" alt="Early hybrid machine-learning architecture across three datasets" />
+      <br />
+      <strong>The first map:</strong> connect each data source to the prediction task it could genuinely support.
+    </td>
+    <td width="45%">
+      <img src="assets/real_synthetic_data_example_with_tsgm.png" alt="Comparison between observed and TSGM-generated vibration data" />
+      <br />
+      <strong>The join test:</strong> inspect whether generated vibration continues the observed signal without pretending it is real.
+    </td>
+  </tr>
+</table>
+
+### The synthetic-data decision
+
+We used time-series generative modelling (TSGM) to expand the Machine C development set. But “the generator ran” was not our acceptance criterion. We compared real and synthetic vibration and temperature behaviour—including frequency-domain characteristics—before using augmented data for experiments.
+
+The public repository keeps those boundaries explicit: observed fixture, synthetic continuation, and deterministic demo state are separate concepts.
+
+---
+
+## Chapter 2 — Then make the signal predictive
+
+Once the data story was defensible, the project moved from analysis into modelling.
+
+The system combines classification and forecasting because maintenance needs both:
+
+- **Classification:** how risky is the machine, and what kind of failure may be developing?
+- **Forecasting:** where are the sensor readings heading next?
+- **Simulation:** what changes if an operator adjusts the conditions?
+
+<table>
+  <tr>
+    <td width="50%">
+      <img src="assets/ml_architecture_2.png" alt="Expanded hybrid classification and time-series forecasting architecture" />
+      <br />
+      <strong>Two paths, one decision:</strong> state simulation on the left, failure-type prediction on the right.
+    </td>
+    <td width="50%">
+      <img src="assets/lstm_model_training.png" alt="Autoregressive LSTM training and validation curves" />
+      <br />
+      <strong>Training reality:</strong> validation movement stays visible instead of being cropped out of the story.
+    </td>
+  </tr>
+</table>
+
+The retained LSTM reads **20 minutes** of telemetry (2,400 samples at 500 ms), predicts the next **10 minutes** (1,200 samples), and builds windows on a **5-minute stride**. Six autoregressive chunks extend that view to one hour.
+
+We also built a constrained autoresearch loop to vary architecture, optimization, regularization, and preprocessing while keeping long-horizon evaluation criteria fixed. The point was not “AI trains AI.” The point was disciplined experiment throughput without moving the goalposts.
+
+## What survived the experiments
+
+These are held-out results from checked-in Machine C artifacts—not the fictional live values displayed by the Vercel demo.
+
+| Retained artifact | Result |
 |---|---:|
-| Machine C risk classifier | 91.28% accuracy; 0.9631 macro one-vs-rest AUC |
-| Low-risk class | F1 0.9502 (107 samples) |
-| High-risk class | F1 0.8333 (39 samples) |
-| 10-minute LSTM — Vibration X | MAE 0.0479; RMSE 0.1262 |
-| 10-minute LSTM — Vibration Y | MAE 0.1102; RMSE 0.2335 |
-| 10-minute LSTM — Vibration Z | MAE 0.0612; RMSE 0.1301 |
-| 10-minute LSTM — Temperature | MAE 0.2425; RMSE 0.3123 |
+| Risk classifier | **91.28% accuracy** · **0.9631 macro OvR AUC** |
+| Low-risk class | F1 **0.9502** (107 samples) |
+| High-risk class | F1 **0.8333** (39 samples) |
+| 10-minute LSTM · Vibration X | MAE 0.0479 · RMSE 0.1262 |
+| 10-minute LSTM · Vibration Y | MAE 0.1102 · RMSE 0.2335 |
+| 10-minute LSTM · Vibration Z | MAE 0.0612 · RMSE 0.1301 |
+| 10-minute LSTM · Temperature | MAE 0.2425 · RMSE 0.3123 |
 
-The medium-risk test subset contains only three samples (F1 0.4000), so the aggregate classifier score should not be read as uniform class performance.
+**The honest footnote:** the medium-risk test subset has only three samples (F1 0.4000). The aggregate score is useful, but it is not evidence of uniform performance across every class.
 
-## Architecture
+---
+
+## Chapter 3 — A prediction is more useful when you can challenge it
+
+A probability alone does not tell an operator what to do next. So the models became a digital twin: a place to compare current conditions with a simulated intervention.
+
+![Digital-twin simulation comparing observed sensor readings with a generated future](assets/similation_pane_with_mockdata.png)
+
+The simulator keeps the two timelines visible:
+
+1. Select a real or fixture-backed source window.
+2. Change the operating scenario.
+3. Generate a future sensor horizon.
+4. Compare baseline risk with projected risk.
+5. Turn the result into a maintenance recommendation.
+
+That changed the product question from **“Will it fail?”** to **“What can we do now, and what might that change?”**
+
+---
+
+## Chapter 4 — The dashboard needed a brain
+
+The first chatbot used a fixed router. It worked, but every new intent made the routing tree more brittle. We replaced it with a supervisor agent using native tool calls.
+
+The supervisor can choose between failure prediction, simulation, maintenance proposals, complaint extraction, knowledge retrieval, and database investigation. A dedicated SQL sub-agent is read-only, and the assistant’s working memory carries context across turns.
+
+![Supervisor agent architecture with action tools, a read-only SQL sub-agent, and a knowledge wiki](assets/chatbot_architecture.png)
+
+### From “chat” to investigation
+
+<table>
+  <tr>
+    <td width="50%">
+      <img src="assets/chatbot_telemetry_retrieval.png" alt="Assistant retrieving and summarizing Machine C telemetry" />
+      <br />
+      <strong>Ask in plain English.</strong> The assistant turns telemetry into a readable operational summary.
+    </td>
+    <td width="50%">
+      <img src="assets/chatbot_example_message_2.png" alt="AI assistant rendering machine telemetry as dashboard components" />
+      <br />
+      <strong>Return more than text.</strong> Responses can surface machine health, risk, temperature, and vibration as UI components.
+    </td>
+  </tr>
+</table>
+
+<table>
+  <tr>
+    <td width="50%">
+      <img src="assets/chatbot_tracing.png" alt="Visible four-step agent tool trace" />
+      <br />
+      <strong>Show the work.</strong> Tool traces expose the path through lookup, correction, retrieval, and simulation.
+    </td>
+    <td width="50%">
+      <img src="assets/chatbot_example_message.png" alt="Assistant recalling earlier maintenance context from working memory" />
+      <br />
+      <strong>Keep the thread.</strong> Working memory lets the assistant recap prior reasoning and unresolved actions.
+    </td>
+  </tr>
+</table>
+
+The team observed roughly a **75% improvement in typical response time** after the redesign. That is a team-observed estimate, not a controlled benchmark—but it matched the architectural improvement we could see: less rigid routing, fewer unnecessary hops, and tools selected at runtime.
+
+> [!NOTE]
+> In the frontend-only demo, assistant cards, charts, and traces are scripted demonstrations of the response contract. In full-stack mode, FastAPI connects the agent workflow to persisted data and model services.
+
+---
+
+## Chapter 5 — Close the loop with live ingestion
+
+The final step is the bridge back to the physical machines. We prototyped configurable MQTT subscriptions so telemetry sources can be mapped without hard-coding one broker or one machine.
+
+<table>
+  <tr>
+    <td width="42%">
+      <img src="assets/MQTT_subscription.png" alt="Form for configuring a new MQTT subscription" />
+      <br />
+      <strong>Configure the source:</strong> endpoint, port, QoS, and topic.
+    </td>
+    <td width="58%">
+      <img src="assets/MQTT_subscription_2.png" alt="MQTT topic-to-machine subscription management interface" />
+      <br />
+      <strong>Manage the mapping:</strong> see connection state and assign topics to machine streams.
+    </td>
+  </tr>
+</table>
+
+This is a prototype for future ingestion, not a claim that the public Vercel demo is connected to live industrial equipment.
+
+---
+
+## Under the hood
 
 ```mermaid
 flowchart LR
-    V["Vercel portfolio demo<br/>Next.js + deterministic provider"]
-    UI["Next.js application<br/>dashboard · chat · simulation · auth"]
-    API["FastAPI<br/>REST · agents · inference"]
-    ML["Model services<br/>RF classification · LSTM forecast"]
-    DB[(PostgreSQL)]
-
-    V --> UI
-    UI -->|local full-stack mode| API
-    API --> ML
-    API --> DB
+    Sensors["Sensor data<br/>public · sanitized · synthetic"] --> Models["ML services<br/>RF · XGBoost · LSTM"]
+    Models --> API["FastAPI<br/>inference · simulation · agents"]
+    API --> DB[(PostgreSQL)]
+    API --> UI["Next.js digital twin<br/>fleet · machine · simulation · chat"]
+    Wiki["Maintenance wiki"] --> Agent["Supervisor agent"]
+    DB --> Agent
+    Models --> Agent
+    Agent --> UI
+    Demo["Vercel demo provider<br/>deterministic + frontend-only"] -. same interface .-> UI
 ```
 
-The `DigitalTwinDataProvider` interface is the seam between both deployment modes:
+The `DigitalTwinDataProvider` is the seam between deployment modes:
 
-- `NEXT_PUBLIC_DEMO_MODE=true` → deterministic, frontend-only provider
-- unset/`false` → FastAPI provider, preserving the Docker workflow
+- `NEXT_PUBLIC_DEMO_MODE=true` → deterministic frontend-only portfolio experience
+- unset or `false` → FastAPI provider with the local Docker stack
 
-## Database model
+### Stack
 
-This ER diagram mirrors every ORM table currently declared in `apps/backend/app/db/models.py`. `chat_messages.thread_id` is relationship-defining application data but is not declared as a database `ForeignKey` in the current model.
-
-```mermaid
-erDiagram
-    PERSONAS {
-        string id PK
-        string name
-        string role
-        string shift
-        string plant
-    }
-    USERS {
-        string id PK
-        string email
-        string password
-        string persona_id FK
-        string access_role
-        string totp_secret
-    }
-    USER_MACHINE_ACCESS {
-        int id PK
-        string user_id FK
-        string machine_id FK
-    }
-    MACHINES {
-        string id PK
-        string name
-        string line
-        string model
-        string machine_type
-        string status
-        float health_score
-        float risk_score
-    }
-    MACHINE_A_TELEMETRY {
-        int id PK
-        string machine_id FK
-        int udi
-        string product_id
-        float air_temp_k
-        float process_temp_k
-    }
-    MACHINE_B_TELEMETRY {
-        int id PK
-        string machine_id FK
-        string timestamp
-        float temperature
-        float vibration_level
-    }
-    MACHINE_C_TELEMETRY {
-        int id PK
-        string machine_id FK
-        int session_id
-        string time_collected
-        string risk_label
-    }
-    MACHINE_C_SIMULATION_TELEMETRY {
-        int id PK
-        string machine_id FK
-        int session_id
-        string time_collected
-        boolean synthetic
-    }
-    PREDICTIONS {
-        string id PK
-        string machine_id FK
-        datetime generated_at
-        int horizon_hours
-        float probability
-    }
-    RECOMMENDATIONS {
-        string id PK
-        string machine_id FK
-        string action_type
-        string priority
-    }
-    HISTORY_EVENTS {
-        string id PK
-        string machine_id FK
-        string user_id FK
-        string timestamp
-        string type
-    }
-    CHAT_THREADS {
-        string id PK
-        string machine_id FK
-        string user_id FK
-        string title
-        string updated_at
-    }
-    CHAT_MESSAGES {
-        string id PK
-        string thread_id "relationship field"
-        string role
-        string created_at
-    }
-    MFA_TOKENS {
-        string token PK
-        string user_id FK
-    }
-    PENDING_TOTP_SETUPS {
-        string token PK
-        string user_id FK
-        string secret
-        datetime created_at
-    }
-    MFA_BACKUP_CODES {
-        int id PK
-        string user_id FK
-        string code
-        boolean used
-    }
-    SESSIONS {
-        string token PK
-        string user_id FK
-        string active_persona_id FK
-        string authenticated_at
-    }
-    SIMULATIONS {
-        string id PK
-        string machine_id FK
-        string user_id FK
-        string created_at
-        float projected_risk
-    }
-
-    PERSONAS ||--o{ USERS : persona_id
-    PERSONAS ||--o{ SESSIONS : active_persona_id
-    USERS ||--o{ USER_MACHINE_ACCESS : user_id
-    MACHINES ||--o{ USER_MACHINE_ACCESS : machine_id
-    MACHINES ||--o{ MACHINE_A_TELEMETRY : machine_id
-    MACHINES ||--o{ MACHINE_B_TELEMETRY : machine_id
-    MACHINES ||--o{ MACHINE_C_TELEMETRY : machine_id
-    MACHINES ||--o{ MACHINE_C_SIMULATION_TELEMETRY : machine_id
-    MACHINES ||--o{ PREDICTIONS : machine_id
-    MACHINES ||--o{ RECOMMENDATIONS : machine_id
-    MACHINES ||--o{ HISTORY_EVENTS : machine_id
-    USERS ||--o{ HISTORY_EVENTS : user_id
-    MACHINES ||--o{ CHAT_THREADS : machine_id
-    USERS ||--o{ CHAT_THREADS : user_id
-    CHAT_THREADS ||--o{ CHAT_MESSAGES : thread_id
-    USERS ||--o{ MFA_TOKENS : user_id
-    USERS ||--o{ PENDING_TOTP_SETUPS : user_id
-    USERS ||--o{ MFA_BACKUP_CODES : user_id
-    USERS ||--o{ SESSIONS : user_id
-    MACHINES ||--o{ SIMULATIONS : machine_id
-    USERS ||--o{ SIMULATIONS : user_id
-```
-
-## Visual record
-
-### Machine learning and data augmentation
-
-| Pipeline | Synthetic-data validation |
+| Layer | Technology |
 |---|---|
-| ![Machine learning architecture](assets/ml_architecture.png) | ![Real and synthetic Machine C data comparison](assets/real_synthetic_data_example_with_tsgm.png) |
-| ![LSTM training results](assets/lstm_model_training.png) | ![Expanded model architecture](assets/ml_architecture_2.png) |
+| Frontend | Next.js 16 · React 19 · TypeScript · Tailwind CSS · Recharts |
+| Backend | FastAPI · SQLAlchemy · Pydantic · PostgreSQL |
+| ML | PyTorch LSTM · XGBoost · Random Forest · scikit-learn · pandas · NumPy |
+| Agent system | Supervisor · six domain tools · read-only SQL sub-agent · working memory · knowledge wiki · persisted traces |
+| Quality | Vitest · Playwright · linting · production build checks |
 
-### Chatbot and tool tracing
+<details>
+<summary><strong>What gets persisted?</strong></summary>
 
-| Supervisor design | Trace visibility |
-|---|---|
-| ![Chatbot supervisor architecture](assets/chatbot_architecture.png) | ![Chatbot tool trace](assets/chatbot_tracing.png) |
-| ![Telemetry retrieval response](assets/chatbot_telemetry_retrieval.png) | ![Example chatbot response](assets/chatbot_example_message_2.png) |
+Machines, telemetry profiles, predictions, recommendations, history, simulations, user access, sessions, chat memory, MFA state, and agent traces are represented in the PostgreSQL/SQLAlchemy model. The source of truth is [`apps/backend/app/db/models.py`](apps/backend/app/db/models.py).
 
-### Simulation
+</details>
 
-![Simulation pane using mock data](assets/similation_pane_with_mockdata.png)
+<details>
+<summary><strong>What can I explore in the interface?</strong></summary>
 
-### Future MQTT ingestion
+- Fleet health, risk, uptime, weekly events, and machine telemetry
+- Random Forest classification and autoregressive LSTM forecasting flows
+- Baseline-versus-intervention simulations
+- AI-assisted investigation with visible tool traces
+- Roles, per-machine access, history, and account security
+- Frontend-only demo mode or the full FastAPI/PostgreSQL stack
 
-| Subscription mapping | Topic assignment prototype |
-|---|---|
-| ![MQTT subscription interface](assets/MQTT_subscription.png) | ![MQTT topic subscription mapping](assets/MQTT_subscription_2.png) |
+</details>
 
-## Run locally
+---
 
-### Hosted-demo behavior only
+## Run it yourself
 
-Demo mode uses one deterministic engineering registry across Machines, History, Predict, Simulation, and the Assistant. Machine C sessions model intermittent supervisor captures lasting one to five hours, with multi-day gaps between collection visits; they are not continuous plant telemetry or fault labels. Public observed fixtures preserve sanitized session structure without publishing private raw client rows. Any future continuation is generated deterministically and labelled `Synthetic forecast`, separately from `Observed/client-derived fixture` data.
-
-The Assistant’s tables, charts, status cards, comparisons, and visible tool traces are scripted demonstrations of response formats that a production agent may select. Demo prediction scores are bounded engineering calculations, not validated production inference. FastAPI-backed behavior is unchanged by demo mode.
+### Fastest path: frontend demo mode
 
 ```bash
 cd apps/frontend
@@ -258,6 +273,8 @@ cp .env.example .env.local
 npm run dev
 ```
 
+Open `http://localhost:3000`.
+
 ### Full stack
 
 ```bash
@@ -265,13 +282,9 @@ cp apps/backend/.env.example apps/backend/.env
 docker compose up --build
 ```
 
-Open `http://localhost:3000`. FastAPI documentation is at `http://localhost:8000/docs`. The seeded local full-stack account is `admin` / `admin`; the Vercel demo uses its **Explore live demo** button and requires no credentials.
+FastAPI documentation is available at `http://localhost:8000/docs`. The seeded local account is `admin` / `admin`; the hosted Vercel demo needs no credentials.
 
-## Deploy on Vercel
-
-Import this repository and set **Root Directory** to `apps/frontend`. The included `vercel.json` enables `NEXT_PUBLIC_DEMO_MODE=true`; no other environment variables or services are required.
-
-## Tests
+### Verify it
 
 ```bash
 cd apps/frontend
@@ -281,11 +294,26 @@ npm run build
 npm run test:e2e
 ```
 
-## Stack and scope
+### Deploy the portfolio mode
 
-- Frontend: Next.js 16, React 19, TypeScript, Tailwind CSS, Recharts, Vitest, Playwright
-- Backend: FastAPI, SQLAlchemy, Pydantic, PostgreSQL
-- ML: PyTorch LSTM, XGBoost/Random Forest workflows, scikit-learn, pandas, NumPy
-- Agent system: supervisor, six domain tools, working memory, RAG/wiki retrieval, persisted traces
+Import the repository into Vercel and set the root directory to `apps/frontend`. The included `vercel.json` enables demo mode without external services or secrets.
 
-This is a sanitized portfolio repository from Swinburne COS40005. Private client readings, credentials, internal documents, and proprietary materials are excluded. See [CONTRIBUTORS.md](CONTRIBUTORS.md) for team contributions.
+---
+
+## Scope, credit, and provenance
+
+This is a sanitized portfolio repository from Swinburne University **COS40005 Computing Technology Project A/B**, built by a six-person team.
+
+My focus was the **ML/AI engineering layer**: analysing the original routing limitations, migrating the assistant to a native tool-calling supervisor, implementing the read-only SQL sub-agent, connecting the knowledge wiki, surfacing agent traces, and adding session-level working memory.
+
+The full team and individual contributions are documented in [CONTRIBUTORS.md](CONTRIBUTORS.md).
+
+Private client readings, credentials, internal documents, and proprietary material are intentionally excluded. The hosted application uses ten fictional fleet instances derived from three model profiles; these are demo assets, not ten independently trained models.
+
+<div align="center">
+
+### Data told us what happened. Models suggested what happens next. The agent made it actionable.
+
+[![Explore the demo](https://img.shields.io/badge/OPEN_THE_DIGITAL_TWIN-2563EB?style=for-the-badge&logo=vercel&logoColor=white)](https://predictive-maintenance-digital-twin.vercel.app/dashboard)
+
+</div>
