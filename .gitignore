@@ -57,3 +57,6 @@ Thumbs.db
 # Data — never commit real sensor data
 ml/data/raw_data/sensordata*.csv
 !ml/data/raw_data/sensordata_demo.csv
+
+# TypeScript incremental build cache
+*.tsbuildinfo
