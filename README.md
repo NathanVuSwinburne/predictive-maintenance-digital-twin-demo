@@ -156,6 +156,10 @@ It was not free, and the demo says so. Things that were implicit had to be said 
 
 What the abstraction bought is the rest of this chapter.
 
+![The MLOps machine registry, with the schema history of the AI4I machine beside it](assets/mlops_machine_registry.png)
+
+<strong>The history is part of the machine.</strong> Each registry entry carries the versions of its own contract, ending at the point where it stopped needing code of its own.
+
 ### Five stages you can open
 
 The public demo ships the workflow as a frontend-only workspace at **`/mlops`**, over three public or synthetic machines. Nothing here is scripted: the recipe genuinely recomputes and the models genuinely fit, in your browser, on every click.
@@ -168,6 +172,10 @@ The public demo ships the workflow as a frontend-only workspace at **`/mlops`**,
 | **Train** | Architectures split into *trains here* and *production worker only*, a hyperparameter form that refuses impossible configurations, and the exact JSON the run will carry. |
 | **Promote** | Candidates scored against the trivial answer, a quality verdict, and a **required written reason** to override a blocked promotion. |
 
+![The preprocessing recipe with three calculated features written against the machine's columns](assets/mlops_prepare_recipe.png)
+
+<strong>The recipe is the artifact.</strong> Split, missing values, scaling and calculated columns on the left; what they do to the actual rows on the right, with every statistic fitted on Train only.
+
 ### The calculated-feature moment
 
 The AI4I failure rules are written on *combinations* of columns — power is `torque × speed`, heat dissipation is a temperature *difference*, overstrain is `wear × torque`. A model given only the six raw columns has to rediscover each product from a handful of positive rows.
@@ -176,11 +184,15 @@ Spelling them out in the formula editor, same forest, same hyperparameters, same
 
 | | Raw columns | With `power_w`, `temp_difference_k`, `overstrain` |
 |---|---:|---:|
-| Balanced accuracy | 0.795 | **0.929** |
-| Recall on failures | 0.609 | **0.870** |
-| Accuracy | 96.00% | 98.25% |
+| Balanced accuracy | 83.7% | **93.1%** |
+| Recall on failures | 69.6% | **87.0%** |
+| Plain accuracy | 96.3% | 98.5% |
 
-The class prior on that split is 94.25%, which is the number both accuracies have to be read against — and it is why the middle row matters more than the bottom one. A unit test pins the gap in place, so the argument for having a formula editor at all cannot quietly stop being true.
+The class prior on that split is 94.3%, which is the number both accuracies have to be read against — and it is why the middle row matters more than the bottom one. Those are the workspace's own default settings, so the screenshot below is a run anyone can reproduce by clicking. A unit test pins the gap in place, so the argument for having a formula editor at all cannot quietly stop being true.
+
+![Two training runs compared: the same forest on raw columns and on the calculated ones](assets/mlops_model_scorecard.png)
+
+<strong>Two runs, one screen:</strong> the newer run cites dataset v2 and finds 87% of the failures; the older one, same model on the raw columns, finds 69.6%. Both are scored against the same 94.3% trivial answer.
 
 ### Honesty is the feature
 
@@ -188,6 +200,10 @@ The class prior on that split is 94.25%, which is the number both accuracies hav
 - **The gate distinguishes a bad model from a deliberate trade.** A class-balanced model that finds rare failures usually *loses* plain accuracy to the class prior. That is called `borderline` and explained, not `not_recommended`.
 - **A recipe that drops the informative columns really does produce a model that loses to the baseline**, and the gate really does block it. Nothing about that path is mocked.
 - **Architectures the browser cannot fit refuse to run.** LSTM, GRU, TCN and XGBoost are described and then decline, saying they train on the production worker. An invented score would have been easier and worthless.
+
+![The promotion stage comparing two candidate runs against the trivial answer before one is allowed to serve](assets/mlops_promotion_gate.png)
+
+<strong>Promotion moves an alias, not a file.</strong> Every candidate is shown against the trivial answer with a verdict attached, and nothing serves until someone chooses — so a caller gets an honest error rather than a silently stale model.
 
 ---
 
@@ -289,6 +305,25 @@ Chunk-and-embed is very good at *"find me a passage that sounds like this"* and 
 - **Numeric claims need a source.** A number in a `domain/` or `concepts/` page either cites a source page or is flagged as unsourced, and the lint panel counts them.
 - **Disagreements are kept, not resolved.** Where a checked-in original contradicts the standards, a `Conflict` callout says so and both stay. The seeded vault carries seven.
 - **Provenance is a view of its own**, and the `raw/` originals are immutable — so the claim that a legacy guideline's vibration table is four times too permissive can be *checked* rather than taken on trust.
+
+![The knowledge wiki: a force-directed graph of 50 pages beside the index page](assets/knowledge_wiki_graph.png)
+
+<strong>50 pages, 409 links, nothing written yet that nobody asked for.</strong> Colour is the namespace, size is how many pages point here, and the header counts are computed from the markdown rather than stored beside it.
+
+<table>
+  <tr>
+    <td width="50%">
+      <img src="assets/knowledge_wiki_page.png" alt="Searching the wiki and reading a page, with the graph dimming everything that did not match" />
+      <br />
+      <strong>Search, then follow the links.</strong> BM25 ranks the matches, the graph dims everything else, and the page itself cites its sources as links you can walk.
+    </td>
+    <td width="50%">
+      <img src="assets/knowledge_wiki_provenance.png" alt="The provenance panel listing each source, what it is, and how many pages cite it" />
+      <br />
+      <strong>Where the numbers come from.</strong> One page per external document, marked primary, secondary, paywalled or internal, with a count of what depends on it.
+    </td>
+  </tr>
+</table>
 
 Because the assistant writes through this pane, two rules live in the store rather than in the UI: `raw/` cannot be edited at all, and `agent/` — the assistant's own operating instructions — is not editable from the pane the assistant writes through. Every save requires a written reason, which lands in an append-only log, because it is the only thing a future reader gets.
 

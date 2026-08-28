@@ -4,7 +4,7 @@ Working branch: **`dev`** (created off `main`; nothing is to be committed to `ma
 Repo: `C:\Users\Admin\predictive-maintenance-digital-twin-demo`
 Production reference (read-only): `C:\Users\Admin\Uni\ProjectA\Predictive-maintenance-digital-twin-simulator`
 
-Status: **Milestones 1 and 2 complete. Milestone 3 (screenshots) is next.**
+Status: **Milestones 1–3 complete. Milestone 4 (navigable README) is next.**
 Verified with `npx tsc --noEmit`, `npm run lint`, `npm run test:unit` (104 passing, 52 of them
 new across `test/demo-mlops.test.ts` and `test/demo-knowledge.test.ts`), `npm run build`
 (both `/mlops` and `/knowledge` prerender static), and `npx playwright test` (9 passing,
@@ -291,11 +291,36 @@ image and file path exists.
 
 </details>
 
-### Milestone 3 — screenshots
-Run the demo (`cd apps/frontend && npm run dev` with `NEXT_PUBLIC_DEMO_MODE=true`), capture
-at least: MLOps main workflow/pane, Knowledge Wiki graph, and a wiki page/editor view.
-Clean consistent filenames under `assets/`, e.g. `mlops_prepare_pane.png`,
-`mlops_model_scorecard.png`, `knowledge_wiki_graph.png`, `knowledge_wiki_page.png`.
+### Milestone 3 — screenshots ✅ done
+
+Seven shots under `assets/`, all 1600 px wide, captured by a throwaway Playwright spec that
+was deleted afterwards:
+
+| File | What it shows |
+|---|---|
+| `mlops_machine_registry.png` | The registry and the schema-history timeline (the generalisation story) |
+| `mlops_prepare_recipe.png` | The recipe sidebar with all three calculated features written out, beside the recomputed preview |
+| `mlops_model_scorecard.png` | **Two runs on one screen** — the same forest on raw columns and on the calculated ones |
+| `mlops_promotion_gate.png` | Both candidates scored against the trivial answer, one selected, nothing serving yet |
+| `knowledge_wiki_graph.png` | The 50-page graph beside the index |
+| `knowledge_wiki_page.png` | A BM25 search, the graph dimming everything else, and the page open |
+| `knowledge_wiki_provenance.png` | The provenance panel: each source's kind and how many pages cite it |
+
+Three things the capture had to handle:
+
+- **The Next.js dev-overlay badge** sits over the sidebar footer, and **sonner toasts** sit
+  over the header. Both are hidden with an injected style before each shot.
+- **`fullPage` puts sticky chrome in the wrong place.** The viewport is grown to the
+  document height instead and the shot is a plain viewport shot.
+- **The scorecard is scripted to earn its caption.** The spec trains the forest on the raw
+  recipe, goes back to Prepare, adds `power_w`, `temp_difference_k` and `overstrain`,
+  freezes v2 and trains again — so the two runs in the image are the comparison the README
+  claims, not two unrelated runs.
+
+The README's calculated-feature table was **restated against the workspace's own defaults**
+(24 trees, depth 7, min leaf 4, balanced) so the numbers in the prose and the numbers in the
+screenshot under it are the same run: balanced accuracy 83.7 % → 93.1 %, failure recall
+69.6 % → 87.0 %, plain accuracy 96.3 % → 98.5 %, against a 94.3 % class prior.
 
 ### Milestone 4 — navigable README
 Markdown anchors + small contextual nav lines so a reader can hop between project story,
