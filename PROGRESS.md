@@ -4,8 +4,7 @@ Working branch: **`dev`** (created off `main`; nothing is to be committed to `ma
 Repo: `C:\Users\Admin\predictive-maintenance-digital-twin-demo`
 Production reference (read-only): `C:\Users\Admin\Uni\ProjectA\Predictive-maintenance-digital-twin-simulator`
 
-Status: **Milestone 1 complete and verified — both MLOps and the Agent Knowledge Wiki are
-in. Milestone 2 (README) is next.**
+Status: **Milestones 1 and 2 complete. Milestone 3 (screenshots) is next.**
 Verified with `npx tsc --noEmit`, `npm run lint`, `npm run test:unit` (104 passing, 52 of them
 new across `test/demo-mlops.test.ts` and `test/demo-knowledge.test.ts`), `npm run build`
 (both `/mlops` and `/knowledge` prerender static), and `npx playwright test` (9 passing,
@@ -243,7 +242,40 @@ npm run build
 npx playwright test   # 9 passing
 ```
 
-### Milestone 2 — README
+### Milestone 2 — README ✅ done
+
+Two new chapters, written in the existing voice, and the surrounding renumbering:
+
+- **Chapter 3 — "A trained model is not yet a workflow"** (new). Opens with the ML-engineer
+  intern motivation and the gap between training a model and having a rerunnable workflow,
+  then tells the **Machine C bespoke → generic schema** story as a before/after table
+  (positional columns, `contextRows = 30` in two places, implicit temporality, one model
+  path, notebook preprocessing, a scaler fitted twice), what forced it (the mill has no time
+  axis and no value of `contextRows` means "there is no context"), **what it cost**, then the
+  five stages, the calculated-feature result and the honesty rules.
+- **Chapter 6 — "Memory the agent can read, and so can you"** (new). LLM-Wiki paper as
+  *inspiration only* with the benchmark disclaimer, the BM25 + interconnected wiki +
+  navigable relations + human-editable design in one sentence, why chunk-and-embed is the
+  wrong shape for "what caused this and what did we do last time", then the derived graph,
+  typed relations, wanted pages, sourced numbers, kept conflicts, provenance and the two
+  store-enforced rules. Ends on the sensitive-data boundary.
+- Chapters 3/4/5 renumbered to 4/5/7; the agent badge anchor followed.
+- Also: the discipline strip gained `MLOPS`; the top nav line gained MLOps and Knowledge
+  wiki; the demo callout now says the two panes really compute in the browser rather than
+  being scripted; the mermaid diagram gained the MLOps stage and renamed the wiki node; the
+  stack table gained two rows; the explore list gained two bullets; and the credit paragraph
+  now names the wiki and the schema migration.
+
+The calculated-feature figures in the README were **measured, not recalled**: same forest,
+same options, raw columns 0.795 balanced accuracy / 0.609 failure recall / 96.00 % accuracy,
+with `power_w` + `temp_difference_k` + `overstrain` 0.929 / 0.870 / 98.25 %, against a
+94.25 % class prior on that split.
+
+Anchor and relative-path check over the whole README: 9 internal links all resolve, every
+image and file path exists.
+
+<details><summary>Original brief for this milestone</summary>
+
 - Keep the existing narrative voice and structure; do not turn it into product docs.
 - MLOps: inspired partly by the user's previous **ML Engineer intern** experience and the
   gap between training a model and having a reproducible, usable ML workflow — brought into
@@ -256,6 +288,8 @@ npx playwright test   # 9 passing
   knowledge · the agent navigates relationships when it needs to reason deeper ·
   human-readable, human-editable knowledge instead of an opaque vector store.
 - Also add the generalisation story (bespoke Machine C pipeline → generic machine schema).
+
+</details>
 
 ### Milestone 3 — screenshots
 Run the demo (`cd apps/frontend && npm run dev` with `NEXT_PUBLIC_DEMO_MODE=true`), capture

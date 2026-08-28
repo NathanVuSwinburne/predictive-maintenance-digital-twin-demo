@@ -9,11 +9,11 @@
 [![Live Demo](https://img.shields.io/badge/Explore_the_live_demo-2563EB?style=for-the-badge&logo=vercel&logoColor=white)](https://predictive-maintenance-digital-twin.vercel.app/dashboard)
 [![Next.js](https://img.shields.io/badge/Next.js_16-111827?style=for-the-badge&logo=nextdotjs&logoColor=white)](apps/frontend)
 [![FastAPI](https://img.shields.io/badge/FastAPI-059669?style=for-the-badge&logo=fastapi&logoColor=white)](apps/backend)
-[![AI Agents](https://img.shields.io/badge/Agentic_AI-7C3AED?style=for-the-badge&logo=openai&logoColor=white)](#chapter-4--the-dashboard-needed-a-brain)
+[![AI Agents](https://img.shields.io/badge/Agentic_AI-7C3AED?style=for-the-badge&logo=openai&logoColor=white)](#chapter-5-the-dashboard-needed-a-brain)
 
-`DATA ANALYSIS` → `DATA SCIENCE` → `DIGITAL TWIN` → `AI ENGINEERING`
+`DATA ANALYSIS` → `DATA SCIENCE` → `MLOPS` → `DIGITAL TWIN` → `AI ENGINEERING`
 
-[The story](#the-short-version) · [Results](#what-survived-the-experiments) · [Architecture](#under-the-hood) · [Run locally](#run-it-yourself)
+[The story](#the-short-version) · [Results](#what-survived-the-experiments) · [MLOps](#chapter-3-a-trained-model-is-not-yet-a-workflow) · [Knowledge wiki](#chapter-6-memory-the-agent-can-read-and-so-can-you) · [Architecture](#under-the-hood) · [Run locally](#run-it-yourself)
 
 </div>
 
@@ -51,6 +51,8 @@ These names identify data profiles, not three physical machines connected to the
 
 > [!IMPORTANT]
 > The public Vercel experience is a **sanitized portfolio demo**. Its “live” values are deterministic demo data. Machine C uses sanitized client-derived fixtures and clearly labelled synthetic continuations. Private raw readings, backend services, databases, and API keys are not deployed.
+>
+> Two panes are an exception worth knowing about. The [MLOps workspace](#chapter-3-a-trained-model-is-not-yet-a-workflow) and the [knowledge wiki](#chapter-6-memory-the-agent-can-read-and-so-can-you) are frontend-only but not scripted: they really compute, in your browser, over public and synthetic data only.
 
 ---
 
@@ -127,7 +129,69 @@ These are held-out results from checked-in Machine C artifacts. They are not the
 
 ---
 
-## Chapter 3: A prediction is more useful when you can challenge it
+## Chapter 3: A trained model is not yet a workflow
+
+Chapter 2 produced numbers. Numbers turned out to be the easy part.
+
+Before this project I worked as an **ML engineer intern**, and what stayed with me was not the modelling. It was the distance between *training a model* and *having a workflow someone else can rerun next month and get the same artifact back*. Preparation lived in a notebook cell. The scaler was fitted in the training script and re-implemented — subtly differently — in the serving path. The score arrived in a chat message with no record of which rows produced it.
+
+So I brought those lessons here, and made preparation, evaluation, promotion and serving **visible steps in the product** rather than folklore. That work has a concrete origin in this repository.
+
+### Machine C was never generic
+
+The Machine C pipeline was written for exactly one machine, and it showed.
+
+| Before | After |
+|---|---|
+| Column order fixed in code — position 0 was X, 1 was Y, 2 was Z | Named, typed, unit-carrying columns in a registry entry |
+| `contextRows = 30` in the training script, and a second copy of the number in the serving path | Window length is part of the recipe, versioned with the dataset |
+| Implicitly temporal: windows, lags and session boundaries everywhere | `timestamp` and `session_id` are **metadata, never model inputs** — and a machine may have neither |
+| One model path, because one machine | Machines **declare capabilities**: detection, forecasting, or both |
+| Preprocessing in the notebook | A recipe frozen into an immutable dataset version with a content digest |
+| A scaler fitted twice, in two places | Statistics fitted on **Train only**, stored with the dataset, reused verbatim at inference |
+
+What forced the rewrite was the AI4I machine, which has **no usable time axis at all**. Every assumption in the bespoke path was temporal, and there is no value of `contextRows` that means *"there is no context."* The choice was to fork the pipeline a second time or to say what a machine **is** in a way that covers both. Forking is the fast answer and the wrong one: two forks become five, and the fifth is where the two definitions of a scaler quietly diverge.
+
+It was not free, and the demo says so. Things that were implicit had to be said out loud. Some domain nuance moved out of code and into configuration, where it is visible but no longer enforced by the type system. The generic path is slower than a hand-written one for any single machine. On a system with one machine and no plans for a second, the bespoke pipeline would have been the right answer.
+
+What the abstraction bought is the rest of this chapter.
+
+### Five stages you can open
+
+The public demo ships the workflow as a frontend-only workspace at **`/mlops`**, over three public or synthetic machines. Nothing here is scripted: the recipe genuinely recomputes and the models genuinely fit, in your browser, on every click.
+
+| Stage | What happens |
+|---|---|
+| **Machine** | The registry, and each machine's **schema history** as a timeline — five versions for the drive, because a schema version with no record of what changed is a number rather than a history. |
+| **Data** | The column contract, the connected sources, and per-goal readiness gates. A machine with no time axis is told it cannot forecast instead of being offered the button. |
+| **Prepare** | Split, missing values, scaling, session-aware resampling, and a **calculated-feature editor** with a real formula compiler. Freezing the recipe produces an immutable dataset version with a digest. |
+| **Train** | Architectures split into *trains here* and *production worker only*, a hyperparameter form that refuses impossible configurations, and the exact JSON the run will carry. |
+| **Promote** | Candidates scored against the trivial answer, a quality verdict, and a **required written reason** to override a blocked promotion. |
+
+### The calculated-feature moment
+
+The AI4I failure rules are written on *combinations* of columns — power is `torque × speed`, heat dissipation is a temperature *difference*, overstrain is `wear × torque`. A model given only the six raw columns has to rediscover each product from a handful of positive rows.
+
+Spelling them out in the formula editor, same forest, same hyperparameters, same split:
+
+| | Raw columns | With `power_w`, `temp_difference_k`, `overstrain` |
+|---|---:|---:|
+| Balanced accuracy | 0.795 | **0.929** |
+| Recall on failures | 0.609 | **0.870** |
+| Accuracy | 96.00% | 98.25% |
+
+The class prior on that split is 94.25%, which is the number both accuracies have to be read against — and it is why the middle row matters more than the bottom one. A unit test pins the gap in place, so the argument for having a formula editor at all cannot quietly stop being true.
+
+### Honesty is the feature
+
+- **Every run reports the majority-class baseline.** An accuracy figure with nothing to compare it to is decoration.
+- **The gate distinguishes a bad model from a deliberate trade.** A class-balanced model that finds rare failures usually *loses* plain accuracy to the class prior. That is called `borderline` and explained, not `not_recommended`.
+- **A recipe that drops the informative columns really does produce a model that loses to the baseline**, and the gate really does block it. Nothing about that path is mocked.
+- **Architectures the browser cannot fit refuse to run.** LSTM, GRU, TCN and XGBoost are described and then decline, saying they train on the production worker. An invented score would have been easier and worthless.
+
+---
+
+## Chapter 4: A prediction is more useful when you can challenge it
 
 A probability alone does not tell an operator what to do next. So the models became a digital twin: a place to compare current conditions with a simulated intervention.
 
@@ -145,7 +209,7 @@ That changed the product question from **“Will it fail?”** to **“What can 
 
 ---
 
-## Chapter 4: The dashboard needed a brain
+## Chapter 5: The dashboard needed a brain
 
 The first chatbot used a fixed router. Every new intent made it more brittle, so we replaced it with a **supervisor agent** that can choose tools and delegate work.
 
@@ -209,7 +273,30 @@ The team observed roughly a **75% improvement in typical response time** after t
 
 ---
 
-## Chapter 5: Close the loop with live ingestion
+## Chapter 6: Memory the agent can read, and so can you
+
+The supervisor in Chapter 5 already reads from a maintenance wiki. This chapter is about why that knowledge is a **wiki** and not a vector index.
+
+The design was inspired by **["Retrieval as Reasoning: Self-Evolving Agent-Native Retrieval via LLM-Wiki"](https://arxiv.org/abs/2605.25480)**, which argues for retrieval an agent *navigates* rather than merely queries, and reports promising gains on multi-hop and cross-document reasoning. The paper inspired the design here; this project has not reproduced its benchmarks and does not inherit its results.
+
+The idea in one breath: **BM25 for fast retrieval, a persistent interconnected wiki for structured knowledge, relationships the agent can follow when one lookup is not enough, and knowledge that stays human-readable and human-editable instead of an opaque vector store.**
+
+Chunk-and-embed is very good at *"find me a passage that sounds like this"* and weak at *"what caused this, what detected it, and what did we decide last time?"* — where the answer is spread across four pages and lives in the links between them. So the corpus is plain markdown with YAML frontmatter and `[[wikilinks]]`, and a few decisions follow from that:
+
+- **Nothing is stored as a graph.** Nodes are pages, edges are links written inside the pages, so the graph and the search index are both derived from the text on read. Edit a page in the pane and the graph changes shape in the same frame — because the text *is* the graph.
+- **Relationships are typed.** `sources`, `caused_by`, `detected_by`, `mitigated_by`. Invent a new relation in a page's frontmatter and the graph draws it, with no code change anywhere.
+- **A link to a page nobody has written becomes a *wanted page*** — dashed and hollow in the graph rather than a dropped edge. That is the worklist, not an error state.
+- **Numeric claims need a source.** A number in a `domain/` or `concepts/` page either cites a source page or is flagged as unsourced, and the lint panel counts them.
+- **Disagreements are kept, not resolved.** Where a checked-in original contradicts the standards, a `Conflict` callout says so and both stay. The seeded vault carries seven.
+- **Provenance is a view of its own**, and the `raw/` originals are immutable — so the claim that a legacy guideline's vibration table is four times too permissive can be *checked* rather than taken on trust.
+
+Because the assistant writes through this pane, two rules live in the store rather than in the UI: `raw/` cannot be edited at all, and `agent/` — the assistant's own operating instructions — is not editable from the pane the assistant writes through. Every save requires a written reason, which lands in an append-only log, because it is the only thing a future reader gets.
+
+The demo's vault at **`/knowledge`** carries 50 interlinked pages: ISO vibration severity zones, bearing degradation physics, envelope analysis, class imbalance and threshold selection, provenance for each public dataset, and the fleet's own registry entries. It is public-domain knowledge and this project's own decisions — the client machine's page is not here, and a test enforces that no page mentions it or any client sensor.
+
+---
+
+## Chapter 7: Close the loop with live ingestion
 
 The final step is the bridge back to the physical machines. We prototyped configurable MQTT subscriptions so telemetry sources can be mapped without hard-coding one broker or one machine.
 
@@ -236,11 +323,12 @@ This is a prototype for future ingestion, not a claim that the public Vercel dem
 
 ```mermaid
 flowchart LR
-    Sensors["Sensor data<br/>public · sanitized · synthetic"] --> Models["ML services<br/>RF · XGBoost · LSTM"]
+    Sensors["Sensor data<br/>public · sanitized · synthetic"] --> MLOps["MLOps workflow<br/>registry · recipe · train · promote"]
+    MLOps --> Models["ML services<br/>RF · XGBoost · LSTM"]
     Models --> API["FastAPI<br/>inference · simulation · agents"]
     API --> DB[(PostgreSQL)]
     API --> UI["Next.js digital twin<br/>fleet · machine · simulation · chat"]
-    Wiki["Maintenance wiki"] --> Agent["Supervisor agent"]
+    Wiki["Knowledge wiki<br/>markdown · wikilinks · BM25"] --> Agent["Supervisor agent"]
     DB --> Agent
     Models --> Agent
     Agent --> UI
@@ -260,6 +348,8 @@ The `DigitalTwinDataProvider` is the seam between deployment modes:
 | Backend | FastAPI · SQLAlchemy · Pydantic · PostgreSQL |
 | ML | PyTorch LSTM · XGBoost · Random Forest · scikit-learn · pandas · NumPy |
 | Agent system | Supervisor · six domain tools · read-only SQL sub-agent · working memory · knowledge wiki · persisted traces |
+| MLOps workspace | Registry schema versions · frozen recipes with content digests · in-browser logistic regression, CART forest, gradient boosting, MLP and ridge-lag forecaster · quality gates |
+| Knowledge wiki | Markdown + YAML frontmatter corpus · `[[wikilinks]]` · BM25 retrieval · d3-force graph · lint and provenance |
 | Quality | Vitest · Playwright · linting · production build checks |
 
 <details>
@@ -275,6 +365,8 @@ Machines, telemetry profiles, predictions, recommendations, history, simulations
 - Fleet health, risk, uptime, weekly events, and machine telemetry
 - Random Forest classification and autoregressive LSTM forecasting flows
 - Baseline-versus-intervention simulations
+- A five-stage MLOps workspace that really prepares data and really trains models in the browser
+- An agent knowledge wiki: graph, BM25 search, editable pages, backlinks, provenance and lint
 - AI-assisted investigation with visible tool traces
 - Roles, per-machine access, history, and account security
 - Frontend-only demo mode or the full FastAPI/PostgreSQL stack
@@ -326,7 +418,7 @@ Import the repository into Vercel and set the root directory to `apps/frontend`.
 
 This is a sanitized portfolio repository from Swinburne University **COS40005 Computing Technology Project A/B**, built by a six-person team.
 
-My focus was the **ML/AI engineering layer**: analysing the original routing limitations, migrating the assistant to a native tool-calling supervisor, implementing the read-only SQL sub-agent, connecting the knowledge wiki, surfacing agent traces, and adding session-level working memory.
+My focus was the **ML/AI engineering layer**: analysing the original routing limitations, migrating the assistant to a native tool-calling supervisor, implementing the read-only SQL sub-agent, building the knowledge wiki and connecting it to the agent, surfacing agent traces, adding session-level working memory, and moving the bespoke Machine C pipeline onto a generic machine schema with a visible preparation, training and promotion workflow.
 
 The full team and individual contributions are documented in [CONTRIBUTORS.md](CONTRIBUTORS.md).
 
