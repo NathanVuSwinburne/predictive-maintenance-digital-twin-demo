@@ -310,7 +310,7 @@ export const DEMO_MACHINES: DemoMachine[] = [
         kind: "synthetic-fixture",
         origin: "Generated in-browser from a seeded PRNG",
         licence: "Demo fixture — free to reuse",
-        rowCount: 8 * 110,
+        rowCount: 908,
         sessionCount: 8,
         connectedAt: "2026-06-11T03:20:00.000Z",
       },
@@ -343,7 +343,7 @@ export const DEMO_MACHINES: DemoMachine[] = [
       },
     ],
     sampleRows: buildDriveRows(),
-    population: { rows: 880, sessions: 8, span: "2026-06-11 → 2026-07-09" },
+    population: { rows: 908, sessions: 8, span: "2026-06-11 → 2026-07-09" },
   },
 ];
 

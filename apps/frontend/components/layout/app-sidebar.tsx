@@ -9,6 +9,7 @@ import {
   CpuIcon,
   FlaskIcon,
   GearIcon,
+  GraphIcon,
   GaugeIcon,
   HouseIcon,
   SpinnerIcon,
@@ -39,6 +40,7 @@ const navigation = [
   { href: "/chat", label: "AI Assistant", icon: ChatCircleDotsIcon },
   { href: "/simulator", label: "Simulator", icon: GaugeIcon },
   { href: "/mlops", label: "MLOps", icon: FlaskIcon },
+  { href: "/knowledge", label: "Knowledge Wiki", icon: GraphIcon },
   {
     href: "/account/security",
     label: "Account Security",

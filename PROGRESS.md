@@ -4,11 +4,13 @@ Working branch: **`dev`** (created off `main`; nothing is to be committed to `ma
 Repo: `C:\Users\Admin\predictive-maintenance-digital-twin-demo`
 Production reference (read-only): `C:\Users\Admin\Uni\ProjectA\Predictive-maintenance-digital-twin-simulator`
 
-Status: **Milestone 1a (MLOps) complete and verified. Milestone 1b (Knowledge Wiki) is next.**
-Verified with `npx tsc --noEmit`, `npm run lint`, `npm run test:unit` (70 passing, 18 of them
-new in `test/demo-mlops.test.ts`), `npm run build`, and `npx playwright test e2e/mlops.spec.ts`
-(2 passing, one of which walks registry → data → recipe → training → promotion in a real
-browser and asserts no page errors).
+Status: **Milestone 1 complete and verified — both MLOps and the Agent Knowledge Wiki are
+in. Milestone 2 (README) is next.**
+Verified with `npx tsc --noEmit`, `npm run lint`, `npm run test:unit` (104 passing, 52 of them
+new across `test/demo-mlops.test.ts` and `test/demo-knowledge.test.ts`), `npm run build`
+(both `/mlops` and `/knowledge` prerender static), and `npx playwright test` (9 passing,
+including three that walk the wiki by graph, link, search, edit and refusal in a real
+browser).
 
 ---
 
@@ -172,39 +174,74 @@ raw columns give a random forest ~0.80 balanced accuracy; adding the three calcu
 features the AI4I rules are actually written in (`power_w`, `temp_difference_k`,
 `overstrain`) takes it to ~0.93.
 
-### Milestone 1b — Agent Knowledge Wiki
-5. `lib/demo-knowledge/corpus.ts` — the markdown pages as template literals. Port from
-   production `knowledge/`: all of `domain/`, `concepts/`, `sources/`, `agent/`, plus
-   `fleet/machine-a.md`; write fresh fleet pages for the demo's own public/synthetic
-   profiles; **exclude `fleet/machine-c.md`**. Keep frontmatter, wikilinks, typed relations,
-   conflict callouts.
-6. `lib/demo-knowledge/store.ts` — frontmatter parser, wikilink extraction, graph build
-   (nodes/edges/wanted pages/tags/namespaces), **BM25 search** (this is the README claim),
-   backlinks, lint report (orphans, broken links, unsourced claims, duplicates, stale,
-   conflicts, missing frontmatter), in-memory save/create/delete + version history, and a
-   subscribe/getSnapshot store like the MLOps one.
-7. `components/knowledge/graph-canvas.tsx` — port from production (d3-force, pan/zoom, drag
-   to pin, neighbour highlight, namespace colours from `--chart-*`, wanted pages dashed).
-8. `components/knowledge/note-editor.tsx` — port (markdown preview via `react-markdown` +
-   `remark-gfm`, wikilinks rendered as buttons, edit/preview toggle, save-with-reason,
-   backlinks / links-out footer, version history).
-9. `components/knowledge/sources-panel.tsx` + `lint-panel.tsx` — adapt: "sources" becomes a
-   provenance list over the bundled `sources/` pages rather than an upload/ingest job.
-10. `app/(protected)/knowledge/page.tsx` — graph + right pane, namespace filters, wanted /
-    tags toggles, search box that dims non-matching nodes, wiki-health button, focus mode.
-    Add a scripted "what the agent did" example that links back to `/chat` traces.
-11. Sidebar + header label entries.
+### Milestone 1b — Agent Knowledge Wiki ✅ done
 
-### Verification (Milestone 1a: all green)
+Route `/knowledge`, wired into `app-sidebar.tsx` and `app-header.tsx`.
+
+**The corpus — 50 pages, reviewed page by page before porting.**
+`lib/demo-knowledge/corpus/{root,domain,concepts,sources,fleet,agent,raw}.ts` hold the
+markdown as template literals, frontmatter and all.
+
+- `domain/` (12) and `concepts/` (11) ported essentially verbatim — public standards and
+  modelling knowledge, every numeric claim carrying a `sources:` entry or an explicit
+  Unsourced callout.
+- `sources/` (11) ported, with production repo paths scrubbed. The AI4I page was rewritten
+  where it mattered: production checks the real CSV into the repo, this demo does not, so
+  the page now separates the published counts (339 failures, 96.61 % baseline) from what the
+  demo's own seeded reconstruction produces (114 of 2 000, 94.30 % baseline) and says why
+  the two are not interchangeable.
+- `fleet/` (4) **written fresh** for this demo's registry: `ai4i-milling-machine`,
+  `utility-pump-02`, `packaging-drive-01`, and `schema-generalisation` — the page that tells
+  the bespoke-pipeline → generic-schema story in full, including what the abstraction cost.
+  Every number on them was read off the MLOps registry, not invented.
+- `agent/` (8) **rewritten**, not ported. Production's operational pages carry a real
+  database schema and real client sampling cadences; these describe this demo's own tool
+  catalogue, capability guards and browser-side data contract instead.
+- `raw/` (1) — the legacy maintenance-guidelines document, unedited, so the corpus's claim
+  that its vibration table is four times too permissive can be checked by the reader rather
+  than taken on trust.
+
+`fleet/machine-c.md` was **not** ported, and a unit test asserts no page mentions it or any
+client sensor.
+
+**The library.** `frontmatter.ts` (a small YAML reader for exactly this schema, which never
+throws on half-typed input), `graph.ts` (nodes/edges/wanted pages/tags/truncation, typed
+frontmatter relations, title and alias resolution), `search.ts` (BM25 plus exact title,
+alias and tag boosts, each hit saying *why* it scored), `lint.ts` (duplicates, unsourced
+numbers, missing frontmatter, orphans, broken links, wanted pages, conflicts, stale),
+`store.ts` (subscribe/getSnapshot, save/create/delete/restore, version history, append-only
+log with a required reason).
+
+**The pane.** `graph-canvas.tsx` (d3-force, pan/zoom, drag-to-pin, neighbour highlight,
+namespace colours from `--chart-*`, wanted pages dashed and hollow), `note-editor.tsx`
+(preview/source toggle, wikilinks as navigable buttons, backlinks and links-out footer,
+save-with-reason), `lint-panel.tsx`, `sources-panel.tsx` (provenance, with each source's
+kind read out of its own Kind row and a count of what cites it), `history-panel.tsx`
+(version history plus the vault log).
+
+Three things that came out of actually looking at the result:
+
+- **Code spans were being read as links.** `AGENT-WIKI` explains the syntax by writing
+  ``[[link]]`` inside backticks, which produced three phantom wanted pages. Body-link
+  extraction now strips fenced and inline code first, which is also what Obsidian does.
+- **The force layout collapsed into a ball.** 50 nodes and 409 edges at d3's default charge
+  is unreadable; charge is now −720 with a 112 px link distance and weak link strength.
+- **Labelling every node was noise.** Only hubs are named by default; everything else is
+  named on hover, on selection, or once the reader has zoomed in.
+
+Two rules are enforced in the store rather than hidden in the UI, and both are asserted in
+tests: `raw/` is immutable, and `agent/` is the assistant's own instructions and so is not
+editable from the pane the assistant writes through.
+
+### Verification (Milestone 1: all green)
 ```
 cd apps/frontend
-npx tsc --noEmit      # or: npm run build
+npx tsc --noEmit
 npm run lint
-npm run test:unit
+npm run test:unit     # 104 passing
+npm run build
+npx playwright test   # 9 passing
 ```
-Consider adding vitest cases for `demo-mlops/formula.ts` (tokenizer + evaluator) and
-`demo-knowledge` BM25 — both are pure and easy to test, and the repo's test layout is
-`apps/frontend/test/**`.
 
 ### Milestone 2 — README
 - Keep the existing narrative voice and structure; do not turn it into product docs.

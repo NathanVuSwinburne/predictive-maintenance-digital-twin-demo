@@ -26,6 +26,7 @@ const pageLabelMap: Record<string, string> = {
   chat: "AI Assistant",
   simulator: "Simulator",
   mlops: "MLOps",
+  knowledge: "Knowledge Wiki",
   admin: "Admin",
   account: "Account",
   security: "Security",
