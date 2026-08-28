@@ -9,13 +9,37 @@
 [![Live Demo](https://img.shields.io/badge/Explore_the_live_demo-2563EB?style=for-the-badge&logo=vercel&logoColor=white)](https://predictive-maintenance-digital-twin.vercel.app/dashboard)
 [![Next.js](https://img.shields.io/badge/Next.js_16-111827?style=for-the-badge&logo=nextdotjs&logoColor=white)](apps/frontend)
 [![FastAPI](https://img.shields.io/badge/FastAPI-059669?style=for-the-badge&logo=fastapi&logoColor=white)](apps/backend)
-[![AI Agents](https://img.shields.io/badge/Agentic_AI-7C3AED?style=for-the-badge&logo=openai&logoColor=white)](#chapter-5-the-dashboard-needed-a-brain)
+[![AI Agents](https://img.shields.io/badge/Agentic_AI-7C3AED?style=for-the-badge&logo=openai&logoColor=white)](#the-dashboard-needed-a-brain)
 
 `DATA ANALYSIS` → `DATA SCIENCE` → `MLOPS` → `DIGITAL TWIN` → `AI ENGINEERING`
 
-[The story](#the-short-version) · [Results](#what-survived-the-experiments) · [MLOps](#chapter-3-a-trained-model-is-not-yet-a-workflow) · [Knowledge wiki](#chapter-6-memory-the-agent-can-read-and-so-can-you) · [Architecture](#under-the-hood) · [Run locally](#run-it-yourself)
+**[Start anywhere ↓](#start-anywhere)**
+
+[The story](#the-short-version) · [MLOps](#a-trained-model-is-not-yet-a-workflow) · [Knowledge wiki](#memory-the-agent-can-read-and-so-can-you) · [Screens](#the-demo-in-pictures) · [Architecture](#under-the-hood) · [Run locally](#run-it-yourself)
 
 </div>
+
+---
+
+## Start anywhere
+
+This is written as a set of connected pages rather than a sequence. Each one ends with where to go next, so you can follow the story straight through or drop into the part you came for.
+
+| Page | What it answers |
+|---|---|
+| [The short version](#the-short-version) | What this is, and the three data profiles behind it |
+| [First, understand the machines](#first-understand-the-machines) | What each dataset could honestly support |
+| [Then make the signal predictive](#then-make-the-signal-predictive) → [what survived](#what-survived-the-experiments) | The models, and the results that held up |
+| [A trained model is not yet a workflow](#a-trained-model-is-not-yet-a-workflow) | **MLOps** — a machine's schema, a frozen recipe, an honest metric, a promotion gate |
+| [A prediction you can challenge](#a-prediction-is-more-useful-when-you-can-challenge-it) | The digital twin: baseline against simulated intervention |
+| [The dashboard needed a brain](#the-dashboard-needed-a-brain) | The supervisor agent, its tools, and its visible traces |
+| [Memory the agent can read](#memory-the-agent-can-read-and-so-can-you) | **Knowledge wiki** — why the agent's memory is a wiki and not a vector index |
+| [Close the loop](#close-the-loop-with-live-ingestion) | The MQTT ingestion prototype |
+| [The demo, in pictures](#the-demo-in-pictures) | Every screen, and where it is explained |
+| [Under the hood](#under-the-hood) | Architecture, stack, and what gets persisted |
+| [Run it yourself](#run-it-yourself) | Demo mode in four commands, or the whole stack |
+| [What this leans on](#what-this-leans-on) | The datasets, standards and the paper behind the wiki |
+| [Scope, credit and provenance](#scope-credit-and-provenance) | Who built what, and what is deliberately not here |
 
 ---
 
@@ -52,11 +76,13 @@ These names identify data profiles, not three physical machines connected to the
 > [!IMPORTANT]
 > The public Vercel experience is a **sanitized portfolio demo**. Its “live” values are deterministic demo data. Machine C uses sanitized client-derived fixtures and clearly labelled synthetic continuations. Private raw readings, backend services, databases, and API keys are not deployed.
 >
-> Two panes are an exception worth knowing about. The [MLOps workspace](#chapter-3-a-trained-model-is-not-yet-a-workflow) and the [knowledge wiki](#chapter-6-memory-the-agent-can-read-and-so-can-you) are frontend-only but not scripted: they really compute, in your browser, over public and synthetic data only.
+> Two panes are an exception worth knowing about. The [MLOps workspace](#a-trained-model-is-not-yet-a-workflow) and the [knowledge wiki](#memory-the-agent-can-read-and-so-can-you) are frontend-only but not scripted: they really compute, in your browser, over public and synthetic data only.
+
+<sub>↑ [Map](#start-anywhere) · → **Next:** [First, understand the machines](#first-understand-the-machines) · ↔ **Related:** [Run it yourself](#run-it-yourself)</sub>
 
 ---
 
-## Chapter 1: First, understand the machines
+## First, understand the machines
 
 Before training anything, we had to work out what each dataset could actually tell us.
 
@@ -87,9 +113,11 @@ We used time-series generative modelling (TSGM) to expand the Machine C developm
 
 The public repository keeps those boundaries explicit: observed fixture, synthetic continuation, and deterministic demo state are separate concepts.
 
+<sub>↑ [Map](#start-anywhere) · → **Next:** [Then make the signal predictive](#then-make-the-signal-predictive) · ↔ **Related:** [What this leans on](#what-this-leans-on)</sub>
+
 ---
 
-## Chapter 2: Then make the signal predictive
+## Then make the signal predictive
 
 Once the data story was defensible, the project moved from analysis into modelling.
 
@@ -127,11 +155,13 @@ These are held-out results from checked-in Machine C artifacts. They are not the
 
 **The honest footnote:** the medium-risk test subset has only three samples (F1 0.4000). The aggregate score is useful, but it is not evidence of uniform performance across every class.
 
+<sub>↑ [Map](#start-anywhere) · → **Next:** [A trained model is not yet a workflow](#a-trained-model-is-not-yet-a-workflow) · ↔ **Related:** [A prediction you can challenge](#a-prediction-is-more-useful-when-you-can-challenge-it)</sub>
+
 ---
 
-## Chapter 3: A trained model is not yet a workflow
+## A trained model is not yet a workflow
 
-Chapter 2 produced numbers. Numbers turned out to be the easy part.
+The section above produced numbers. Numbers turned out to be the easy part.
 
 Before this project I worked as an **ML engineer intern**, and what stayed with me was not the modelling. It was the distance between *training a model* and *having a workflow someone else can rerun next month and get the same artifact back*. Preparation lived in a notebook cell. The scaler was fitted in the training script and re-implemented — subtly differently — in the serving path. The score arrived in a chat message with no record of which rows produced it.
 
@@ -205,9 +235,11 @@ The class prior on that split is 94.3%, which is the number both accuracies have
 
 <strong>Promotion moves an alias, not a file.</strong> Every candidate is shown against the trivial answer with a verdict attached, and nothing serves until someone chooses — so a caller gets an honest error rather than a silently stale model.
 
+<sub>↑ [Map](#start-anywhere) · → **Next:** [A prediction you can challenge](#a-prediction-is-more-useful-when-you-can-challenge-it) · ↔ **Related:** [Memory the agent can read](#memory-the-agent-can-read-and-so-can-you) · [Under the hood](#under-the-hood)</sub>
+
 ---
 
-## Chapter 4: A prediction is more useful when you can challenge it
+## A prediction is more useful when you can challenge it
 
 A probability alone does not tell an operator what to do next. So the models became a digital twin: a place to compare current conditions with a simulated intervention.
 
@@ -223,9 +255,11 @@ The simulator keeps the two timelines visible:
 
 That changed the product question from **“Will it fail?”** to **“What can we do now, and what might that change?”**
 
+<sub>↑ [Map](#start-anywhere) · → **Next:** [The dashboard needed a brain](#the-dashboard-needed-a-brain) · ↔ **Related:** [Then make the signal predictive](#then-make-the-signal-predictive)</sub>
+
 ---
 
-## Chapter 5: The dashboard needed a brain
+## The dashboard needed a brain
 
 The first chatbot used a fixed router. Every new intent made it more brittle, so we replaced it with a **supervisor agent** that can choose tools and delegate work.
 
@@ -287,11 +321,13 @@ The team observed roughly a **75% improvement in typical response time** after t
 > [!NOTE]
 > The trace shows tool calls, delegations, and results at a high level. It does not expose hidden chain-of-thought. In the frontend-only demo these actions are scripted examples of the response contract. Full-stack mode connects the same workflow to FastAPI, PostgreSQL, model services, and the Obsidian knowledge vault.
 
+<sub>↑ [Map](#start-anywhere) · → **Next:** [Memory the agent can read](#memory-the-agent-can-read-and-so-can-you) · ↔ **Related:** [Under the hood](#under-the-hood)</sub>
+
 ---
 
-## Chapter 6: Memory the agent can read, and so can you
+## Memory the agent can read, and so can you
 
-The supervisor in Chapter 5 already reads from a maintenance wiki. This chapter is about why that knowledge is a **wiki** and not a vector index.
+The [supervisor](#the-dashboard-needed-a-brain) already reads from a maintenance wiki. This chapter is about why that knowledge is a **wiki** and not a vector index.
 
 The design was inspired by **["Retrieval as Reasoning: Self-Evolving Agent-Native Retrieval via LLM-Wiki"](https://arxiv.org/abs/2605.25480)**, which argues for retrieval an agent *navigates* rather than merely queries, and reports promising gains on multi-hop and cross-document reasoning. The paper inspired the design here; this project has not reproduced its benchmarks and does not inherit its results.
 
@@ -329,9 +365,11 @@ Because the assistant writes through this pane, two rules live in the store rath
 
 The demo's vault at **`/knowledge`** carries 50 interlinked pages: ISO vibration severity zones, bearing degradation physics, envelope analysis, class imbalance and threshold selection, provenance for each public dataset, and the fleet's own registry entries. It is public-domain knowledge and this project's own decisions — the client machine's page is not here, and a test enforces that no page mentions it or any client sensor.
 
+<sub>↑ [Map](#start-anywhere) · → **Next:** [Close the loop](#close-the-loop-with-live-ingestion) · ↔ **Related:** [What this leans on](#what-this-leans-on) · [A trained model is not yet a workflow](#a-trained-model-is-not-yet-a-workflow)</sub>
+
 ---
 
-## Chapter 7: Close the loop with live ingestion
+## Close the loop with live ingestion
 
 The final step is the bridge back to the physical machines. We prototyped configurable MQTT subscriptions so telemetry sources can be mapped without hard-coding one broker or one machine.
 
@@ -351,6 +389,27 @@ The final step is the bridge back to the physical machines. We prototyped config
 </table>
 
 This is a prototype for future ingestion, not a claim that the public Vercel demo is connected to live industrial equipment.
+
+<sub>↑ [Map](#start-anywhere) · → **Next:** [The demo, in pictures](#the-demo-in-pictures) · ↔ **Related:** [Under the hood](#under-the-hood)</sub>
+
+---
+
+## The demo, in pictures
+
+Every screen here appears somewhere above. This is the index if you would rather jump straight to one.
+
+| Screen | Explained in |
+|---|---|
+| [Machine registry and schema history](assets/mlops_machine_registry.png) | [Machine C was never generic](#machine-c-was-never-generic) |
+| [Preprocessing recipe with calculated features](assets/mlops_prepare_recipe.png) | [Five stages you can open](#five-stages-you-can-open) |
+| [Two runs on one scorecard](assets/mlops_model_scorecard.png) | [The calculated-feature moment](#the-calculated-feature-moment) |
+| [The promotion gate](assets/mlops_promotion_gate.png) | [Honesty is the feature](#honesty-is-the-feature) |
+| [The knowledge graph](assets/knowledge_wiki_graph.png) | [Memory the agent can read](#memory-the-agent-can-read-and-so-can-you) |
+| [A searched-and-opened wiki page](assets/knowledge_wiki_page.png) | [Memory the agent can read](#memory-the-agent-can-read-and-so-can-you) |
+| [The provenance panel](assets/knowledge_wiki_provenance.png) | [Memory the agent can read](#memory-the-agent-can-read-and-so-can-you) |
+| [Digital-twin simulation](assets/similation_pane_with_mockdata.png) | [A prediction you can challenge](#a-prediction-is-more-useful-when-you-can-challenge-it) |
+| [Agent traces and telemetry retrieval](assets/chatbot_tracing.png) | [From a complaint to an investigation](#from-a-complaint-to-an-investigation) |
+| [MQTT subscription prototype](assets/MQTT_subscription_2.png) | [Close the loop](#close-the-loop-with-live-ingestion) |
 
 ---
 
@@ -408,6 +467,8 @@ Machines, telemetry profiles, predictions, recommendations, history, simulations
 
 </details>
 
+<sub>↑ [Map](#start-anywhere) · → **Next:** [Run it yourself](#run-it-yourself) · ↔ **Related:** [The demo, in pictures](#the-demo-in-pictures)</sub>
+
 ---
 
 ## Run it yourself
@@ -447,6 +508,25 @@ npm run test:e2e
 
 Import the repository into Vercel and set the root directory to `apps/frontend`. The included `vercel.json` enables demo mode without external services or secrets.
 
+<sub>↑ [Map](#start-anywhere) · → **Next:** [What this leans on](#what-this-leans-on) · ↔ **Related:** [Memory the agent can read](#memory-the-agent-can-read-and-so-can-you)</sub>
+
+---
+
+## What this leans on
+
+Very little here was invented from nothing, and the parts that came from somewhere say so — in the wiki's provenance panel as well as here.
+
+| Source | What it gave the project |
+|---|---|
+| [AI4I 2020 Predictive Maintenance Dataset](https://archive.ics.uci.edu/dataset/601/ai4i+2020+predictive+maintenance+dataset) | The public classification baseline, and the five published failure rules the [MLOps demo](#a-trained-model-is-not-yet-a-workflow) regenerates its rows from |
+| ISO 10816-3 / 20816-3 and ISO 13374-1 | Vibration severity zones and the condition-monitoring block model the wiki's `domain/` pages are written against |
+| Rolling-element bearing fault literature — envelope analysis, the P-F curve | The physics the assistant reasons with, cited page by page rather than in bulk |
+| Time-series generative modelling (TSGM) | The [synthetic continuation](#the-synthetic-data-decision) used to expand the Machine C development set |
+| ["Retrieval as Reasoning: Self-Evolving Agent-Native Retrieval via LLM-Wiki"](https://arxiv.org/abs/2605.25480) | Inspired the design of the [knowledge wiki](#memory-the-agent-can-read-and-so-can-you): retrieval an agent navigates rather than only queries. The paper reports promising multi-hop and cross-document gains; this project has not reproduced them and does not claim them. |
+| Working as an ML engineer intern | The reason there is a frozen recipe and a [promotion gate](#honesty-is-the-feature) at all, rather than a notebook and a number |
+
+<sub>↑ [Map](#start-anywhere) · → **Next:** [Scope, credit and provenance](#scope-credit-and-provenance)</sub>
+
 ---
 
 ## Scope, credit, and provenance
@@ -456,6 +536,8 @@ This is a sanitized portfolio repository from Swinburne University **COS40005 Co
 My focus was the **ML/AI engineering layer**: analysing the original routing limitations, migrating the assistant to a native tool-calling supervisor, implementing the read-only SQL sub-agent, building the knowledge wiki and connecting it to the agent, surfacing agent traces, adding session-level working memory, and moving the bespoke Machine C pipeline onto a generic machine schema with a visible preparation, training and promotion workflow.
 
 The full team and individual contributions are documented in [CONTRIBUTORS.md](CONTRIBUTORS.md).
+
+<sub>↑ [Back to the map](#start-anywhere)</sub>
 
 Private client readings, credentials, internal documents, and proprietary material are intentionally excluded. The hosted application uses ten fictional fleet instances derived from three model profiles; these are demo assets, not ten independently trained models.
 

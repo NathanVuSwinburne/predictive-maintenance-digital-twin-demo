@@ -4,7 +4,7 @@ Working branch: **`dev`** (created off `main`; nothing is to be committed to `ma
 Repo: `C:\Users\Admin\predictive-maintenance-digital-twin-demo`
 Production reference (read-only): `C:\Users\Admin\Uni\ProjectA\Predictive-maintenance-digital-twin-simulator`
 
-Status: **Milestones 1–3 complete. Milestone 4 (navigable README) is next.**
+Status: **All four milestones complete and verified.**
 Verified with `npx tsc --noEmit`, `npm run lint`, `npm run test:unit` (104 passing, 52 of them
 new across `test/demo-mlops.test.ts` and `test/demo-knowledge.test.ts`), `npm run build`
 (both `/mlops` and `/knowledge` prerender static), and `npx playwright test` (9 passing,
@@ -322,10 +322,25 @@ The README's calculated-feature table was **restated against the workspace's own
 screenshot under it are the same run: balanced accuracy 83.7 % → 93.1 %, failure recall
 69.6 % → 87.0 %, plain accuracy 96.3 % → 98.5 %, against a 94.3 % class prior.
 
-### Milestone 4 — navigable README
-Markdown anchors + small contextual nav lines so a reader can hop between project story,
-Digital Twin, AI assistant, MLOps, Knowledge Wiki, architecture, screenshots and research.
-Wiki-like, but still plain GitHub Markdown — no documentation framework.
+### Milestone 4 — navigable README ✅ done
+
+The README is now a set of linked pages rather than a numbered sequence, in plain GitHub
+Markdown — no framework, no generated table of contents, no HTML beyond the `<sub>` the
+trails use.
+
+- **`Chapter N:` is gone from every heading.** Sections are named for what they answer, and
+  the two prose references to a chapter number were rewritten as links.
+- **A `Start anywhere` map** sits under the header: thirteen rows, each a page and the
+  question it answers. The header keeps a short jump line pointing into it.
+- **Every page ends with a trail** — `↑ Map · → Next · ↔ Related` — so the reader is always
+  one click from the map, the next page, and the page this one leans on.
+- **Two new pages.** `The demo, in pictures` indexes all ten screens against the section that
+  explains each, and `What this leans on` collects the datasets, standards, TSGM, the
+  LLM-Wiki paper (inspiration only, benchmark results explicitly not claimed) and the intern
+  experience behind the promotion gate.
+
+74 internal anchors, all checked against GitHub's own slugging rules; every image and
+relative path resolves.
 
 ---
 
