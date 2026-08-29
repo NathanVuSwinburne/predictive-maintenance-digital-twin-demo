@@ -363,7 +363,7 @@ The standard approach, chopping documents into chunks and converting each one in
     <td width="50%">
       <img src="assets/knowledge_wiki_page.png" alt="Searching the wiki and reading a page, with the graph dimming everything that did not match" />
       <br />
-      <strong>Search, then follow the links.</strong> Keyword search ranks the matches, the graph dims everything that did not match, and the page itself cites its sources as links you can walk.
+      <strong>Search, then follow the links.</strong> Keyword search ranks the matches, the graph dims everything that did not match, and every backlink says which relation it arrived by. Eleven pages point at this one along fifteen links, because a page is allowed to point at another twice for two different reasons.
     </td>
     <td width="50%">
       <img src="assets/knowledge_wiki_provenance.png" alt="The provenance panel listing each source, what it is, and how many pages cite it" />
