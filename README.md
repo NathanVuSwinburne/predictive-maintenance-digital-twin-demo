@@ -208,9 +208,9 @@ Training ends there, and deliberately. It produces candidates, nothing more. Mov
 
 <strong>One place a value is written.</strong> The hints above are read-only and list every parameter the model accepts; the box below is the payload the run will carry. Copy, edit, apply, and it is validated before anything is applied.
 
-![The preprocessing recipe with three calculated features written against the machine's columns](assets/mlops_prepare_recipe.png)
+![The preprocessing recipe, with the three calculated features this machine's failure rules are written in offered as suggestions](assets/mlops_prepare_recipe.png)
 
-<strong>The recipe is the deliverable, not just the model.</strong> Split, missing values, scaling and calculated columns on the left; what they do to the actual rows on the right, with every statistic measured on the training rows only, so the test rows stay honest.
+<strong>The recipe is the deliverable, not just the model.</strong> Split, missing values, scaling and calculated columns on the left; what they do to the actual rows on the right. The three formulas the AI4I rules are written in are offered rather than pre-applied, and every statistic on the screen is fitted on Train only, so the test rows stay honest.
 
 ### The calculated-feature moment
 
@@ -368,7 +368,7 @@ The standard approach, chopping documents into chunks and converting each one in
     <td width="50%">
       <img src="assets/knowledge_wiki_provenance.png" alt="The provenance panel listing each source, what it is, and how many pages cite it" />
       <br />
-      <strong>Where the numbers come from.</strong> One page per outside document, marked primary, secondary, paywalled or internal, with a count of how many pages depend on it.
+      <strong>Where the numbers come from.</strong> One page per outside document, marked primary, secondary or internal, each stating what was actually read and what was not, with a count of how many pages depend on it. One entry admits the handbook behind it is paid and was never opened.
     </td>
   </tr>
 </table>

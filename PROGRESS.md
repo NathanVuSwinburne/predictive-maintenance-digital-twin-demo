@@ -344,6 +344,79 @@ relative path resolves.
 
 ---
 
+## Session 2026-08-29 — production UX parity (branch `fix/production-ux-parity`)
+
+PR #2 (`dev` -> `main`) is open and unmerged. This branch sits on top of `dev` and should be
+folded into that PR or opened as its own once the screenshots land.
+
+Started from six things the user reported after reviewing the Vercel preview:
+
+1. **The wiki note preview could not be scrolled.** Root cause: all four right-pane panels
+   were `flex h-full flex-col` inside a Card that was itself a column flex container with
+   `max-h-[52rem] overflow-hidden`. `h-full` against an indefinite parent height resolves to
+   `auto`, so the body's `flex-1 min-h-0 overflow-auto` never got a bounded height and the
+   markdown was clipped with no scrollbar. Edit mode worked only because the textarea scrolls
+   itself. Fixed by giving the Card a definite height and the panels `min-h-0 flex-1`.
+   **Then a second bug appeared:** with a definite height, the unconstrained 15-item backlinks
+   panel took the whole pane and `min-h-0` let the body shrink to nothing. Links list is
+   capped at `max-h-44` and scrolls on its own; body is `basis-0` so it is sized from what is
+   left. e2e test asserts the pane is over 300px tall BEFORE asserting it scrolls, because the
+   first version of that test passed against a 30px body.
+2. **MLOps machine pane too verbose.** Rebuilt to production's shape: plain list, register
+   form on the right (disabled, one line saying why). The "why there is no add machine form"
+   essay is gone; schema history is a `<details>`.
+3. **Missing JSON configuration.** Ported production's `training-configuration-panel.tsx`:
+   read-only parameter hints, editable Configuration JSON, Download effective JSON, Apply JSON
+   with validation. Deleted the per-parameter number fields, which is exactly what production
+   had already deleted (its source carries a comment saying two sets of controls were only ever
+   a way for the two to disagree).
+4. **"Who invented the promote?"** Nobody. It is real: production
+   `app/(protected)/admin/models/page.tsx` calls `promoteEntityTrainingRun` and moves the
+   MLflow `@production` alias, with a required override reason on `not_recommended`. The demo
+   had invented only the *placement*. Moved to `/admin/models` as the approvals table, wired
+   into the admin tab bar and overview. `Stage` type lost `"promote"`; the wizard is four
+   stages and links across.
+5. **Design read as AI-generated.** User chose "sharpen, keep teal": `--radius` 0.72rem ->
+   0.25rem, panel shadows flattened, cards solid instead of `bg-card/95` over the page grid.
+   Production's own tokens (blue `#1d4ed8`, `--radius: 0.18rem`) were deliberately NOT adopted,
+   so existing screenshots stay valid.
+6. **Dark mode hard to read.** Measured: contrast was fine (muted text 7.64:1, AAA). The real
+   problem was borders at 1.52:1 against a card plus shadows invisible on a dark ground, so
+   panels ran together. Borders `#30454b` -> `#46646e` (2.42:1), inputs and muted text up,
+   `instrument-label` 0.68rem/0.14em -> 0.72rem/0.08em, page grid alpha 26% -> 18%.
+
+### Found while reviewing the screenshots, not reported by the user
+
+- **Backlinks showed the same page twice** with nothing to tell the entries apart, under a
+  label reading "15 pages point here" while counting rows. A page can point here under two
+  relations, which is the typed-link feature working, but the relation was only in a `title`
+  tooltip. Each chip names its relation now; the label counts distinct pages. Test added.
+- Three README captions were wrong about their own screenshots: a "paywalled" provenance
+  category that does not exist in the corpus (only Primary/Secondary/Internal), calculated
+  features described as applied when the screenshot shows them offered as suggestions, and a
+  schema-history claim that no longer matched the collapsible.
+- Registry copy said the machine list was "below" the form, true only once the layout stacks.
+
+### README
+
+Cut roughly 240 words net (more gross, since the JSON stage and the approvals paragraph are
+new text): the sentences restating the "In plain terms" summary directly above them, bullets
+repeating the table above them, and transitions that only announced the next section. No
+number or claim changed. Still zero long dashes; all anchors resolve.
+
+### Verified
+
+`tsc --noEmit`, `eslint`, `vitest run` (35 knowledge tests incl. the new backlink one),
+`npm run build` with `/admin/models` routed, and Playwright green including the new scroll
+regression, which was confirmed to fail with the fix reverted.
+
+**The click-through reproduces the README's headline table exactly:** Random forest at UI
+defaults gives 83.7% balanced / 69.6% failure recall on raw columns and 93.1% / 87.0% with
+the three calculated features, against the 94.3% trivial answer. So "a run anyone can
+reproduce by clicking" is now a checked claim, not a hopeful one.
+
+---
+
 ## Working rules to keep honouring
 
 - Inspect both repos before changing anything; production = behaviour, demo = styling.
