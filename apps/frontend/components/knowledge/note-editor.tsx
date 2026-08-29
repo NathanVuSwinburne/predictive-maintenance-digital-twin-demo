@@ -263,7 +263,7 @@ export function NoteEditor({
         )}
       </div>
 
-      <div className="min-h-0 flex-1 overflow-auto p-3.5 text-sm" data-testid="note-body">
+      <div className="min-h-0 flex-1 basis-0 overflow-auto p-3.5 text-sm" data-testid="note-body">
         {isEditing ? (
           <textarea
             className="h-full min-h-[24rem] w-full resize-none rounded-lg border bg-background p-2.5 font-mono text-xs leading-5 outline-none focus-visible:border-ring"
@@ -299,7 +299,10 @@ export function NoteEditor({
       )}
 
       {!isEditing && (note.backlinks.length > 0 || note.outbound.length > 0) && (
-        <div className="border-t bg-muted/15 p-3 text-[11px]" data-testid="note-links">
+        <div
+          className="max-h-44 shrink-0 overflow-auto border-t bg-muted/15 p-3 text-[11px]"
+          data-testid="note-links"
+        >
           {note.backlinks.length > 0 && (
             <div className="mb-2">
               <p className="instrument-label mb-1.5 flex items-center gap-1">

@@ -91,6 +91,10 @@ test("the preview scrolls a page taller than its pane", async ({ page }) => {
   // The pane used to size itself to its content and get clipped by the card, which left the
   // reader with no way to reach the bottom of a page.
   const body = page.getByTestId("note-body");
+  // A body squeezed to nothing by the backlinks panel below it would also "overflow",
+  // so the pane has to be a readable size before the scroll assertion means anything.
+  const height = await body.evaluate((node) => node.clientHeight);
+  expect(height).toBeGreaterThan(300);
   const overflows = await body.evaluate((node) => node.scrollHeight > node.clientHeight + 8);
   expect(overflows).toBe(true);
 

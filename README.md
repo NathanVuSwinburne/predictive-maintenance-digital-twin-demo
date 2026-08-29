@@ -189,7 +189,7 @@ What the rewrite bought is everything below.
 
 ![The MLOps machine registry, with the schema history of the AI4I machine beside it](assets/mlops_machine_registry.png)
 
-<strong>The history is part of the machine.</strong> Each entry carries every version of its own column contract, ending where it stopped needing code written specially for it.
+<strong>The registry is deliberately dull.</strong> A list and a register form, the same shape the production app uses, with the register button off because writing one needs a database. Open **Schema history** and each machine unfolds every version of its own column contract, ending where it stopped needing code written specially for it.
 
 ### Four stages, and a decision that is not the trainer's to make
 

@@ -104,7 +104,7 @@ export function MachineRegistryStage({ machines, selectedId, onSelect, onContinu
             <p className="flex items-start gap-2 text-xs leading-5 text-muted-foreground">
               <LockSimpleIcon className="mt-0.5 shrink-0" />
               Registering writes to a database, so it is off in this demo. The three machines
-              below it are fixed; everything downstream is computed live in your browser.
+              in the registry are fixed; everything downstream is computed live in your browser.
             </p>
           </CardContent>
         </Card>
