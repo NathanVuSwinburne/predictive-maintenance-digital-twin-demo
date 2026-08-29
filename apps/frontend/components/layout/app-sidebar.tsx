@@ -7,7 +7,9 @@ import {
   CirclesThreePlusIcon,
   ClockCounterClockwiseIcon,
   CpuIcon,
+  FlaskIcon,
   GearIcon,
+  GraphIcon,
   GaugeIcon,
   HouseIcon,
   SpinnerIcon,
@@ -37,6 +39,8 @@ const navigation = [
   { href: "/history", label: "History", icon: ClockCounterClockwiseIcon },
   { href: "/chat", label: "AI Assistant", icon: ChatCircleDotsIcon },
   { href: "/simulator", label: "Simulator", icon: GaugeIcon },
+  { href: "/mlops", label: "MLOps", icon: FlaskIcon },
+  { href: "/knowledge", label: "Knowledge Wiki", icon: GraphIcon },
   {
     href: "/account/security",
     label: "Account Security",
