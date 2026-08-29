@@ -191,6 +191,10 @@ export function NoteEditor({
     [note?.id, resolveLink],
   );
 
+  // One page can point here under two relations, so the list is longer than the number of
+  // pages in it. The label counts pages, because that is what it says it counts.
+  const backlinkPages = new Set(note?.backlinks.map((link) => link.id) ?? []).size;
+
   if (!note) {
     return (
       <div className="flex h-full min-h-0 flex-1 items-center justify-center p-6 text-center text-sm text-muted-foreground">
@@ -307,9 +311,12 @@ export function NoteEditor({
             <div className="mb-2">
               <p className="instrument-label mb-1.5 flex items-center gap-1">
                 <LinkSimpleIcon />
-                {note.backlinks.length === 1
-                  ? "1 page points here"
-                  : `${note.backlinks.length} pages point here`}
+                {backlinkPages === 1 ? "1 page points here" : `${backlinkPages} pages point here`}
+                {note.backlinks.length > backlinkPages && (
+                  <span className="font-normal normal-case tracking-normal">
+                    via {note.backlinks.length} links
+                  </span>
+                )}
               </p>
               <div className="flex flex-wrap gap-1">
                 {note.backlinks.map((link) => (
@@ -321,6 +328,7 @@ export function NoteEditor({
                     title={`via ${link.relation}`}
                   >
                     {link.title}
+                    <span className="ml-1 font-mono text-muted-foreground">{link.relation}</span>
                   </button>
                 ))}
               </div>
@@ -345,6 +353,7 @@ export function NoteEditor({
                     title={link.exists ? `via ${link.relation}` : "Not written yet"}
                   >
                     {link.title}
+                    <span className="ml-1 font-mono text-muted-foreground">{link.relation}</span>
                   </button>
                 ))}
               </div>
