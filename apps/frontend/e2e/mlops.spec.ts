@@ -6,15 +6,16 @@ test.beforeEach(async ({ page }) => {
   await expect(page).toHaveURL(/dashboard/);
 });
 
-test("walks a machine from raw columns to a promoted model", async ({ page }) => {
+test("walks a machine from raw columns to an approved model", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
 
   await page.goto("/mlops");
   await expect(page.getByRole("heading", { name: "MLOps workspace" })).toBeVisible();
 
-  // Step 1 — the registry, and the schema history that explains why it is a registry.
+  // Step 1 — the registry, shaped like the production one: a list and a register form.
   await expect(page.getByRole("button", { name: /AI4I Milling Machine/ }).first()).toBeVisible();
+  await expect(page.getByRole("button", { name: /Register machine/i })).toBeDisabled();
   await page.getByRole("button", { name: /Open .*'s data/i }).click();
 
   // Step 2 — the column contract.
@@ -25,18 +26,21 @@ test("walks a machine from raw columns to a promoted model", async ({ page }) =>
   await expect(page.getByText(/Fitted Train-only statistics/i)).toBeVisible();
   await page.getByRole("button", { name: /Freeze this recipe into a dataset/i }).click();
 
-  // Step 4 — a model really is fitted here, so the wait is for arithmetic, not a timer.
+  // Step 4 — hyperparameters are JSON here, as they are in production.
   await expect(page.getByText("Fit a model")).toBeVisible();
+  await expect(page.getByLabel("Configuration JSON")).toBeVisible();
+  await page.getByRole("button", { name: /^Apply JSON$/ }).click();
+  // A model really is fitted here, so the wait is for arithmetic, not a timer.
   await page.getByRole("button", { name: /Train detect possible failure/i }).click();
   await expect(page.getByText("succeeded")).toBeVisible({ timeout: 30_000 });
   await expect(page.getByText(/Always guessing/i).first()).toBeVisible();
 
-  // Step 5 — the promotion gate.
-  await page.getByRole("button", { name: /Review for promotion/i }).click();
-  await expect(page.getByText(/Send to production/i)).toBeVisible();
-  await page.getByRole("radio").first().check();
-  await page.getByRole("button", { name: /Promote to production/i }).click();
-  await expect(page.getByText(/@production/)).toBeVisible();
+  // Approval is an admin duty on its own page, exactly as it is in the production app.
+  await page.getByRole("link", { name: /Review for promotion/i }).click();
+  await expect(page).toHaveURL(/admin\/models/);
+  await expect(page.getByRole("heading", { name: "Machine model approvals" })).toBeVisible();
+  await page.getByRole("button", { name: /Approve/i }).first().click();
+  await expect(page.getByText(/@production/).first()).toBeVisible();
 
   expect(errors).toEqual([]);
 });

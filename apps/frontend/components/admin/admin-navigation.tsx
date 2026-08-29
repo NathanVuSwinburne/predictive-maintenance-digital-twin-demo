@@ -9,6 +9,7 @@ const adminLinks = [
   { href: "/admin", label: "Overview", value: "overview" },
   { href: "/admin/users", label: "Users", value: "users" },
   { href: "/admin/machines", label: "Machines", value: "machines" },
+  { href: "/admin/models", label: "Model approvals", value: "models" },
 ]
 
 export function AdminNavigation() {
@@ -22,6 +23,10 @@ export function AdminNavigation() {
 
     if (pathname.startsWith("/admin/machines")) {
       return "machines"
+    }
+
+    if (pathname.startsWith("/admin/models")) {
+      return "models"
     }
 
     return "overview"

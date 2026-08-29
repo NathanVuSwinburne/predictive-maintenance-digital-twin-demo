@@ -140,6 +140,20 @@ export default function AdminOverviewPage() {
 
         <Card>
           <CardHeader>
+            <CardTitle className="text-sm">Approve model versions</CardTitle>
+            <CardDescription className="text-sm">
+              Move one trained version per machine and goal to production.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-wrap gap-2">
+            <Button asChild variant="outline">
+              <Link href="/admin/models">Open model approvals</Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
             <CardTitle className="text-sm">
               Inspect machine assignments
             </CardTitle>

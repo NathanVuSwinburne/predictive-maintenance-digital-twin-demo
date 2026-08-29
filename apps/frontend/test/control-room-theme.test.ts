@@ -19,10 +19,24 @@ describe("control room visual system", () => {
     expect(globals).toContain(".data-value");
   });
 
-  it("uses soft instrument geometry in shared cards and controls", () => {
-    expect(source("components/ui/card.tsx")).toContain("rounded-xl");
+  it("keeps the corner radius tight enough to read as an instrument", () => {
+    // The radius token drives every rounded-* utility, so it is the thing to hold. Panels
+    // used to sit at 0.72rem, which read as a marketing page rather than a tool.
+    const radius = /--radius:\s*([\d.]+)rem/.exec(source("app/globals.css"));
+    expect(radius).not.toBeNull();
+    expect(Number(radius![1])).toBeLessThanOrEqual(0.3);
+
+    expect(source("components/ui/card.tsx")).toContain("rounded-lg");
     expect(source("components/ui/button.tsx")).toContain("rounded-lg");
     expect(source("components/ui/input.tsx")).toContain("rounded-lg");
+  });
+
+  it("keeps panel edges visible rather than leaning on a shadow", () => {
+    // In dark mode a shadow on a dark ground does nothing, so the border is the only edge a
+    // panel has. It was 1.52:1 against the card, which lost every edge on the page.
+    const card = source("components/ui/card.tsx");
+    expect(card).toContain("border border-border");
+    expect(card).not.toContain("bg-card/95");
   });
 
   it("keeps the monitoring shell and login portal visibly branded", () => {

@@ -381,7 +381,7 @@ export default function KnowledgePage() {
           />
         </Card>
 
-        <Card className="flex max-h-[52rem] min-h-[34rem] flex-col gap-0 overflow-hidden p-0 lg:min-h-[42rem]">
+        <Card className="flex h-[34rem] flex-col gap-0 overflow-hidden p-0 lg:h-[42rem]">
           {rightPane === "sources" ? (
             <SourcesPanel
               sources={sources}

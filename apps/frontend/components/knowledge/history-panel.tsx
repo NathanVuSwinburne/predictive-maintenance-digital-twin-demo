@@ -39,7 +39,7 @@ export function HistoryPanel({
   onClose: () => void;
 }) {
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full min-h-0 flex-1 flex-col">
       <div className="flex items-center justify-between border-b bg-muted/25 p-3">
         <div>
           <p className="instrument-label">Chronology</p>

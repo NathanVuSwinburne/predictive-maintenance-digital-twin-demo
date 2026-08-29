@@ -128,6 +128,20 @@ describe("the graph", () => {
     expect(detail!.outbound.some((link) => link.id.startsWith("sources/"))).toBe(true);
   });
 
+  it("keeps one page twice when it points here under two relations, and names each", () => {
+    // The list is longer than the number of pages in it, which is why the panel counts
+    // distinct pages rather than rows. Every entry has to say which relation it came by,
+    // or the repeat just looks like a bug.
+    const detail = noteDetail(index, "domain/bearing-degradation-stages")!;
+    const pages = new Set(detail.backlinks.map((link) => link.id));
+    expect(detail.backlinks.length).toBeGreaterThan(pages.size);
+    expect(detail.backlinks.every((link) => link.relation.length > 0)).toBe(true);
+    for (const link of detail.backlinks) {
+      const sameSource = detail.backlinks.filter((other) => other.id === link.id);
+      expect(new Set(sameSource.map((other) => other.relation)).size).toBe(sameSource.length);
+    }
+  });
+
   it("leaves the seeded vault reachable — index links to every namespace", () => {
     const detail = noteDetail(index, "index")!;
     const namespaces = new Set(detail.outbound.map((link) => link.id.split("/")[0]));
