@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState, useSyncExternalStore } from "react";
 import { ArrowClockwiseIcon } from "@phosphor-icons/react";
 import { toast } from "sonner";
@@ -7,20 +8,17 @@ import { toast } from "sonner";
 import { MachineDataStage } from "@/components/mlops/machine-data-stage";
 import { MachineRegistryStage } from "@/components/mlops/machine-registry-stage";
 import { PreprocessingWorkspace } from "@/components/mlops/preprocessing-workspace";
-import { PromotionStage } from "@/components/mlops/promotion-stage";
 import { TrainingStage } from "@/components/mlops/training-stage";
 import { WorkflowNav } from "@/components/mlops/workflow-nav";
 import { Button } from "@/components/ui/button";
 import { CAPABILITY_LABEL, DEMO_MACHINES, findMachine } from "@/lib/demo-mlops/datasets";
 import { defaultRecipe } from "@/lib/demo-mlops/preprocessing";
 import {
-  activeDeployment,
   buildDataset,
   cancelRun,
   datasetsFor,
   getServerSnapshot,
   getSnapshot,
-  promoteRun,
   resetWorkspace,
   runsFor,
   startTraining,
@@ -32,7 +30,6 @@ import type {
   PreprocessingRecipe,
   PreviewResult,
   Stage,
-  TrainingRun,
 } from "@/lib/demo-mlops/types";
 import { cn } from "@/lib/utils";
 
@@ -55,7 +52,6 @@ export default function MlopsPage() {
 
   const datasets = datasetsFor(machine.id, capability);
   const runs = runsFor(machine.id, capability);
-  const deployment = activeDeployment(machine.id, capability);
 
   const complete = useMemo<Record<Stage, boolean>>(
     () => ({
@@ -63,9 +59,8 @@ export default function MlopsPage() {
       data: machine.sampleRows.length > 0,
       prepare: datasets.some((dataset) => dataset.status === "ready"),
       train: runs.some((run) => run.status === "succeeded"),
-      promote: deployment !== undefined,
     }),
-    [datasets, deployment, machine.sampleRows.length, runs],
+    [datasets, machine.sampleRows.length, runs],
   );
 
   function selectMachine(nextId: string) {
@@ -102,15 +97,6 @@ export default function MlopsPage() {
     startTraining(machine, dataset, architectureId, hyperparameters);
   }
 
-  function promote(run: TrainingRun, overrideReason: string | null) {
-    promoteRun(run, overrideReason);
-    toast.success(`${run.architectureLabel} now serves ${CAPABILITY_LABEL[capability].toLowerCase()}`, {
-      description: overrideReason
-        ? "Promoted over the quality gate. The reason is stored with the deployment."
-        : "The production alias now points at this version.",
-    });
-  }
-
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
@@ -118,9 +104,13 @@ export default function MlopsPage() {
           <p className="instrument-label">Model operations</p>
           <h1 className="text-2xl font-semibold tracking-[-0.04em] md:text-3xl">MLOps workspace</h1>
           <p className="max-w-2xl text-sm text-muted-foreground">
-            The path a model takes from a machine&rsquo;s raw columns to something allowed to
-            serve: inspect the data, write a preprocessing recipe, freeze it into an immutable
-            dataset version, fit a model, and defend the score before promoting it.
+            How a model gets from a machine&rsquo;s raw columns to something allowed to serve:
+            inspect the data, write a preprocessing recipe, freeze it into an immutable dataset
+            version, and fit a model. Approving one to serve is an admin decision and happens on{" "}
+            <Link href="/admin/models" className="underline underline-offset-2">
+              Machine model approvals
+            </Link>
+            .
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -197,18 +187,6 @@ export default function MlopsPage() {
           onLaunch={launch}
           onCancel={cancelRun}
           onBack={() => setStage("prepare")}
-          onContinue={() => setStage("promote")}
-        />
-      )}
-
-      {stage === "promote" && (
-        <PromotionStage
-          machine={machine}
-          capability={capability}
-          runs={runs}
-          deployment={deployment}
-          onPromote={promote}
-          onBack={() => setStage("train")}
         />
       )}
     </div>

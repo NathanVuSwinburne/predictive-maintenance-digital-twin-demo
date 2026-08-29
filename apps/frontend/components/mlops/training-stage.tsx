@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import {
   ArrowRightIcon,
@@ -13,13 +14,12 @@ import {
 } from "@phosphor-icons/react";
 
 import { ModelScorecard } from "@/components/mlops/model-scorecard";
+import { TrainingConfigurationPanel } from "@/components/mlops/training-configuration-panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import { Switch } from "@/components/ui/switch";
 import { CAPABILITY_LABEL } from "@/lib/demo-mlops/datasets";
 import {
   architecturesFor,
@@ -31,23 +31,11 @@ import type {
   ArchitectureOption,
   Capability,
   DatasetVersion,
-  TrainingParameterOption,
   TrainingRun,
 } from "@/lib/demo-mlops/types";
 import { cn } from "@/lib/utils";
 
 type Values = Record<string, string | number | boolean>;
-
-/** The allowed span for one parameter, phrased for the hint under its field. */
-function parameterRange(parameter: TrainingParameterOption): string | null {
-  const unit = parameter.unit ? ` ${parameter.unit}` : "";
-  if (parameter.minimum !== undefined && parameter.maximum !== undefined) {
-    return `${parameter.minimum} to ${parameter.maximum}${unit}`;
-  }
-  if (parameter.minimum !== undefined) return `at least ${parameter.minimum}${unit}`;
-  if (parameter.maximum !== undefined) return `at most ${parameter.maximum}${unit}`;
-  return null;
-}
 
 /**
  * Everything wrong with the configuration, stated before the run starts rather than
@@ -107,7 +95,6 @@ type Props = {
   onLaunch: (dataset: DatasetVersion, architectureId: string, hyperparameters: Values) => void;
   onCancel: (runId: string) => void;
   onBack: () => void;
-  onContinue: () => void;
 };
 
 export function TrainingStage({
@@ -118,7 +105,6 @@ export function TrainingStage({
   onLaunch,
   onCancel,
   onBack,
-  onContinue,
 }: Props) {
   const architectures = useMemo(() => architecturesFor(capability), [capability]);
   const readyDatasets = datasets.filter((dataset) => dataset.status === "ready");
@@ -249,75 +235,11 @@ export function TrainingStage({
               )}
 
               {architecture && architecture.parameters.length > 0 && (
-                <fieldset className="space-y-3">
-                  <legend className="text-sm font-medium">Hyperparameters</legend>
-                  {architecture.parameters.map((parameter) => {
-                    const range = parameterRange(parameter);
-                    const fieldId = `parameter-${parameter.key}`;
-                    return (
-                      <div key={parameter.key} className="space-y-1.5">
-                        {parameter.type === "boolean" ? (
-                          <div className="flex items-start justify-between gap-3">
-                            <Label htmlFor={fieldId} className="font-normal">
-                              {parameter.label}
-                            </Label>
-                            <Switch
-                              id={fieldId}
-                              checked={values[parameter.key] !== false}
-                              onCheckedChange={(checked) =>
-                                setValues((current) => ({ ...current, [parameter.key]: checked }))
-                              }
-                            />
-                          </div>
-                        ) : parameter.type === "select" ? (
-                          <>
-                            <Label htmlFor={fieldId}>{parameter.label}</Label>
-                            <select
-                              id={fieldId}
-                              className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
-                              value={String(values[parameter.key] ?? parameter.default)}
-                              onChange={(event) =>
-                                setValues((current) => ({
-                                  ...current,
-                                  [parameter.key]: event.target.value,
-                                }))
-                              }
-                            >
-                              {(parameter.choices ?? []).map((choice) => (
-                                <option key={choice} value={choice}>
-                                  {choice}
-                                </option>
-                              ))}
-                            </select>
-                          </>
-                        ) : (
-                          <>
-                            <Label htmlFor={fieldId}>{parameter.label}</Label>
-                            <Input
-                              id={fieldId}
-                              type="number"
-                              inputMode="decimal"
-                              step={parameter.type === "integer" ? 1 : "any"}
-                              min={parameter.minimum}
-                              max={parameter.maximum}
-                              value={String(values[parameter.key] ?? "")}
-                              onChange={(event) =>
-                                setValues((current) => ({
-                                  ...current,
-                                  [parameter.key]: event.target.value,
-                                }))
-                              }
-                            />
-                          </>
-                        )}
-                        <p className="text-xs leading-5 text-muted-foreground">
-                          {parameter.description}
-                          {range ? ` Allowed ${range}.` : ""}
-                        </p>
-                      </div>
-                    );
-                  })}
-                </fieldset>
+                <TrainingConfigurationPanel
+                  architecture={architecture}
+                  values={values}
+                  onChange={setValues}
+                />
               )}
 
               {problems.length > 0 && (
@@ -461,9 +383,17 @@ export function TrainingStage({
               Nothing has finished successfully yet, so there is nothing to promote.
             </p>
           )}
-          <Button className="ml-auto" disabled={!hasSucceeded} onClick={onContinue}>
-            Review for promotion <ArrowRightIcon data-icon="inline-end" />
-          </Button>
+          {hasSucceeded ? (
+            <Button asChild className="ml-auto">
+              <Link href="/admin/models">
+                Review for promotion <ArrowRightIcon data-icon="inline-end" />
+              </Link>
+            </Button>
+          ) : (
+            <Button className="ml-auto" disabled>
+              Review for promotion <ArrowRightIcon data-icon="inline-end" />
+            </Button>
+          )}
         </div>
       </div>
     </div>

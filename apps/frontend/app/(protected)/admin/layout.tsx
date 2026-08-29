@@ -24,7 +24,7 @@ export default async function AdminLayout({
       <div className="flex flex-col gap-2">
         <h1 className="text-lg font-semibold">Administration</h1>
         <p className="text-sm text-muted-foreground">
-          Manage user roles and machine access.
+          Manage user roles, machine access, and which model version serves.
         </p>
       </div>
       <AdminNavigation />

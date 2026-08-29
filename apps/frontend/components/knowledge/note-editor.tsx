@@ -193,14 +193,14 @@ export function NoteEditor({
 
   if (!note) {
     return (
-      <div className="flex h-full items-center justify-center p-6 text-center text-sm text-muted-foreground">
+      <div className="flex h-full min-h-0 flex-1 items-center justify-center p-6 text-center text-sm text-muted-foreground">
         Pick a page in the graph to read it.
       </div>
     );
   }
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full min-h-0 flex-1 flex-col">
       <div className="flex flex-col gap-2 border-b bg-muted/25 p-3">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">

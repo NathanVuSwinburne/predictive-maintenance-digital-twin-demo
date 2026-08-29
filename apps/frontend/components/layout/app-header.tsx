@@ -31,6 +31,7 @@ const pageLabelMap: Record<string, string> = {
   account: "Account",
   security: "Security",
   users: "Users",
+  models: "Model Approvals",
   login: "Login",
 };
 

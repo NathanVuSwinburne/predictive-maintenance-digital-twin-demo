@@ -74,24 +74,24 @@
   --status-watch: #c78a2c;
   --status-risk: #c9574e;
   --status-offline: #76858b;
-  --border: #d5dedb;
-  --input: #ccd8d4;
+  --border: #c2cfca;
+  --input: #b6c5bf;
   --ring: #2a918c;
   --chart-1: #167c78;
   --chart-2: #4c78a8;
   --chart-3: #5c9b7e;
   --chart-4: #d49a42;
   --chart-5: #c95d57;
-  --radius: 0.72rem;
-  --panel-shadow: 0 1px 2px rgb(18 44 53 / 5%), 0 10px 32px rgb(35 74 72 / 7%);
-  --panel-shadow-hover: 0 2px 4px rgb(18 44 53 / 7%), 0 16px 40px rgb(35 74 72 / 10%);
+  --radius: 0.25rem;
+  --panel-shadow: 0 1px 1px rgb(18 44 53 / 4%);
+  --panel-shadow-hover: 0 1px 2px rgb(18 44 53 / 7%);
   --sidebar: #f8faf8;
   --sidebar-foreground: #19343d;
   --sidebar-primary: #167c78;
   --sidebar-primary-foreground: #f6fffd;
   --sidebar-accent: #e4efec;
   --sidebar-accent-foreground: #173f3d;
-  --sidebar-border: #d7e1de;
+  --sidebar-border: #c6d2ce;
   --sidebar-ring: #2a918c;
 }
 
@@ -107,7 +107,7 @@
   --secondary: #243d40;
   --secondary-foreground: #d8edE8;
   --muted: #24343a;
-  --muted-foreground: #a8babd;
+  --muted-foreground: #b3c4c7;
   --accent: #294442;
   --accent-foreground: #e5f2ef;
   --destructive: #ef8176;
@@ -117,23 +117,23 @@
   --status-watch: #e4ad57;
   --status-risk: #ef8176;
   --status-offline: #91a1a5;
-  --border: #30454b;
-  --input: #385159;
+  --border: #46646e;
+  --input: #4c6b76;
   --ring: #71c7bf;
   --chart-1: #5bb7ae;
   --chart-2: #7ca9d6;
   --chart-3: #7ac39f;
   --chart-4: #e4ad57;
   --chart-5: #ef8176;
-  --panel-shadow: 0 1px 2px rgb(0 0 0 / 22%), 0 16px 38px rgb(0 0 0 / 18%);
-  --panel-shadow-hover: 0 2px 4px rgb(0 0 0 / 28%), 0 20px 44px rgb(0 0 0 / 24%);
+  --panel-shadow: 0 1px 1px rgb(0 0 0 / 30%);
+  --panel-shadow-hover: 0 1px 3px rgb(0 0 0 / 38%);
   --sidebar: #132329;
   --sidebar-foreground: #dfebe8;
   --sidebar-primary: #5bb7ae;
   --sidebar-primary-foreground: #0d2426;
   --sidebar-accent: #243b3e;
   --sidebar-accent-foreground: #e5f2ef;
-  --sidebar-border: #2a4147;
+  --sidebar-border: #3f5c65;
   --sidebar-ring: #71c7bf;
 }
 
@@ -167,12 +167,12 @@
         transparent 38%
       ),
       linear-gradient(
-        color-mix(in srgb, var(--border) 26%, transparent) 1px,
+        color-mix(in srgb, var(--border) 18%, transparent) 1px,
         transparent 1px
       ),
       linear-gradient(
         90deg,
-        color-mix(in srgb, var(--border) 26%, transparent) 1px,
+        color-mix(in srgb, var(--border) 18%, transparent) 1px,
         transparent 1px
       );
     background-size: auto, auto, 32px 32px, 32px 32px;
@@ -191,9 +191,9 @@
 @layer components {
   .instrument-label {
     font-family: var(--font-data), monospace;
-    font-size: 0.68rem;
+    font-size: 0.72rem;
     font-weight: 600;
-    letter-spacing: 0.14em;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--muted-foreground);
   }

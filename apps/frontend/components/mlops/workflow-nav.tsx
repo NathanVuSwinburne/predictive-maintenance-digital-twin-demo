@@ -10,7 +10,6 @@ export const STAGES: Array<{ id: Stage; label: string; caption: string }> = [
   { id: "data", label: "Machine data", caption: "Inspect what it sends" },
   { id: "prepare", label: "Prepare", caption: "Write the recipe" },
   { id: "train", label: "Train", caption: "Fit and score a model" },
-  { id: "promote", label: "Promote", caption: "Decide what serves" },
 ];
 
 type Props = {
@@ -22,7 +21,7 @@ type Props = {
 export function WorkflowNav({ current, complete, onChange }: Props) {
   return (
     <nav aria-label="Workflow steps" className="overflow-x-auto">
-      <ol className="grid min-w-[720px] grid-cols-5 gap-2">
+      <ol className="grid min-w-[600px] grid-cols-4 gap-2">
         {STAGES.map((stage, index) => {
           const isCurrent = stage.id === current;
           const isComplete = complete[stage.id];
@@ -33,10 +32,10 @@ export function WorkflowNav({ current, complete, onChange }: Props) {
                 aria-current={isCurrent ? "step" : undefined}
                 onClick={() => onChange(stage.id)}
                 className={cn(
-                  "group flex w-full items-start gap-3 rounded-xl border p-3 text-left transition-colors",
+                  "group flex w-full items-start gap-3 rounded-lg border p-3 text-left transition-colors",
                   isCurrent
-                    ? "border-primary/45 bg-primary/8 shadow-[var(--panel-shadow)]"
-                    : "border-border/70 bg-card/60 hover:border-primary/30 hover:bg-accent/40",
+                    ? "border-primary bg-primary/8"
+                    : "border-border bg-card hover:border-primary/40 hover:bg-accent/40",
                 )}
               >
                 <span
