@@ -78,7 +78,7 @@ function PredictScorecard({ run }: { run: TrainingRun }) {
         {metrics.test_balanced_accuracy !== undefined && (
           <Figure
             value={percent.format(metrics.test_balanced_accuracy)}
-            caption="Balanced accuracy — every outcome weighted equally"
+            caption="Balanced accuracy: every outcome weighted equally"
           />
         )}
         {metrics.test_accuracy !== undefined && (
@@ -137,7 +137,7 @@ function PredictScorecard({ run }: { run: TrainingRun }) {
         <div className="overflow-x-auto rounded-lg border">
           <table className="w-full text-sm">
             <caption className="p-2 text-left text-xs text-muted-foreground">
-              What it actually answered — rows are the true outcome, columns what the model said
+              What it actually answered: rows are the true outcome, columns what the model said
             </caption>
             <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
               <tr>
@@ -172,7 +172,7 @@ function PredictScorecard({ run }: { run: TrainingRun }) {
       {metrics.train_test_gap !== undefined && (
         <p className="text-xs text-muted-foreground">
           Train accuracy {percent.format(metrics.train_accuracy ?? 0)} against test{" "}
-          {percent.format(metrics.test_accuracy ?? 0)} — a gap of{" "}
+          {percent.format(metrics.test_accuracy ?? 0)}, a gap of{" "}
           <span className={metrics.train_test_gap > 0.2 ? "text-[var(--status-watch)]" : undefined}>
             {percent.format(metrics.train_test_gap)}
           </span>

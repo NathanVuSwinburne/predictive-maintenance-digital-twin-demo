@@ -61,8 +61,8 @@ function fold(value: string): string {
 }
 
 /**
- * The column the user most likely meant. The common miss is a half-named column —
- * `Torque` typed for `Torque [Nm]` — so a prefix counts, and so does a spacing difference.
+ * The column the user most likely meant. The common miss is a half-named column:
+ * `Torque` typed for `Torque [Nm]`, so a prefix counts, and so does a spacing difference.
  */
 function nearestColumn(name: string, availableColumns: string[]): string | undefined {
   const wanted = fold(name);
@@ -92,7 +92,7 @@ export function derivedFeatureProblem(
 
   const { columns, functions, unterminatedQuote } = readFormula(expression);
   if (unterminatedQuote) {
-    return "A quoted column name is still open — close it with a matching quote mark.";
+    return "A quoted column name is still open; close it with a matching quote mark.";
   }
   const unknownFunction = functions.find(
     (item) => !(FORMULA_FUNCTIONS as readonly string[]).includes(item),

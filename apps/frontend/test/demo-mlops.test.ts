@@ -63,7 +63,7 @@ describe("calculated feature formulas", () => {
   });
 
   it("names the problem with a wrong formula, and stays quiet about a half-typed one", () => {
-    // A row still being filled in is not an error yet — the editor would be shouting at
+    // A row still being filled in is not an error yet; the editor would be shouting at
     // every keystroke.
     expect(
       derivedFeatureProblem({ name: "", expression: '"a"', dtype: "float" }, ["a"]),

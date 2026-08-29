@@ -48,7 +48,7 @@ function scoreAgainstBaseline(run: TrainingRun): { score: string; baseline: stri
     const balanced = run.metrics.test_balanced_accuracy;
     const lift = run.metrics.test_accuracy_lift;
     return {
-      score: balanced === undefined ? "—" : `${percent.format(balanced)} balanced`,
+      score: balanced === undefined ? "not scored" : `${percent.format(balanced)} balanced`,
       baseline:
         lift === undefined
           ? "no baseline recorded"
@@ -62,7 +62,7 @@ function scoreAgainstBaseline(run: TrainingRun): { score: string; baseline: stri
       ? (persistence - rmse) / persistence
       : undefined;
   return {
-    score: rmse === undefined ? "—" : `error ${decimal.format(rmse)}`,
+    score: rmse === undefined ? "not scored" : `error ${decimal.format(rmse)}`,
     baseline:
       gain === undefined
         ? "no baseline recorded"
@@ -182,7 +182,7 @@ export default function MachineModelApprovalsPage() {
                     <TableCell>{CAPABILITY_LABEL[run.capability]}</TableCell>
                     <TableCell className="font-mono">v{run.modelVersion}</TableCell>
                     <TableCell>
-                      Dataset v{run.datasetVersion ?? "—"}
+                      {run.datasetVersion ? `Dataset v${run.datasetVersion}` : "No dataset version"}
                       <span className="block max-w-40 truncate font-mono text-[11px] text-muted-foreground">
                         {run.datasetContentDigest}
                       </span>

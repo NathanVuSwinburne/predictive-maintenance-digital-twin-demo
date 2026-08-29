@@ -13,20 +13,20 @@ test("walks a machine from raw columns to an approved model", async ({ page }) =
   await page.goto("/mlops");
   await expect(page.getByRole("heading", { name: "MLOps workspace" })).toBeVisible();
 
-  // Step 1 — the registry, shaped like the production one: a list and a register form.
+  // Step 1, the registry, shaped like the production one: a list and a register form.
   await expect(page.getByRole("button", { name: /AI4I Milling Machine/ }).first()).toBeVisible();
   await expect(page.getByRole("button", { name: /Register machine/i })).toBeDisabled();
   await page.getByRole("button", { name: /Open .*'s data/i }).click();
 
-  // Step 2 — the column contract.
+  // Step 2: the column contract.
   await expect(page.getByText("Machine failure").first()).toBeVisible();
-  await page.getByRole("button", { name: /Prepare this data/i }).click();
+  await page.getByRole("button", { name: /Preprocess this data/i }).click();
 
-  // Step 3 — the recipe, previewed against the bundled rows.
+  // Step 3: the recipe, previewed against the bundled rows.
   await expect(page.getByText(/Fitted Train-only statistics/i)).toBeVisible();
   await page.getByRole("button", { name: /Freeze this recipe into a dataset/i }).click();
 
-  // Step 4 — hyperparameters are JSON here, as they are in production.
+  // Step 4: hyperparameters are JSON here, as they are in production.
   await expect(page.getByText("Fit a model")).toBeVisible();
   await expect(page.getByLabel("Configuration JSON")).toBeVisible();
   await page.getByRole("button", { name: /^Apply JSON$/ }).click();
@@ -48,7 +48,7 @@ test("walks a machine from raw columns to an approved model", async ({ page }) =
 test("refuses an architecture it cannot honestly train", async ({ page }) => {
   await page.goto("/mlops");
   await page.getByRole("button", { name: /Open .*'s data/i }).click();
-  await page.getByRole("button", { name: /Prepare this data/i }).click();
+  await page.getByRole("button", { name: /Preprocess this data/i }).click();
   await page.getByRole("button", { name: /Freeze this recipe into a dataset/i }).click();
 
   await expect(page.getByText("Fit a model")).toBeVisible();

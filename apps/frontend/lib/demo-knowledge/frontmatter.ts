@@ -3,7 +3,7 @@
  *
  * Not a YAML parser, and deliberately not: pulling a full one into the bundle to read six scalar
  * keys and some string lists would cost more than the feature. It handles what the schema in
- * `AGENT-WIKI` describes — scalars, inline lists, block lists, quoted strings, comments — and
+ * `AGENT-WIKI` describes (scalars, inline lists, block lists, quoted strings, comments) and
  * ignores anything else rather than throwing, because a half-typed frontmatter in the editor must
  * still render a page.
  */
@@ -140,7 +140,7 @@ export function extractWikilinks(body: string): string[] {
 
 /**
  * Typed edges. Any list-valued key that is not reserved, whose values are wikilinks, becomes a
- * relation named after the key — which is how `caused_by` and `mitigated_by` work without either
+ * relation named after the key, which is how `caused_by` and `mitigated_by` work without either
  * appearing anywhere in this file.
  */
 export function edgeKeys(meta: Parsed): Record<string, string[]> {

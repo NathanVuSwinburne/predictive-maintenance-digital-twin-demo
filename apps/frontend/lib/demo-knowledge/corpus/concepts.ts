@@ -1,5 +1,5 @@
 /**
- * The `concepts/` namespace — the modelling vocabulary.
+ * The `concepts/` namespace: the modelling vocabulary.
  *
  * These are the pages the assistant reads before explaining one of its own numbers: what a
  * majority-class baseline is, why accuracy lies on rare events, where leakage comes from. The
@@ -32,7 +32,7 @@ predictive-maintenance model gets shipped while being worthless.
 
 ## The number that makes it concrete
 
-[[sources/ai4i-2020-dataset]] has **339 failures in 10 000 rows — 3.39 %**. A model that answers
+[[sources/ai4i-2020-dataset]] has **339 failures in 10 000 rows, 3.39 %**. A model that answers
 "no failure" to every row scores **96.61 % accuracy** and has never once been right about the thing
 it was built to find.
 
@@ -51,11 +51,11 @@ pipeline.
 
 Then report metrics that cannot be gamed by silence:
 
-- **balanced accuracy** — mean of per-class recall
-- **macro precision and recall** — every class weighted equally regardless of size
-- **per-class precision, recall, F1 and support** — support included, because a 100 % recall over
+- **balanced accuracy**: mean of per-class recall
+- **macro precision and recall**: every class weighted equally regardless of size
+- **per-class precision, recall, F1 and support**: support included, because a 100 % recall over
   three test examples is noise
-- **train and test class counts** — so a reader can see the imbalance rather than infer it
+- **train and test class counts**, so a reader can see the imbalance rather than infer it
 
 See [[concepts/precision-recall-vs-accuracy]].
 
@@ -63,11 +63,11 @@ See [[concepts/precision-recall-vs-accuracy]].
 
 | Lever | What it does | Watch out for |
 |---|---|---|
-| Class weights / \`sample_weight\` | reweights the loss so minority errors cost more | changes calibration — predicted probabilities are no longer frequencies |
+| Class weights / \`sample_weight\` | reweights the loss so minority errors cost more | changes calibration: predicted probabilities are no longer frequencies |
 | Oversampling the minority | duplicates rare rows | duplicates can straddle a train/test split; see [[concepts/train-test-leakage-in-time-series]] |
 | Undersampling the majority | discards data | throws away the variety that defines "normal" |
 | Synthetic minority sampling | interpolates new minority rows | interpolating between two different failure *modes* invents a failure that cannot happen |
-| Moving the decision threshold | keeps the model, changes the cut | usually the best first move — see [[concepts/threshold-selection]] |
+| Moving the decision threshold | keeps the model, changes the cut | usually the best first move; see [[concepts/threshold-selection]] |
 
 Class weighting is the default worth reaching for first because it leaves the data alone. But note
 what it costs: a reweighted model's output is no longer a calibrated probability, so "70 % risk"
@@ -76,7 +76,7 @@ stops meaning "seven times in ten".
 ## The subtler trap
 
 Imbalance is not only about the label. In AI4I the *cause* labels are imbalanced against each other
-too — TWF 46, HDF 115, PWF 95, OSF 98, RNF 19 — so a multi-class cause classifier faces a harder
+too (TWF 46, HDF 115, PWF 95, OSF 98, RNF 19), so a multi-class cause classifier faces a harder
 version of the same problem, on a dataset where 18 of the 19 RNF rows are not even labelled as
 failures. See [[sources/ai4i-2020-dataset]].
 `,
@@ -103,14 +103,14 @@ confidence: medium
 A deployed model's accuracy decays because the world moves and the model does not. Two distinct
 things get called drift and they need different responses:
 
-- **Covariate shift** — the inputs change distribution. Seasonal ambient temperature, a new raw
+- **Covariate shift**: the inputs change distribution. Seasonal ambient temperature, a new raw
   material, a rebuilt machine, a replaced sensor. The relationship between input and failure is
   intact; the model is simply extrapolating.
-- **Concept drift** — the relationship itself changes. A bearing upgrade, a new control strategy, a
+- **Concept drift**: the relationship itself changes. A bearing upgrade, a new control strategy, a
   maintenance regime change. The old mapping is now wrong, and no amount of input monitoring reveals
   it.
 
-Covariate shift is detectable without labels. Concept drift is not — it only shows up when outcomes
+Covariate shift is detectable without labels. Concept drift is not; it only shows up when outcomes
 arrive, which on rare failures can be months.
 
 ## Detecting the detectable part
@@ -132,14 +132,14 @@ The [[fleet/ai4i-milling-machine]] rows are synthetic and drawn from fixed distr
 ([[sources/ai4i-2020-dataset]]), so nothing drifts and a model trained on them will never show
 decay. That is a property of the benchmark, not evidence about the pipeline. A real drive on a real
 line does drift, and the difference between the two is the difference between a demo and a
-deployment — see [[fleet/packaging-drive-01]].
+deployment; see [[fleet/packaging-drive-01]].
 
 ## Responding
 
 Do not retrain reflexively. Retraining on drifted-and-unlabelled data propagates whatever caused the
 drift. The order is: confirm the instrument, confirm the labels, then decide whether the new regime is
 one the model should learn or one it should refuse to predict on. Failing closed on out-of-range input
-is often better than answering confidently — the same argument as
+is often better than answering confidently; the same argument as
 [[concepts/threshold-selection]].
 `,
 
@@ -187,7 +187,7 @@ in the feature space.
 
 - **Row-wise only.** A derived feature must depend on nothing but the current row's declared columns.
   The moment it looks at other rows it becomes a rolling feature, and rolling features can leak across
-  a split — see [[concepts/train-test-leakage-in-time-series]].
+  a split; see [[concepts/train-test-leakage-in-time-series]].
 - **Computed before other transforms**, so scaling and encoding see the final column set.
 - **Baked into the immutable artifact**, so a dataset version is reproducible even if the expression
   is later edited.
@@ -198,7 +198,7 @@ in the feature space.
 ## The unit trap
 
 \`torque * rotational_speed\` is not power until the speed is in radians per second. AI4I's PWF
-thresholds — 3 500 W and 9 000 W — are only reproducible if that conversion is done. A derived feature
+thresholds (3 500 W and 9 000 W) are only reproducible if that conversion is done. A derived feature
 with the wrong units still trains, still scores, and is still wrong. Put the unit in the name or the
 description.
 `,
@@ -223,7 +223,7 @@ confidence: medium
 
 # Feature Engineering for Telemetry
 
-This is the DM — Data Manipulation — block of [[domain/condition-monitoring-architecture]], and it is
+This is the DM (Data Manipulation) block of [[domain/condition-monitoring-architecture]], and it is
 where most of the achievable accuracy actually lives. A better feature beats a better model on
 industrial telemetry almost every time, because the physics is known and the model would otherwise
 have to rediscover it from a few thousand rows.
@@ -249,20 +249,20 @@ temperature, not on either value. See [[concepts/derived-features]] and [[domain
 
 ## What to avoid
 
-- **Anything computed across the whole dataset before splitting** — normalisation statistics, rolling
+- **Anything computed across the whole dataset before splitting**: normalisation statistics, rolling
   windows that span the split boundary, any target encoding. That is
   [[concepts/train-test-leakage-in-time-series]], and it is the most common way a good-looking model
   fails in production.
 - **Features not available at inference time.** If it takes a lab result that arrives two days later,
   it cannot be in a real-time model, however predictive it is.
 - **Windows longer than the sampling regime supports.** A one-hour rolling mean on a machine whose
-  median session is a few minutes is mostly padding — see [[fleet/packaging-drive-01]].
+  median session is a few minutes is mostly padding; see [[fleet/packaging-drive-01]].
 
 ## Recompute identically at serving time
 
 The transformation applied at training must be applied, bit for bit, at inference. A feature computed
 one way in a notebook and another way in the serving path is not the same feature, and the failure is
-silent — the model returns a confident number computed from an input it has never seen.
+silent: the model returns a confident number computed from an input it has never seen.
 `,
 
   "concepts/labelling-failure-windows": `---
@@ -287,7 +287,7 @@ confidence: medium
 
 "Will this machine fail?" is not a question until you say *when*. The label definition is a design
 decision that determines the difficulty of the problem, the base rate, and whether the answer is
-actionable — and it is usually made implicitly.
+actionable, and it is usually made implicitly.
 
 ## The choice
 
@@ -295,7 +295,7 @@ actionable — and it is usually made implicitly.
 |---|---|---|
 | Row at the moment of failure only | "is it failing right now?" | detection, not prediction. Warning is zero. Base rate is at its lowest. |
 | Every row within a window before failure | "will it fail within H?" | genuine prediction. Raises the positive rate, which helps [[concepts/class-imbalance-in-failure-data]]. |
-| Cycles remaining | "how long left?" | regression — see [[concepts/remaining-useful-life]] |
+| Cycles remaining | "how long left?" | regression; see [[concepts/remaining-useful-life]] |
 
 [[sources/ai4i-2020-dataset]] uses the first: \`Machine failure\` marks the failing row, with no
 timestamps and no unit identity, so no window can be constructed. It is a **detection** benchmark
@@ -319,8 +319,8 @@ gets quietly stretched. State it next to every metric.
 - **The horizon is not reported.** "94 % accurate" over a 30-day window and over a 1-hour window are
   different products. A metric without its horizon is not comparable to anything.
 - **The post-failure rows stay in.** Readings taken *after* a failure, during the fault or the repair,
-  are trivially separable and inflate every score. They must be excluded, and the exclusion documented
-  — this is a specific case of [[concepts/train-test-leakage-in-time-series]].
+  are trivially separable and inflate every score. They must be excluded, and the exclusion documented.
+  This is a specific case of [[concepts/train-test-leakage-in-time-series]].
 `,
 
   "concepts/model-evaluation-for-rare-events": `---
@@ -351,7 +351,7 @@ An evaluation protocol that works at a 50 % base rate can be actively misleading
    result to discuss. See [[concepts/class-imbalance-in-failure-data]].
 2. **The confusion matrix**, with raw counts. False positives and false negatives cost different
    things; a single score hides which one you are buying.
-3. **Per-class precision, recall, F1 and support.** Support included — recall over four positive test
+3. **Per-class precision, recall, F1 and support.** Support included: recall over four positive test
    examples is a coin flip, and without support nobody can tell.
 4. **Balanced accuracy and macro precision/recall.** Every class weighted equally.
 5. **Train and test class counts.** So the reader sees the imbalance instead of having to ask.
@@ -367,18 +367,18 @@ not flatter. Use PR; if ROC is reported, report the base rate beside it.
 
 With a few dozen positives in a test partition, the metric that matters rests on a handful of rows.
 A 5-point difference between two models is usually noise. Either report an interval, or say plainly
-how many positive examples the number rests on — and be sceptical of leaderboard-style comparisons
+how many positive examples the number rests on, and be sceptical of leaderboard-style comparisons
 that do neither.
 
 ## The split has to be right first
 
 None of the above means anything if the split leaks. Split by time or by unit, and fit every
-statistic inside the training partition — see [[concepts/train-test-leakage-in-time-series]]. An
+statistic inside the training partition; see [[concepts/train-test-leakage-in-time-series]]. An
 impressive number from a leaked split is not a good model; it is a broken measurement.
 
 ## Then, and only then, choose a threshold
 
-Metrics describe the ranking. The decision is a separate act — see
+Metrics describe the ranking. The decision is a separate act; see
 [[concepts/threshold-selection]].
 `,
 
@@ -407,12 +407,12 @@ For a rare positive class, accuracy measures how common the negative class is. N
 |---|---|---|
 | **Precision** | of the alarms we raised, how many were real? | wasted call-outs, alarm fatigue |
 | **Recall** | of the real failures, how many did we catch? | the failure you missed |
-| **F1** | harmonic mean of the two | neither, specifically — it is a summary, not a decision |
+| **F1** | harmonic mean of the two | neither, specifically; it is a summary, not a decision |
 | **Balanced accuracy** | mean per-class recall | a model that ignores the minority class |
 
 ## Which one to lead with
 
-It depends entirely on what a mistake costs, and that is not a modelling question — it is the
+It depends entirely on what a mistake costs, and that is not a modelling question; it is the
 severity question from [[domain/fmea-and-criticality]].
 
 - Unplanned failure of a critical asset dwarfs an unnecessary inspection → **recall**.
@@ -426,11 +426,11 @@ destroys itself through alarm fatigue within a month.
 ## Alarm fatigue is a real failure mode
 
 At 3.39 % base rate ([[sources/ai4i-2020-dataset]]), a detector with 90 % recall and 10 % false
-positive rate raises roughly 305 true alarms and 966 false ones over 10 000 parts — **three quarters
+positive rate raises roughly 305 true alarms and 966 false ones over 10 000 parts: **three quarters
 of all alarms are false**, and precision is about 24 %. That model is defensible or useless depending
 on what an inspection costs, and no metric decides it for you.
 
-That arithmetic — base rate times error rates — is the calculation to run *before* promising anyone a
+That arithmetic (base rate times error rates) is the calculation to run *before* promising anyone a
 model will help.
 
 ## Reporting
@@ -555,7 +555,7 @@ reading a window of a different length than it was trained on.
 ## Choosing the interval
 
 Short enough to preserve the phenomenon, long enough to smooth noise. The upper bound comes from the
-[[domain/p-f-curve]] interval — a grid coarser than the warning you are trying to catch cannot catch
+[[domain/p-f-curve]] interval: a grid coarser than the warning you are trying to catch cannot catch
 it. The lower bound comes from the sensor. [[domain/envelope-analysis]] is the extreme case: a bearing
 turning under 0.4 rpm needed a 25-minute acquisition for a single average.
 `,
@@ -582,16 +582,16 @@ confidence: high
 # Threshold Selection
 
 A classifier outputs a score. Turning that score into "raise an alarm" requires a cut, and **0.5 is
-not a neutral default** — it is a choice that says a false negative and a false positive cost the
+not a neutral default**; it is a choice that says a false negative and a false positive cost the
 same. On maintenance data they almost never do.
 
 ## The threshold is an economics decision
 
 The inputs are not in the data:
 
-- cost of a missed failure — downtime, damage, safety consequence. This is the **Severity** rating
+- cost of a missed failure: downtime, damage, safety consequence. This is the **Severity** rating
   from [[domain/fmea-and-criticality]].
-- cost of a false alarm — inspection labour, an unnecessary shutdown, and the slower cost of
+- cost of a false alarm: inspection labour, an unnecessary shutdown, and the slower cost of
   operators learning to ignore alarms.
 - the base rate, which decides how many false alarms a given false-positive rate actually produces.
 
@@ -601,13 +601,13 @@ business answer, and the model cannot supply it.
 
 ## How to pick one
 
-1. Choose the metric that matches the cost asymmetry — usually recall at an acceptable precision, or
+1. Choose the metric that matches the cost asymmetry: usually recall at an acceptable precision, or
    precision at a required recall.
 2. Sweep the threshold on the **validation** partition, never the test partition.
 3. Read the operating point off the precision-recall curve.
 4. Sanity-check the resulting alarm *volume* against what the site can absorb per week. A threshold
    that generates more work than there are people is not deployable regardless of its metrics.
-5. Fix it, record it with the model version, and re-check it when the base rate moves — see
+5. Fix it, record it with the model version, and re-check it when the base rate moves; see
    [[concepts/data-drift]].
 
 ## Multiple thresholds beat one
@@ -620,7 +620,7 @@ splitting them lets you run high recall at the cheap tier without drowning the e
 ## Calibration
 
 If the number is shown to a human as a percentage, it should mean what it says: of the cases scored
-70 %, about seven in ten should fail. Class weighting and resampling both break this — see
+70 %, about seven in ten should fail. Class weighting and resampling both break this; see
 [[concepts/class-imbalance-in-failure-data]]. Either calibrate afterwards, or stop calling the output
 a probability.
 `,
@@ -655,7 +655,7 @@ evidence of leakage until proven otherwise.
 
 1. **Random splitting.** A random shuffle puts a row from 10:00:01 in train and 10:00:02 in test.
    Adjacent readings are nearly identical, so the model is being tested on what it memorised. Split
-   **by time**, or better, **by unit** — the way [[sources/cmapss-turbofan]] does it, with whole
+   **by time**, or better, **by unit**: the way [[sources/cmapss-turbofan]] does it, with whole
    engine trajectories held out.
 2. **Fitting statistics before splitting.** Scalers, imputation values, encoders and PCA bases fitted
    on the whole dataset carry the test set's distribution into training. Fit on train, apply to test.
@@ -670,7 +670,7 @@ evidence of leakage until proven otherwise.
 
 Split by **machine**, not by row, whenever you have more than one machine and intend to generalise to
 a new one. Same-machine rows in train and test measure how well the model memorised that machine,
-which is a different — and much easier — question than the one being asked.
+which is a different (and much easier) question than the one being asked.
 
 ## The self-check
 

@@ -29,9 +29,9 @@ export type NoteRecord = {
   updated: string | null;
   updatedBy: string | null;
   confidence: Confidence | null;
-  /** The full markdown, frontmatter included — what the editor shows in source mode. */
+  /** The full markdown, frontmatter included: what the editor shows in source mode. */
   content: string;
-  /** The markdown below the frontmatter — what the preview renders. */
+  /** The markdown below the frontmatter: what the preview renders. */
   body: string;
   bytes: number;
   bodyLinks: string[];

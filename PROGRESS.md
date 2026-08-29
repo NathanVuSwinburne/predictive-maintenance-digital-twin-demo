@@ -1,4 +1,4 @@
-# PROGRESS — porting MLOps + Agent Knowledge Wiki into the public demo
+# PROGRESS: porting MLOps + Agent Knowledge Wiki into the public demo
 
 Working branch: **`dev`** (created off `main`; nothing is to be committed to `main`).
 Repo: `C:\Users\Admin\predictive-maintenance-digital-twin-demo`
@@ -16,12 +16,12 @@ browser).
 ## The brief (four milestones)
 
 1. **Port two production frontend experiences into the demo as frontend-only, mocked
-   experiences** — MLOps and the Agent Knowledge Wiki. No backend, no API, no database.
+   experiences**: MLOps and the Agent Knowledge Wiki. No backend, no API, no database.
    Public datasets only (AI4I etc.). **No Machine C data, no client/private telemetry.**
    Production is the source of truth for *behaviour*; the demo is the source of truth for
    *visual language*.
 2. **Update the README** in its existing narrative voice, explaining why both features
-   exist (ML-engineer-intern experience behind MLOps; the LLM-Wiki paper behind the wiki —
+   exist (ML-engineer-intern experience behind MLOps; the LLM-Wiki paper behind the wiki;
    inspiration only, no inherited benchmark claims).
 3. **Capture screenshots** of the finished panes for the README.
 4. **Make the README wiki-like / navigable** rather than linear chapters.
@@ -30,7 +30,7 @@ browser).
 
 Before the MLOps work, Machine C was **not generic**: a bespoke pipeline with column order,
 window length and model path fixed in code. Part of this work was forcing it into a
-**generic machine schema** — named, typed, versioned columns; timestamp and session as
+**generic machine schema**: named, typed, versioned columns; timestamp and session as
 metadata; both goals declared on one contract. This is already encoded in the demo data as
 `migrations` on each machine (see `lib/demo-mlops/datasets.ts`) and rendered as a "Schema
 history" timeline in the machine stage. It still needs to be told in the README (Milestone 2).
@@ -42,14 +42,14 @@ history" timeline in the machine stage. It still needs to be told in the README 
 ### Demo repo (this one)
 - Next.js 16 / React 19 / TS / Tailwind v4 / shadcn-style `components/ui`, app lives in
   `apps/frontend`.
-- Design language: teal "control room" theme in `app/globals.css` — `--primary #167c78`,
+- Design language: teal "control room" theme in `app/globals.css`: `--primary #167c78`,
   rounded (`--radius: 0.72rem`), `--panel-shadow`, and utility classes `instrument-label`,
   `data-value`, `display-mark`, `status-dot`, `panel-enter`. Page pattern is
   `instrument-label` eyebrow → `text-2xl font-semibold tracking-[-0.04em]` h1 → muted
   description → Cards.
 - Data seam: `lib/data/provider.ts` (`DigitalTwinDataProvider`), `demo-provider.ts`,
   `fastapi-provider.ts`, `provider-factory.ts` (switches on `NEXT_PUBLIC_DEMO_MODE`).
-  **Decision made: do NOT extend that interface** for the new features — `provider-contract.ts`
+  **Decision made: do NOT extend that interface** for the new features: `provider-contract.ts`
   type-guards both providers, so every new method would have to be implemented in the dead
   FastAPI provider too. New features use standalone modules under `lib/demo-mlops/` and
   (planned) `lib/demo-knowledge/`.
@@ -67,13 +67,13 @@ history" timeline in the machine stage. It still needs to be told in the README 
   `components/knowledge/{graph-canvas,note-editor,sources-panel,lint-panel,conflict-dialog,save-to-wiki-button}.tsx`.
   Types at `lib/domain/types.ts` from line ~1230 (`KnowledgeNoteDetail`, `KnowledgeGraph`,
   `KnowledgeSearchHit`, `KnowledgeLintReport`, …).
-- Knowledge corpus: `knowledge/` at repo root — `domain/` (12 pages, ISO/bearing/vibration
+- Knowledge corpus: `knowledge/` at repo root: `domain/` (12 pages, ISO/bearing/vibration
   physics), `concepts/` (11 pages, ML evaluation), `sources/` (11 provenance pages),
   `agent/` (supervisor + sql operational pages), `fleet/` (machine-a/b/c), `index.md`,
   `AGENT-WIKI.md`, `log.md`. Markdown with YAML frontmatter and `[[wikilinks]]`, typed
   relations (`sources`, `caused_by`, `detected_by`, `relates_to`), `> **Conflict:**`
   callouts, `confidence:` levels.
-  **`knowledge/fleet/machine-c.md` must NOT be ported** — it describes the real client
+  **`knowledge/fleet/machine-c.md` must NOT be ported**: it describes the real client
   machine's sampling, session gaps and drift. Everything in `domain/`, `concepts/`,
   `sources/`, `agent/` and `fleet/machine-a.md` is public/non-sensitive and reusable.
 
@@ -83,25 +83,25 @@ history" timeline in the machine stage. It still needs to be told in the README 
 
 - **The demo actually computes.** The preprocessing recipe and the training are real, not
   scripted: statistics are fitted on Train only and applied to Test, and the models are
-  genuinely fitted in the browser. This is what makes the honest-metrics story land — a
+  genuinely fitted in the browser. This is what makes the honest-metrics story land: a
   recipe that drops the informative columns produces a model that really does lose to the
   majority-class baseline, and the quality gate really does block it.
 - **Honesty about architectures.** Browser-trainable: logistic regression, random forest,
   gradient boosting, small MLP, ridge-on-lags forecaster. LSTM / GRU / TCN / XGBoost are
   listed and described but **refuse to run** with a message saying they train on the
-  production worker — no invented scores.
+  production worker; no invented scores.
 - **Three registry machines**, all public or synthetic:
   `mach-ai4i-mill` (AI4I 2020 rules, 2 000 generated rows, predict only),
   `mach-utility-pump` (synthetic 5-sensor, simulate + predict),
-  `mach-packaging-drive` (synthetic 3-axis fixture, simulate + predict — carries the
+  `mach-packaging-drive` (synthetic 3-axis fixture, simulate + predict; carries the
   generalisation story in its 5-entry `migrations` list).
   AI4I rows are regenerated from the dataset's **published** generative rules, so TWF / HDF /
-  PWF / OSF really do depend on products and differences of columns — which is why the
+  PWF / OSF really do depend on products and differences of columns, which is why the
   calculated-feature editor earns its place.
 - **Five stages** in the demo (production has four + a separate admin page):
   machine → data → prepare → train → **promote**.
 - Added deps to `apps/frontend/package.json`: `d3-force@^3.0.0`, `@types/d3-force@^3.0.10`
-  (already `npm install`ed). `papaparse` deliberately **not** added — no CSV upload in the
+  (already `npm install`ed). `papaparse` deliberately **not** added: no CSV upload in the
   demo; bundled public sources instead.
 
 ---
@@ -109,25 +109,25 @@ history" timeline in the machine stage. It still needs to be told in the README 
 ## Files written so far (all new, all on `dev`, none committed)
 
 ```
-apps/frontend/lib/demo-mlops/types.ts            — Capability, recipes, dataset versions, runs, deployments
-apps/frontend/lib/demo-mlops/datasets.ts         — 3 machines + seeded row generators + migrations
-apps/frontend/lib/demo-mlops/formula.ts          — formula grammar: validation (ported) + real
+apps/frontend/lib/demo-mlops/types.ts            : Capability, recipes, dataset versions, runs, deployments
+apps/frontend/lib/demo-mlops/datasets.ts         : 3 machines + seeded row generators + migrations
+apps/frontend/lib/demo-mlops/formula.ts          : formula grammar: validation (ported) + real
                                                     shunting-yard tokenizer/compiler/evaluator (new)
-apps/frontend/lib/demo-mlops/preprocessing.ts    — retypeColumn, defaultRecipe, digestOf,
+apps/frontend/lib/demo-mlops/preprocessing.ts    : retypeColumn, defaultRecipe, digestOf,
                                                     materialiseRows, split, Train-only statistics,
                                                     transform, warnings, previewRecipe
-apps/frontend/lib/demo-mlops/training.ts         — ARCHITECTURES, real learners (logistic, CART
+apps/frontend/lib/demo-mlops/training.ts         : ARCHITECTURES, real learners (logistic, CART
                                                     forest, gradient boosting, MLP, ridge-lag
                                                     forecaster), scoring + quality gate
-apps/frontend/lib/demo-mlops/store.ts            — module-scope store (subscribe/getSnapshot),
+apps/frontend/lib/demo-mlops/store.ts            : module-scope store (subscribe/getSnapshot),
                                                     buildDataset, startTraining, cancelRun,
                                                     promoteRun, workflowProgress
 apps/frontend/components/mlops/workflow-nav.tsx
-apps/frontend/components/mlops/machine-registry-stage.tsx   — machine list + schema-history timeline
-apps/frontend/components/mlops/machine-data-stage.tsx       — column contract, sources, readiness gates, row preview
-apps/frontend/components/mlops/derived-feature-editor.tsx   — ported + per-machine suggestions
-apps/frontend/components/mlops/preprocessing-workspace.tsx  — recipe controls + raw/train/test preview
-apps/frontend/components/mlops/model-scorecard.tsx          — headline figures, per-outcome table,
+apps/frontend/components/mlops/machine-registry-stage.tsx   : machine list + schema-history timeline
+apps/frontend/components/mlops/machine-data-stage.tsx       : column contract, sources, readiness gates, row preview
+apps/frontend/components/mlops/derived-feature-editor.tsx   : ported + per-machine suggestions
+apps/frontend/components/mlops/preprocessing-workspace.tsx  : recipe controls + raw/train/test preview
+apps/frontend/components/mlops/model-scorecard.tsx          : headline figures, per-outcome table,
                                                               confusion matrix, quality verdict
 ```
 
@@ -138,21 +138,21 @@ return expression; it now returns `augmented.map((row, index) => row[size] / row
 
 ## Next steps, in order
 
-### Milestone 1a — MLOps ✅ done
+### Milestone 1a: MLOps ✅ done
 
 Route `/mlops`, wired into `app-sidebar.tsx` and `app-header.tsx`. Five stages:
 
-1. `machine-registry-stage.tsx` — machine list, why there is no add-machine form, and the
+1. `machine-registry-stage.tsx`: machine list, why there is no add-machine form, and the
    **schema history timeline** that carries the bespoke → generic story.
-2. `machine-data-stage.tsx` — column contract, connected sources, per-goal readiness gates
+2. `machine-data-stage.tsx`: column contract, connected sources, per-goal readiness gates
    (`readinessFor`), 8-row authoritative preview.
-3. `preprocessing-workspace.tsx` + `derived-feature-editor.tsx` — recipe sidebar and a
+3. `preprocessing-workspace.tsx` + `derived-feature-editor.tsx`: recipe sidebar and a
    raw/train/test preview that really recomputes. Freezing produces a dataset version.
-4. `training-stage.tsx` — dataset picker over ready versions, model picker split into
+4. `training-stage.tsx`: dataset picker over ready versions, model picker split into
    *trains here* vs *production worker only*, hyperparameter form with `parameterRange` and
    `configurationProblems`, the exact JSON the run will carry, run list with progress,
    cancel, `<ModelScorecard>` and a technical-details dump.
-5. `promotion-stage.tsx` — candidate table scored against the trivial answer, quality
+5. `promotion-stage.tsx`: candidate table scored against the trivial answer, quality
    verdict, **required override reason** (≥ 12 chars) when a run is `not_recommended`,
    blocked entirely when `incompatible`, and the currently-serving alias card.
 
@@ -173,15 +173,15 @@ raw columns give a random forest ~0.80 balanced accuracy; adding the three calcu
 features the AI4I rules are actually written in (`power_w`, `temp_difference_k`,
 `overstrain`) takes it to ~0.93.
 
-### Milestone 1b — Agent Knowledge Wiki ✅ done
+### Milestone 1b: Agent Knowledge Wiki ✅ done
 
 Route `/knowledge`, wired into `app-sidebar.tsx` and `app-header.tsx`.
 
-**The corpus — 50 pages, reviewed page by page before porting.**
+**The corpus: 50 pages, reviewed page by page before porting.**
 `lib/demo-knowledge/corpus/{root,domain,concepts,sources,fleet,agent,raw}.ts` hold the
 markdown as template literals, frontmatter and all.
 
-- `domain/` (12) and `concepts/` (11) ported essentially verbatim — public standards and
+- `domain/` (12) and `concepts/` (11) ported essentially verbatim: public standards and
   modelling knowledge, every numeric claim carrying a `sources:` entry or an explicit
   Unsourced callout.
 - `sources/` (11) ported, with production repo paths scrubbed. The AI4I page was rewritten
@@ -190,13 +190,13 @@ markdown as template literals, frontmatter and all.
   demo's own seeded reconstruction produces (114 of 2 000, 94.30 % baseline) and says why
   the two are not interchangeable.
 - `fleet/` (4) **written fresh** for this demo's registry: `ai4i-milling-machine`,
-  `utility-pump-02`, `packaging-drive-01`, and `schema-generalisation` — the page that tells
+  `utility-pump-02`, `packaging-drive-01`, and `schema-generalisation`: the page that tells
   the bespoke-pipeline → generic-schema story in full, including what the abstraction cost.
   Every number on them was read off the MLOps registry, not invented.
 - `agent/` (8) **rewritten**, not ported. Production's operational pages carry a real
   database schema and real client sampling cadences; these describe this demo's own tool
   catalogue, capability guards and browser-side data contract instead.
-- `raw/` (1) — the legacy maintenance-guidelines document, unedited, so the corpus's claim
+- `raw/` (1): the legacy maintenance-guidelines document, unedited, so the corpus's claim
   that its vibration table is four times too permissive can be checked by the reader rather
   than taken on trust.
 
@@ -242,18 +242,18 @@ npm run build
 npx playwright test   # 9 passing
 ```
 
-### Milestone 2 — README ✅ done
+### Milestone 2: README ✅ done
 
 Two new chapters, written in the existing voice, and the surrounding renumbering:
 
-- **Chapter 3 — "A trained model is not yet a workflow"** (new). Opens with the ML-engineer
+- **Chapter 3: "A trained model is not yet a workflow"** (new). Opens with the ML-engineer
   intern motivation and the gap between training a model and having a rerunnable workflow,
   then tells the **Machine C bespoke → generic schema** story as a before/after table
   (positional columns, `contextRows = 30` in two places, implicit temporality, one model
   path, notebook preprocessing, a scaler fitted twice), what forced it (the mill has no time
   axis and no value of `contextRows` means "there is no context"), **what it cost**, then the
   five stages, the calculated-feature result and the honesty rules.
-- **Chapter 6 — "Memory the agent can read, and so can you"** (new). LLM-Wiki paper as
+- **Chapter 6: "Memory the agent can read, and so can you"** (new). LLM-Wiki paper as
   *inspiration only* with the benchmark disclaimer, the BM25 + interconnected wiki +
   navigable relations + human-editable design in one sentence, why chunk-and-embed is the
   wrong shape for "what caused this and what did we do last time", then the derived graph,
@@ -278,10 +278,10 @@ image and file path exists.
 
 - Keep the existing narrative voice and structure; do not turn it into product docs.
 - MLOps: inspired partly by the user's previous **ML Engineer intern** experience and the
-  gap between training a model and having a reproducible, usable ML workflow — brought into
+  gap between training a model and having a reproducible, usable ML workflow, brought into
   this project to make preparation, evaluation, promotion and serving transparent.
 - Knowledge Wiki: inspired by **"Retrieval as Reasoning: Self-Evolving Agent-Native
-  Retrieval via LLM-Wiki"** — <https://arxiv.org/abs/2605.25480>. Say it **inspired the
+  Retrieval via LLM-Wiki"**, <https://arxiv.org/abs/2605.25480>. Say it **inspired the
   design**; the paper *reports* promising gains for multi-hop / cross-document reasoning;
   **do not imply this implementation inherits those benchmark results.** Design in one
   breath: BM25 for fast retrieval · a persistent interconnected wiki for structured
@@ -291,7 +291,7 @@ image and file path exists.
 
 </details>
 
-### Milestone 3 — screenshots ✅ done
+### Milestone 3: screenshots ✅ done
 
 Seven shots under `assets/`, all 1600 px wide, captured by a throwaway Playwright spec that
 was deleted afterwards:
@@ -300,7 +300,7 @@ was deleted afterwards:
 |---|---|
 | `mlops_machine_registry.png` | The registry and the schema-history timeline (the generalisation story) |
 | `mlops_prepare_recipe.png` | The recipe sidebar with all three calculated features written out, beside the recomputed preview |
-| `mlops_model_scorecard.png` | **Two runs on one screen** — the same forest on raw columns and on the calculated ones |
+| `mlops_model_scorecard.png` | **Two runs on one screen**: the same forest on raw columns and on the calculated ones |
 | `mlops_promotion_gate.png` | Both candidates scored against the trivial answer, one selected, nothing serving yet |
 | `knowledge_wiki_graph.png` | The 50-page graph beside the index |
 | `knowledge_wiki_page.png` | A BM25 search, the graph dimming everything else, and the page open |
@@ -314,7 +314,7 @@ Three things the capture had to handle:
   document height instead and the shot is a plain viewport shot.
 - **The scorecard is scripted to earn its caption.** The spec trains the forest on the raw
   recipe, goes back to Prepare, adds `power_w`, `temp_difference_k` and `overstrain`,
-  freezes v2 and trains again — so the two runs in the image are the comparison the README
+  freezes v2 and trains again, so the two runs in the image are the comparison the README
   claims, not two unrelated runs.
 
 The README's calculated-feature table was **restated against the workspace's own defaults**
@@ -322,17 +322,17 @@ The README's calculated-feature table was **restated against the workspace's own
 screenshot under it are the same run: balanced accuracy 83.7 % → 93.1 %, failure recall
 69.6 % → 87.0 %, plain accuracy 96.3 % → 98.5 %, against a 94.3 % class prior.
 
-### Milestone 4 — navigable README ✅ done
+### Milestone 4: navigable README ✅ done
 
 The README is now a set of linked pages rather than a numbered sequence, in plain GitHub
-Markdown — no framework, no generated table of contents, no HTML beyond the `<sub>` the
+Markdown: no framework, no generated table of contents, no HTML beyond the `<sub>` the
 trails use.
 
 - **`Chapter N:` is gone from every heading.** Sections are named for what they answer, and
   the two prose references to a chapter number were rewritten as links.
 - **A `Start anywhere` map** sits under the header: thirteen rows, each a page and the
   question it answers. The header keeps a short jump line pointing into it.
-- **Every page ends with a trail** — `↑ Map · → Next · ↔ Related` — so the reader is always
+- **Every page ends with a trail** (`↑ Map · → Next · ↔ Related`), so the reader is always
   one click from the map, the next page, and the page this one leans on.
 - **Two new pages.** `The demo, in pictures` indexes all ten screens against the section that
   explains each, and `What this leans on` collects the datasets, standards, TSGM, the
@@ -344,7 +344,7 @@ relative path resolves.
 
 ---
 
-## Session 2026-08-29 — production UX parity (branch `fix/production-ux-parity`)
+## Session 2026-08-29: production UX parity (branch `fix/production-ux-parity`)
 
 PR #2 (`dev` -> `main`) is open and unmerged. This branch sits on top of `dev` and should be
 folded into that PR or opened as its own once the screenshots land.
@@ -414,6 +414,73 @@ regression, which was confirmed to fail with the fix reverted.
 defaults gives 83.7% balanced / 69.6% failure recall on raw columns and 93.1% / 87.0% with
 the three calculated features, against the 94.3% trivial answer. So "a run anyone can
 reproduce by clicking" is now a checked claim, not a hopeful one.
+
+---
+
+## Session 2026-08-29b: preprocessing terminology, and no long dashes anywhere (on `main`)
+
+Two asks, both cosmetic on the surface and a little less so underneath.
+
+### "Prepare" is now "Preprocessing"
+
+Stage three said **Prepare**, which is what a person says rather than what the pipeline does.
+Renamed through the stack, not just on the chip, because a label and an id that disagree are
+the next reader's small confusion:
+
+- `Stage` union: `"prepare"` becomes `"preprocess"` (`lib/demo-mlops/types.ts`), and with it
+  the `complete` record and the three `setStage` calls.
+- Nav chip reads **Preprocessing**; caption "Write the recipe" is unchanged.
+- The button leaving the data stage: "Prepare this data" becomes "Preprocess this data".
+- `workflowProgress()` in `lib/demo-mlops/store.ts` deleted. Exported, called by nothing,
+  still keyed on the `promote` stage that moved to `/admin/models` last session, and its doc
+  comment still said "five stages". Dead code that lies is worse than dead code.
+- README stage table and the two glossary sentences follow the rename.
+
+### Long dashes: 438 of them, none left
+
+`grep -o` counts bytes, not characters, so the first count came back three times too high.
+The real inventory across `apps/frontend`, excluding `node_modules`: **438**, of which 349
+were in the seven knowledge-corpus files, which are UI, because that markdown is what the
+preview pane renders.
+
+They were not all the same problem, so they did not all get the same fix:
+
+- **Prose dashes** became a colon, semicolon, comma or full stop depending on what the clause
+  was doing. Appositives that interrupt a sentence became parentheses, which is what the
+  paired dashes were imitating: `That framing (not the engine physics) is what makes C-MAPSS
+  the reference example`.
+- **Numeric ranges** (`0-2.8 mm/s`, `250-350 kHz`, `1-10`) became hyphens inside tables, and
+  "to" where a hyphen next to a unit would misread: `≈300 kW to 50 MW`.
+- **Null placeholders** were the interesting ones. A lone dash in a table cell is not
+  punctuation, it is a value, so it needed a word rather than a substitute mark: `n/a` in the
+  column contract, `none` in the wiki's own tables, `not scored` where a metric is missing.
+  One did not survive as a placeholder at all: a dash after `Dataset v` would have read
+  "Dataset vn/a", so the whole expression now branches to "No dataset version".
+- **ISO standard titles** keep an ASCII hyphen as their part separator, which is the ordinary
+  citation convention: *Mechanical vibration - Evaluation of machine vibration ... - Part 3*.
+- **YAML titles** could not take the obvious colon. `title: Supervisor: Routing Guide` parses
+  under the hand-rolled frontmatter reader but is not valid YAML, and the source view shows
+  the raw text, so those became `title: Supervisor Routing Guide`.
+
+`PROGRESS.md` got the same pass, since it is written in the same voice. The backend and `ml/`
+markdown was left alone: it is not the demo UI and predates this work.
+
+### Screenshots
+
+Every MLOps and wiki shot showed either the old **Prepare** chip or copy that has since
+changed, so seven were recaptured through a scripted click-through: registry, recipe,
+scorecard, approvals, graph, page, provenance. `mlops_training_config.png` shows neither and
+was left as it was. Framing is now the `main` element at a 1592px viewport, so the sidebar
+and top bar stay out, matching how the previous set was cropped.
+
+The scorecard reproduces the README's headline table again, on purpose: Random forest at UI
+defaults, 83.7 % balanced / 69.6 % failure recall on the registered columns, 93.1 % / 87.0 %
+with the three calculated features, against a 94.3 % trivial answer.
+
+### Verified
+
+`tsc --noEmit`, `eslint`, `vitest run` (19 files, 106 tests), `npm run build`, and Playwright
+10 passed. Dash count across `apps/frontend`: 0.
 
 ---
 

@@ -1,5 +1,5 @@
 /**
- * The `sources/` namespace — provenance.
+ * The `sources/` namespace: provenance.
  *
  * One page per external document, carrying its citation, what was taken from it, and what it
  * does not cover. Every number in `domain/` and `concepts/` traces back to one of these, which
@@ -36,7 +36,7 @@ confidence: high
 
 This is the dataset behind [[fleet/ai4i-milling-machine]], the first machine in the MLOps
 registry. **This demo does not ship the file.** It reconstructs rows in the browser from the five
-published rules below, which is why its own failure counts differ from the ones recorded here — see
+published rules below, which is why its own failure counts differ from the ones recorded here; see
 [[fleet/ai4i-milling-machine]] for what the reconstruction actually produces.
 
 ## What the dataset is
@@ -45,9 +45,9 @@ published rules below, which is why its own failure counts differ from the ones 
 
 | Column | Unit | How it is generated |
 |---|---|---|
-| \`UDI\` | — | 1–10 000 |
-| \`Product ID\` | — | quality variant letter L / M / H plus a serial |
-| \`Type\` | — | L / M / H — **6 000 / 2 997 / 1 003** rows (verified) |
+| \`UDI\` | none | 1-10 000 |
+| \`Product ID\` | none | quality variant letter L / M / H plus a serial |
+| \`Type\` | none | L / M / H, **6 000 / 2 997 / 1 003** rows (verified) |
 | \`Air temperature [K]\` | K | random walk, σ ≈ 2 K, around 300 K |
 | \`Process temperature [K]\` | K | random walk, σ ≈ 1 K, air temperature + 10 K |
 | \`Rotational speed [rpm]\` | rpm | derived from a 2 860 W power draw, plus noise |
@@ -58,14 +58,14 @@ published rules below, which is why its own failure counts differ from the ones 
 
 ## The five failure modes, as documented
 
-- **TWF** tool wear failure — the tool is replaced or fails at a randomly chosen wear between 200
+- **TWF** tool wear failure: the tool is replaced or fails at a randomly chosen wear between 200
   and 240 min.
-- **HDF** heat dissipation failure — air-to-process temperature difference below 8.6 K *and*
+- **HDF** heat dissipation failure: air-to-process temperature difference below 8.6 K *and*
   rotational speed below 1 380 rpm.
-- **PWF** power failure — torque × angular velocity below 3 500 W or above 9 000 W.
-- **OSF** overstrain failure — tool wear × torque exceeds 11 000 minNm (L), 12 000 (M) or
+- **PWF** power failure: torque × angular velocity below 3 500 W or above 9 000 W.
+- **OSF** overstrain failure: tool wear × torque exceeds 11 000 minNm (L), 12 000 (M) or
   13 000 (H).
-- **RNF** random failure — a 0.1 % chance per process, independent of everything else.
+- **RNF** random failure: a 0.1 % chance per process, independent of everything else.
 
 ## Verified counts, and where they disagree with the description
 
@@ -84,7 +84,7 @@ Recomputed from the real 10 000-row file on 2026-08-27, in the project this demo
 
 > **Conflict (2026-08-27):** the UCI description says TWF occurs 120 times, of which 51 are
 > failures, and that RNF occurs 5 times. The file has **TWF = 46** and **RNF = 19**. The file is
-> what the real models were trained on, so the file wins — but do not quote the
+> what the real models were trained on, so the file wins, but do not quote the
 > published figures as if they described this data.
 
 > **Conflict (2026-08-27):** RNF is documented as a failure mode, yet **18 of its 19 rows carry
@@ -97,7 +97,7 @@ Recomputed from the real 10 000-row file on 2026-08-27, in the project this demo
 
 It is synthetic. The distributions are drawn, not measured, so it is a benchmark for method
 comparison and not evidence about how any real milling machine behaves. It carries no timestamps and
-no machine identity, so nothing about sequence, drift, or per-unit history can be learned from it —
+no machine identity, so nothing about sequence, drift, or per-unit history can be learned from it;
 see [[concepts/train-test-leakage-in-time-series]] for why that matters elsewhere.
 
 At 3.39 % positives it is severely imbalanced: predicting "no failure" for every row scores
@@ -123,7 +123,7 @@ confidence: medium
 |---|---|
 | Publishers | Automotive Industry Action Group (AIAG) and Verband der Automobilindustrie (VDA) |
 | Edition | 1st, 2019 |
-| Secondary sources read | Quality Assist, *RPN vs Action Priority* — <https://quasist.com/fmea/rpn-vs-ap-action-priority/>; *FMEA Action Priority (AIAG-VDA Standard)* — <https://quasist.com/fmea/action-priority-in-fmea/> |
+| Secondary sources read | Quality Assist, *RPN vs Action Priority*, <https://quasist.com/fmea/rpn-vs-ap-action-priority/>; *FMEA Action Priority (AIAG-VDA Standard)*, <https://quasist.com/fmea/action-priority-in-fmea/> |
 | Accessed | 2026-08-27 |
 | Kind | **Secondary.** The handbook is a paid publication and was not read. |
 
@@ -131,7 +131,7 @@ confidence: medium
 
 That the 2019 handbook **replaced the Risk Priority Number with Action Priority**, and why.
 
-RPN is Severity × Occurrence × Detection, each rated 1–10, giving 1–1 000. Its flaw is that it treats
+RPN is Severity × Occurrence × Detection, each rated 1-10, giving 1-1 000. Its flaw is that it treats
 the three factors as interchangeable: a safety-critical failure mode scores low if occurrence and
 detection happen to be good, and a genuinely dangerous risk drops down the list.
 
@@ -143,7 +143,7 @@ Used by [[domain/fmea-and-criticality]].
 
 ## What it does not cover
 
-The AP table itself is not reproduced here — it is 1 000 rows of copyrighted content, and
+The AP table itself is not reproduced here: it is 1 000 rows of copyrighted content, and
 paraphrasing it from a summary would be exactly the kind of unsourced numeric claim this corpus
 refuses to make. Anyone doing a real FMEA needs the handbook.
 `,
@@ -180,13 +180,13 @@ throttle resolver angle), plus an engine unit id and a cycle counter.
 | Subset | Operating conditions | Fault modes | Train / test trajectories |
 |---|---|---|---|
 | FD001 | 1 (sea level) | 1 (HPC degradation) | 100 / 100 |
-| FD002 | 6 | 1 | — |
-| FD003 | 1 | 2 | — |
+| FD002 | 6 | 1 | none |
+| FD003 | 1 | 2 | none |
 | FD004 | 6 | 2 (HPC and fan degradation) | 248 / 249 |
 
 The structural point, which is why this page exists: **training trajectories run to failure, test
 trajectories are truncated at an arbitrary point**, and the task is to predict how many cycles
-remain. That framing — not the engine physics — is what makes C-MAPSS the reference example for
+remain. That framing (not the engine physics) is what makes C-MAPSS the reference example for
 [[concepts/remaining-useful-life]] and for [[concepts/labelling-failure-windows]].
 
 ## What it does not cover
@@ -197,7 +197,7 @@ are deliberately left blank rather than guessed.
 `,
 
   "sources/crowe-2007-bearing-faults": `---
-title: Crowe 2007 — Understanding and Detecting Rolling Element Bearing Faults
+title: Crowe 2007, Understanding and Detecting Rolling Element Bearing Faults
 namespace: sources
 type: source
 tags: [bearing, vibration, diagnostics]
@@ -216,7 +216,7 @@ confidence: high
 | | |
 |---|---|
 | Author | Jim Crowe, Jim Crowe Vibration Technologies |
-| Published in | 2007 Conference Proceedings, Reliability Engineering track, pp. 301–306 |
+| Published in | 2007 Conference Proceedings, Reliability Engineering track, pp. 301-306 |
 | Retrieved from | <http://media.noria.com/downloads/ml/Crowe-Understanding.pdf> |
 | Accessed | 2026-08-27 |
 | Kind | **Primary.** All six pages were read in full. |
@@ -224,7 +224,7 @@ confidence: high
 ## What was taken from it
 
 **The defect-frequency formulas**, with \`Nb\` rolling elements, \`Pd\` pitch diameter, \`Bd\` ball or
-roller diameter, \`Ca\` contact angle, \`Ts\` shaft turning speed — used by
+roller diameter, \`Ca\` contact angle, \`Ts\` shaft turning speed, used by
 [[domain/bearing-failure-modes]]:
 
 \`\`\`
@@ -239,7 +239,7 @@ FTF  = Ts/2 * (1 + Bd/Pd * cos Ca)     inner race fixed, outer rotating
 known: \`0.6 * Nb * Ts\` inner race, \`0.4 * Nb * Ts\` outer race, \`0.23 * Nb * Ts\` for ball spin under
 10 rolling elements and \`0.18 * Nb * Ts\` at 10 or more, \`0.4 * Ts\` for the cage.
 
-**The sideband signatures** — the part that actually identifies which component failed:
+**The sideband signatures**, the part that actually identifies which component failed:
 
 - inner race defect → sidebands spaced at **shaft speed**, because the defect passes in and out of
   the load zone once per revolution
@@ -250,24 +250,24 @@ known: \`0.6 * Nb * Ts\` inner race, \`0.4 * Nb * Ts\` outer race, \`0.23 * Nb *
   the same size
 
 **The six-stage progression** and the observation that detection moves down in frequency as damage
-grows — used by [[domain/bearing-degradation-stages]].
+grows, used by [[domain/bearing-degradation-stages]].
 
 **Two cautions that matter more than the formulas.** First: overall velocity is a bad screen for
 bearing damage. The paper shows a bearing with a clear inner-race defect and 7 g impacting whose
 overall velocity trend read 0.0625 in/s. Second: absolute amplitude is not severity. An inner-race
 defect reads lower than an identical outer-race defect purely because its energy travels through a
-rolling element first, and sensor position relative to the load zone changes the number again — so
+rolling element first, and sensor position relative to the load zone changes the number again, so
 watch rate of change and pattern, not the absolute value.
 
 **Time to failure is not a constant.** The paper reports the same progression taking hours when
 coolant washes out the grease, months when the bearing is merely overloaded, and years for what the
-author took to be mounting or handling damage — one fan bearing showed outer-race defect frequencies
+author took to be mounting or handling damage: one fan bearing showed outer-race defect frequencies
 from April 2000 and was still not in alarm in June 2006.
 
 ## What it does not cover
 
 No thresholds, no alarm levels, no ISO zone mapping. It is a pattern-recognition paper: it tells you
-what a defect *looks* like, not when to act. Do not cite it for a limit — see
+what a defect *looks* like, not when to act. Do not cite it for a limit; see
 [[domain/vibration-severity-zones]] for those.
 `,
 
@@ -313,8 +313,8 @@ synthetic, snapshot-shaped and labelled by rule; PRONOSTIA is measured, trajecto
 labelled by the bearing actually failing. The contrast is the cleanest way to explain why a model
 that scores well on one says nothing about the other. See [[concepts/remaining-useful-life]].
 
-> **Unsourced:** a widely repeated detail — that vibration is recorded as 2 560-sample snapshots
-> every 10 s — was not confirmed from the platform's own documentation and is deliberately omitted
+> **Unsourced:** a widely repeated detail (that vibration is recorded as 2 560-sample snapshots
+> every 10 s) was not confirmed from the platform's own documentation and is deliberately omitted
 > from the numbers above.
 
 ## What it does not cover
@@ -363,12 +363,12 @@ confidence: medium
 
 ## What this source establishes
 
-- Temperature monitoring thresholds for CNC Spindle Motors (60–75°C, Warning 85°C, Critical 95°C)
-- Vibration severity zones based on RMS Velocity (ISO 10816): A (0–2.8 mm/s), B (2.8–7.1 mm/s), C (7.1–18 mm/s), D (>18 mm/s)
+- Temperature monitoring thresholds for CNC Spindle Motors (60-75°C, Warning 85°C, Critical 95°C)
+- Vibration severity zones based on RMS Velocity (ISO 10816): A (0-2.8 mm/s), B (2.8-7.1 mm/s), C (7.1-18 mm/s), D (>18 mm/s)
 - Tool life model using Taylor's Equation: T × V^n = C (where n ≈ 0.25)
 - Tool life reduction: Doubling cutting speed reduces tool life by approximately 16×
 - Hydraulic system failure response: Pressure drop >20% schedules action within 24 hours
-- Bearing failure progression stages: Stage 1 (250–350 kHz), Stage 2 (2–60 kHz), Stage 3 (1–10 kHz), Stage 4 (<1 kHz)
+- Bearing failure progression stages: Stage 1 (250-350 kHz), Stage 2 (2-60 kHz), Stage 3 (1-10 kHz), Stage 4 (<1 kHz)
 - Lubrication intervals: Rolling bearings (<3000 RPM) require NLGI #2 grease every 2000 hours; Gear boxes require ISO VG 220 oil every 4000 hours
 
 ## What it does not cover
@@ -399,28 +399,28 @@ confidence: medium
 
 # ISO 10816-3
 
-**Full title.** *Mechanical vibration — Evaluation of machine vibration by measurements on
-non-rotating parts — Part 3: Industrial machines with nominal power above 15 kW and nominal speeds
+**Full title.** *Mechanical vibration - Evaluation of machine vibration by measurements on
+non-rotating parts - Part 3: Industrial machines with nominal power above 15 kW and nominal speeds
 between 120 r/min and 15 000 r/min when measured in situ.*
 
 | | |
 |---|---|
-| Status | **Superseded** by ISO 20816-3:2022 ([[sources/iso-20816-3]]) — and still what most field instruments, spreadsheets and plant standards actually quote |
+| Status | **Superseded** by ISO 20816-3:2022 ([[sources/iso-20816-3]]), and still what most field instruments, spreadsheets and plant standards actually quote |
 | Catalogue (authority) | <https://www.iso.org/standard/50528.html> |
 | Accessed | 2026-08-27 |
 | Kind | **Paywalled.** Numbers below are from a secondary source. |
 
 ## Secondary source used for the numbers
 
-Fabrico, *ISO 10816-3 Vibration Severity: Zones, Limits and How to Read Them* —
+Fabrico, *ISO 10816-3 Vibration Severity: Zones, Limits and How to Read Them*,
 <https://www.fabrico.io/blog/iso-10816-3-vibration-severity/>, accessed 2026-08-27.
 
 ## What was taken from it
 
-- Measured quantity: broadband **RMS vibration velocity in mm/s**, band **10–1 000 Hz**, taken on
-  the non-rotating parts — bearing housings, horizontal / vertical / axial.
+- Measured quantity: broadband **RMS vibration velocity in mm/s**, band **10-1 000 Hz**, taken on
+  the non-rotating parts: bearing housings, horizontal / vertical / axial.
 - Machine groups: **Group 1** large machines above about 300 kW up to 50 MW; **Group 2** medium
-  machines about 15 kW to 300 kW. Speed range 120–15 000 r/min.
+  machines about 15 kW to 300 kW. Speed range 120-15 000 r/min.
 - Support class: rigid or flexible, which shifts every boundary.
 
 | Class | A/B | B/C | C/D |
@@ -459,8 +459,8 @@ confidence: high
 
 # ISO 13374-1:2003
 
-**Full title.** *Condition monitoring and diagnostics of machines — Data processing, communication
-and presentation — Part 1: General guidelines.*
+**Full title.** *Condition monitoring and diagnostics of machines - Data processing, communication
+and presentation - Part 1: General guidelines.*
 
 | | |
 |---|---|
@@ -494,7 +494,7 @@ presentation requirements); and that Annex A points at the MIMOSA XML schema.
 
 ## Naming discrepancy worth knowing
 
-Secondary summaries of ISO 13374 — including MIMOSA/OSA-CBM material — routinely call the sixth
+Secondary summaries of ISO 13374 (including MIMOSA/OSA-CBM material) routinely call the sixth
 block **"Advisory Presentation (AP)"**. The standard's own text calls it **"Advisory Generation
 (AG)"**. This corpus follows the standard.
 
@@ -525,7 +525,7 @@ confidence: medium
 
 # ISO 20816-3:2022
 
-**Full title.** *Mechanical vibration — Measurement and evaluation of machine vibration — Part 3:
+**Full title.** *Mechanical vibration - Measurement and evaluation of machine vibration - Part 3:
 Industrial machinery with a power rating above 15 kW and operating speeds between 120 r/min and
 30 000 r/min.*
 
@@ -539,7 +539,7 @@ Industrial machinery with a power rating above 15 kW and operating speeds betwee
 
 ## Secondary source used for the numbers
 
-Wertek, *ISO 20816 Vibration Severity Guide* — <https://wertek.ai/engineering/vibration/iso-20816-severity/>,
+Wertek, *ISO 20816 Vibration Severity Guide*, <https://wertek.ai/engineering/vibration/iso-20816-severity/>,
 accessed 2026-08-27.
 
 ## What was taken from it
@@ -566,12 +566,12 @@ Used by [[domain/vibration-severity-zones]].
 
 The zone boundaries alone do not decide anything. The standard also evaluates displacement, sets
 criteria for *change* from a baseline as well as absolute magnitude, and defines the machine groups
-by power and support flexibility — none of which was read from the standard itself. Anything in this
+by power and support flexibility, none of which was read from the standard itself. Anything in this
 corpus about machine-group assignment is inference from the secondary tables, not from ISO text.
 `,
 
   "sources/nowlan-heap-1978-rcm": `---
-title: Nowlan and Heap (1978) — Reliability-Centered Maintenance
+title: Nowlan and Heap (1978), Reliability-Centered Maintenance
 namespace: sources
 type: source
 tags: [reliability, rcm, p-f-curve, strategy]
@@ -590,7 +590,7 @@ confidence: medium
 |---|---|
 | Authors | F. Stanley Nowlan and Howard F. Heap, United Airlines |
 | Published | 1978, report prepared for the U.S. Department of Defense |
-| Secondary sources read | eMaint, *P-F Curve Explained* — <https://www.emaint.com/resources/blog/p-f-curve-explained-definition-and-explanation>; Reliabilityweb, *Completing the Curve* — <https://reliabilityweb.com/articles/entry/completing-the-curve> |
+| Secondary sources read | eMaint, *P-F Curve Explained*, <https://www.emaint.com/resources/blog/p-f-curve-explained-definition-and-explanation>; Reliabilityweb, *Completing the Curve*, <https://reliabilityweb.com/articles/entry/completing-the-curve> |
 | Accessed | 2026-08-27 |
 | Kind | **Secondary.** The 1978 report itself was not fetched. The definition below is quoted by both secondary sources as the report's own wording. |
 
@@ -598,21 +598,21 @@ confidence: medium
 
 The origin of the **P-F curve** and its two named points:
 
-- **Potential failure (P)** — "an identifiable physical condition which indicates that a functional
+- **Potential failure (P)**: "an identifiable physical condition which indicates that a functional
   failure is imminent".
-- **Functional failure (F)** — the point at which the item no longer meets a stated standard of
+- **Functional failure (F)**: the point at which the item no longer meets a stated standard of
   performance. Crucially **not** the same as catastrophic failure: a machine can be running and
   already functionally failed.
 
 The **P-F interval** is the time between the two, and it is the quantity that sets how often you have
-to look. Nowlan and Heap's underlying finding — that condition-based intervention outperforms
-age-based replacement for most failure patterns — is the argument this whole application rests on.
+to look. Nowlan and Heap's underlying finding (that condition-based intervention outperforms
+age-based replacement for most failure patterns) is the argument this whole application rests on.
 See [[domain/p-f-curve]] and [[domain/maintenance-strategies]].
 
 ## What it does not cover
 
 No P-F interval values. The interval is per failure mode, per machine, per detection technique, and
-the report does not tabulate them — anyone quoting "the P-F interval for bearings" without naming a
+the report does not tabulate them; anyone quoting "the P-F interval for bearings" without naming a
 technique is quoting nothing. This corpus does not state one.
 `,
 
@@ -636,7 +636,7 @@ confidence: low
 | | |
 |---|---|
 | Origin | \`maintenance_guidelines.md\`, the only domain document this project originally shipped with |
-| Preserved at | [[raw/legacy-maintenance-guidelines]] in this vault — the original, unedited, so every claim below can be checked against it |
+| Preserved at | [[raw/legacy-maintenance-guidelines]] in this vault: the original, unedited, so every claim below can be checked against it |
 | Kind | **Internal, uncited.** It carries no references of its own and no author. Its provenance is unknown; its style suggests it was generated rather than compiled. |
 | Status | Superseded by this corpus. Retained here so the claims it made can be traced. |
 | Accessed | 2026-08-27 |
@@ -644,7 +644,7 @@ confidence: low
 ## Why it is recorded as a source at all
 
 Because it was the only domain knowledge this application shipped with, it was wired into a FAISS
-retrieval pipeline that **nothing ever called** — the retriever module had no callers, so the
+retrieval pipeline that **nothing ever called**: the retriever module had no callers, so the
 document was unreachable at runtime for its entire life. Content that was never read cannot have
 been validated by use. Everything it asserts should be treated as a claim to check, not a fact.
 
@@ -664,19 +664,19 @@ Its ISO 10816 table:
 
 | Its zone | Its range (mm/s RMS) |
 |---|---|
-| A (Good) | 0–2.8 |
-| B (Acceptable) | 2.8–7.1 |
-| C (Warning) | 7.1–18 |
+| A (Good) | 0-2.8 |
+| B (Acceptable) | 2.8-7.1 |
+| C (Warning) | 7.1-18 |
 | D (Danger) | >18 |
 
 > **Conflict (2026-08-27):** these are **not** ISO 10816-3 values for any machine group. The
 > standard's Group 2 rigid boundaries are 1.4 / 2.8 / 4.5 mm/s and even the most permissive class in
 > [[sources/iso-10816-3]] tops out at 11.0 mm/s, not 18. A machine sitting at 6 mm/s is "Acceptable"
-> by this document and already past the C/D line — a *stop immediately* condition — for a Group 2
+> by this document and already past the C/D line (a *stop immediately* condition) for a Group 2
 > rigid machine. The correct figures are on [[domain/vibration-severity-zones]]; this table is
 > recorded only so that anyone who saw it can recognise where the wrong number came from.
 
-Its bearing-stage frequency bands (250–350 kHz ultrasonic, 2–60 kHz, 1–10 kHz audible) and its
+Its bearing-stage frequency bands (250-350 kHz ultrasonic, 2-60 kHz, 1-10 kHz audible) and its
 fixed remaining-life claims ("plan replacement in 30 days") are likewise uncited and are **not**
 carried into [[domain/bearing-degradation-stages]], which uses [[sources/crowe-2007-bearing-faults]]
 instead. Crowe's own finding is that the time through those stages ranges from hours to years, which

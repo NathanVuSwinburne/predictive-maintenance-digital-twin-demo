@@ -1,7 +1,7 @@
 /**
  * The registry the demo MLOps workspace works on.
  *
- * Every row is generated here, in the browser, from a seeded PRNG — there is no backend
+ * Every row is generated here, in the browser, from a seeded PRNG: there is no backend
  * and no client telemetry in this repository. Two of the three machines follow the
  * *published* generative rules of public datasets, so the relationships a model has to
  * find are real relationships rather than decoration: the AI4I failure modes genuinely
@@ -11,7 +11,7 @@
 
 import type { DemoMachine, SampleRow } from "@/lib/demo-mlops/types";
 
-/** mulberry32 — small, fast, and identical on every machine that loads this page. */
+/** mulberry32: small, fast, and identical on every machine that loads this page. */
 function seededRandom(seed: number) {
   let state = seed >>> 0;
   return () => {
@@ -22,7 +22,7 @@ function seededRandom(seed: number) {
   };
 }
 
-/** Box–Muller, so the columns have a believable spread rather than a flat one. */
+/** Box-Muller, so the columns have a believable spread rather than a flat one. */
 function gaussian(random: () => number, mean: number, deviation: number) {
   const u = Math.max(random(), 1e-9);
   const v = random();
@@ -196,7 +196,7 @@ export const DEMO_MACHINES: DemoMachine[] = [
     id: "mach-ai4i-mill",
     name: "AI4I Milling Machine",
     description:
-      "The AI4I 2020 benchmark, treated as a registered machine. Snapshot failure detection only — the dataset carries no usable time axis, so nothing here can be forecast.",
+      "The AI4I 2020 benchmark, treated as a registered machine. Snapshot failure detection only: the dataset carries no usable time axis, so nothing here can be forecast.",
     capabilities: ["predict"],
     schemaVersion: 4,
     createdAt: "2026-02-02T06:00:00.000Z",
@@ -222,7 +222,7 @@ export const DEMO_MACHINES: DemoMachine[] = [
         label: "AI4I 2020 predictive maintenance dataset",
         kind: "public-dataset",
         origin: "UCI Machine Learning Repository · Matzka (2020)",
-        licence: "CC BY 4.0 — public benchmark",
+        licence: "CC BY 4.0, public benchmark",
         rowCount: AI4I_ROWS,
         sessionCount: 8,
         connectedAt: "2026-02-02T06:12:00.000Z",
@@ -235,7 +235,7 @@ export const DEMO_MACHINES: DemoMachine[] = [
       { schemaVersion: 4, at: "2026-06-09", summary: "Moved onto the shared machine schema: timestamp and session become metadata, never model inputs." },
     ],
     sampleRows: buildAi4iRows(),
-    population: { rows: 10000, sessions: 40, span: "no real time axis — ordered by unique row id" },
+    population: { rows: 10000, sessions: 40, span: "no real time axis, ordered by unique row id" },
   },
   {
     id: "mach-utility-pump",
@@ -250,7 +250,7 @@ export const DEMO_MACHINES: DemoMachine[] = [
     features: [
       { name: "vibration_rms_g", unit: "g", dtype: "float", note: "Broadband RMS, rises with wear." },
       { name: "bearing_temp_c", unit: "°C", dtype: "float", note: "Drive-end bearing housing." },
-      { name: "discharge_pressure_bar", unit: "bar", dtype: "float", note: "Has genuine dropouts — about 1 % of rows." },
+      { name: "discharge_pressure_bar", unit: "bar", dtype: "float", note: "Has genuine dropouts, about 1 % of rows." },
       { name: "flow_lpm", unit: "L/min", dtype: "float", note: "Falls as the impeller wears." },
       { name: "motor_power_kw", unit: "kW", dtype: "float", note: "Rises to hold flow." },
     ],
@@ -266,7 +266,7 @@ export const DEMO_MACHINES: DemoMachine[] = [
         label: "Synthetic multi-sensor pump telemetry",
         kind: "synthetic-fixture",
         origin: "Generated in-browser from a seeded PRNG",
-        licence: "Demo fixture — free to reuse",
+        licence: "Demo fixture, free to reuse",
         rowCount: 12 * 110,
         sessionCount: 12,
         connectedAt: "2026-05-04T22:31:00.000Z",
@@ -309,7 +309,7 @@ export const DEMO_MACHINES: DemoMachine[] = [
         label: "Synthetic three-axis drive fixture",
         kind: "synthetic-fixture",
         origin: "Generated in-browser from a seeded PRNG",
-        licence: "Demo fixture — free to reuse",
+        licence: "Demo fixture, free to reuse",
         rowCount: 908,
         sessionCount: 8,
         connectedAt: "2026-06-11T03:20:00.000Z",

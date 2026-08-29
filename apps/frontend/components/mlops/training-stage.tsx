@@ -117,7 +117,7 @@ export function TrainingStage({
 
   const architecture = findArchitecture(architectureId) ?? architectures[0];
   // The newest ready dataset is almost always the one meant, so it stands in until a
-  // choice is made — and a choice that stops existing falls back to it rather than
+  // choice is made, and a choice that stops existing falls back to it rather than
   // leaving the picker pointing at nothing.
   const dataset =
     readyDatasets.find((item) => item.id === datasetId) ?? readyDatasets[0] ?? null;
@@ -145,7 +145,7 @@ export function TrainingStage({
           <CardTitle className="text-lg">Fit a model</CardTitle>
           <CardDescription>
             A run cites one frozen dataset version. Change the recipe and you get a new
-            version — never a quietly different model over the same name.
+            version, never a quietly different model over the same name.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-5 p-4">
@@ -227,7 +227,7 @@ export function TrainingStage({
                 >
                   <ProhibitIcon className="mt-0.5 shrink-0" aria-hidden="true" />
                   <span>
-                    This one is real in production and absent here. Launch it if you like — the
+                    This one is real in production and absent here. Launch it if you like: the
                     run will fail with the reason rather than print a plausible score nobody
                     computed.
                   </span>

@@ -10,7 +10,7 @@ import type { HistoryEntry, LogEntry } from "@/lib/demo-knowledge/types";
  * Two chronologies side by side, because they answer different questions.
  *
  * The log is the vault's: every write, with the reason its author gave. The history is one page's:
- * the previous versions, restorable. Keeping the reason next to the version is the point — a
+ * the previous versions, restorable. Keeping the reason next to the version is the point: a
  * timestamp tells a future reader when something changed and nothing about why.
  */
 
@@ -58,7 +58,7 @@ export function HistoryPanel({
         </p>
         {history.length === 0 ? (
           <p className="mb-4 text-[11px] leading-4 text-muted-foreground">
-            No earlier versions — this page has only been written once. Every save from here on
+            No earlier versions. This page has only been written once. Every save from here on
             snapshots the previous text, which is exactly why editing is allowed to be casual.
           </p>
         ) : (

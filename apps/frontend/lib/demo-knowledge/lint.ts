@@ -1,10 +1,10 @@
 /**
- * Vault health — the third operation, after ingest and query.
+ * Vault health, the third operation, after ingest and query.
  *
  * Lint answers "what is wrong with the wiki right now" in a form both the pane and the assistant
  * can act on. Everything it reports is a piece of work, not a violation: a wanted page is a page
  * worth writing, an orphan is a page nobody can find, an unsourced number is a claim waiting for a
- * citation. Presenting them as errors would be the wrong frame — a healthy vault under active use
+ * citation. Presenting them as errors would be the wrong frame; a healthy vault under active use
  * always has some.
  */
 
@@ -17,7 +17,7 @@ const STALE_DAYS = 90;
 const CONFLICT = /^>\s*\*\*Conflict\b/m;
 const UNSOURCED = /^>\s*\*\*Unsourced\b/m;
 
-/** A bare number with a unit or a comparison — the shape of a claim that needs a citation. */
+/** A bare number with a unit or a comparison, the shape of a claim that needs a citation. */
 const NUMERIC_CLAIM = /\b\d+(?:[.,]\d+)?\s*(?:mm\/s|Hz|kHz|°C|degC|%|rpm|RPM|bar|kW|Nm|dB|K)\b/;
 
 /** Only these namespaces are held to the citation rule; `fleet/` reports observations. */
@@ -35,7 +35,7 @@ function parseDate(value: string | null): Date | null {
  * Two pages that are really the same page.
  *
  * This is what a forked write looks like from the outside: one file keeps the content while another
- * takes the name, and every symptom after that — an orphan, a link resolving to the wrong one — is
+ * takes the name, and every symptom after that (an orphan, a link resolving to the wrong one) is
  * downstream of it. Naming the pair says what actually happened.
  *
  * Filenames only collide within one folder, because a vault deliberately has several `index` pages

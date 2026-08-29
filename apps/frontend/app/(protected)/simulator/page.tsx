@@ -506,7 +506,7 @@ function sortReadingsByNewest<T extends { timestamp: string }>(readings: T[]) {
 function legendSensorLabel(dataKey: unknown) {
   if (typeof dataKey !== "string") return "Sensor";
   const sensor = metricLabel(dataKey.replace(/(Actual|Generated)$/, ""));
-  return `${sensor} — ${dataKey.endsWith("Actual") ? "Observed/client-derived fixture" : "Synthetic forecast"}`;
+  return `${sensor}: ${dataKey.endsWith("Actual") ? "Observed/client-derived fixture" : "Synthetic forecast"}`;
 }
 
 function SensorChartLegend({

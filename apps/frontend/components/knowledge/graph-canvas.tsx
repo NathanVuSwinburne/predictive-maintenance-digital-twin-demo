@@ -345,7 +345,7 @@ export function GraphCanvas({
       <div className="absolute right-3 bottom-3 flex items-center gap-2 text-xs text-muted-foreground">
         {graph.truncated > 0 && (
           <span className="rounded-md border bg-card/90 px-2 py-1 shadow-sm">
-            {graph.truncated} more pages not drawn — narrow the filter
+            {graph.truncated} more pages not drawn. Narrow the filter
           </span>
         )}
         <button

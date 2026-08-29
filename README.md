@@ -199,7 +199,7 @@ The workflow ships as a frontend-only workspace at **`/mlops`**, over three publ
 |---|---|
 | **Machine** | The registry, plus each machine's **column history** as a timeline. Five versions for the drive, because a version number with no record of what changed is a number, not a history. |
 | **Data** | The columns, where they came from, and a readiness check per goal. A machine with no time axis is told plainly that it cannot forecast, instead of being offered a button that would fail. |
-| **Prepare** | Split, missing values, scaling, resampling, and an editor for writing **new columns as formulas** over the existing ones. Freezing the recipe produces a dataset version that can no longer change. |
+| **Preprocessing** | Split, missing values, scaling, resampling, and an editor for writing **new columns as formulas** over the existing ones. Freezing the recipe produces a dataset version that can no longer change. |
 | **Train** | Model types split into *runs in your browser* and *production worker only*, and hyperparameters edited as **JSON**, the way the production app edits them. There were per-parameter number fields here once; two ways to set one value is only ever a way for the two to disagree. |
 
 Training ends there, and deliberately. It produces candidates, nothing more. Moving one to production is an admin decision on a separate page, **`/admin/models`**, which is where it lives in the real app too.
@@ -572,7 +572,7 @@ Every term this README uses, in one sentence. Nothing here assumes you have trai
 
 | Term | What it means |
 |---|---|
-| **MLOps** | The practice of making the whole model lifecycle repeatable: prepare, train, evaluate, approve, serve. |
+| **MLOps** | The practice of making the whole model lifecycle repeatable: preprocess, train, evaluate, approve, serve. |
 | **Schema** | The description of a machine's columns: their names, units, types and meanings. |
 | **Recipe / dataset version** | The written-down preparation steps, frozen together with a fingerprint of the exact rows they produced, so the same run can be reproduced later. |
 | **Scaler** | The step that puts columns measured in different units onto a comparable numeric range. |
@@ -598,7 +598,7 @@ Every term this README uses, in one sentence. Nothing here assumes you have trai
 
 A sanitized portfolio repository from Swinburne University **COS40005 Computing Technology Project A/B**, built by a six-person team.
 
-I owned the **ML/AI engineering layer**: diagnosing the original router's limits, migrating the assistant to a native tool-calling supervisor, the read-only SQL sub-agent, the knowledge wiki and its connection to the agent, visible agent traces, session-level working memory, and moving the bespoke Machine C pipeline onto a generic machine schema with a visible prepare, train and approve workflow.
+I owned the **ML/AI engineering layer**: diagnosing the original router's limits, migrating the assistant to a native tool-calling supervisor, the read-only SQL sub-agent, the knowledge wiki and its connection to the agent, visible agent traces, session-level working memory, and moving the bespoke Machine C pipeline onto a generic machine schema with a visible preprocessing, training and approval workflow.
 
 The full team and individual contributions are documented in [CONTRIBUTORS.md](CONTRIBUTORS.md).
 

@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
  *
  * The production pane has a file input here: drop a document into `raw/`, ask the assistant to
  * write its `sources/` page. There is no server in this build, so the upload half is honestly
- * absent — what remains is the half that carries the argument, which is that every number in
+ * absent; what remains is the half that carries the argument, which is that every number in
  * `domain/` and `concepts/` traces to a page naming a real, fetchable document.
  */
 

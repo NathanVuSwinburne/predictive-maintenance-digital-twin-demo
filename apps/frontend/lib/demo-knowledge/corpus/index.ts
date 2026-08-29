@@ -2,7 +2,7 @@
  * The seeded vault, assembled.
  *
  * Everything here is markdown text, exactly as a person would see it in an editor. The graph, the
- * search index and the lint report are all derived from these strings on read — there is no stored
+ * search index and the lint report are all derived from these strings on read: there is no stored
  * graph and nothing to reindex, which is what makes an edit in the pane take effect immediately.
  */
 

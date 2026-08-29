@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import type { LintKey, LintReport } from "@/lib/demo-knowledge/types";
 
 /**
- * Lint — the third operation, after ingest and query. Everything it reports is a piece of work
+ * Lint, the third operation, after ingest and query. Everything it reports is a piece of work
  * rather than a violation: a wanted page is a page worth writing, an orphan is a page nobody can
  * find, an unsourced number is a claim waiting for a citation. Framing them as errors would be
  * wrong, because a vault under active use always has some.
@@ -25,7 +25,7 @@ const GROUPS: Group[] = [
     key: "duplicates",
     label: "Two pages, one subject",
     meaning:
-      "The same name or title in two files. One holds the content, the other takes the name — merge them and delete the loser.",
+      "The same name or title in two files. One holds the content, the other takes the name; merge them and delete the loser.",
     severe: true,
   },
   {

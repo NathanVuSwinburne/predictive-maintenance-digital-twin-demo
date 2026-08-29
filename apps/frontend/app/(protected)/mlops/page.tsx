@@ -57,7 +57,7 @@ export default function MlopsPage() {
     () => ({
       machine: true,
       data: machine.sampleRows.length > 0,
-      prepare: datasets.some((dataset) => dataset.status === "ready"),
+      preprocess: datasets.some((dataset) => dataset.status === "ready"),
       train: runs.some((run) => run.status === "succeeded"),
     }),
     [datasets, machine.sampleRows.length, runs],
@@ -165,10 +165,10 @@ export default function MlopsPage() {
       )}
 
       {stage === "data" && (
-        <MachineDataStage machine={machine} onContinue={() => setStage("prepare")} />
+        <MachineDataStage machine={machine} onContinue={() => setStage("preprocess")} />
       )}
 
-      {stage === "prepare" && (
+      {stage === "preprocess" && (
         <PreprocessingWorkspace
           machine={machine}
           recipe={recipe}
@@ -186,7 +186,7 @@ export default function MlopsPage() {
           isRecipeFrozen={datasets.length > 0}
           onLaunch={launch}
           onCancel={cancelRun}
-          onBack={() => setStage("prepare")}
+          onBack={() => setStage("preprocess")}
         />
       )}
     </div>

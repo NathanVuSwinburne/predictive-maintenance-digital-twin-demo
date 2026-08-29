@@ -54,7 +54,7 @@ export function DerivedFeatureEditor({
 }: Props) {
   const formulaRefs = useRef<Array<HTMLTextAreaElement | null>>([]);
   // Where the caret goes after a column is inserted, applied after the render that carries
-  // the new value — setting it any earlier places it in the old string.
+  // the new value; setting it any earlier places it in the old string.
   const pendingCaret = useRef<{ index: number; position: number } | null>(null);
   // Clicking a column button takes focus off the formula first, so the field's own
   // selection has already collapsed by the time the handler runs.
@@ -111,7 +111,7 @@ export function DerivedFeatureEditor({
     <fieldset className="space-y-2">
       <legend className="text-sm font-medium">Calculated features</legend>
       <p className="text-xs leading-5 text-muted-foreground">
-        Make a new column from the ones above. Column names go in quotes — click one rather
+        Make a new column from the ones above. Column names go in quotes; click one rather
         than spelling it. Calculated columns are trained on and recomputed whenever the
         model runs.
       </p>
@@ -244,7 +244,7 @@ export function DerivedFeatureEditor({
           </p>
           <p className="mt-2 text-muted-foreground">
             A formula reads the machine&rsquo;s own columns, not other calculated ones. A row whose
-            formula cannot be worked out — a missing reading, a division by zero — becomes a
+            formula cannot be worked out (a missing reading, a division by zero) becomes a
             missing value and is handled by the missing-value setting below.
           </p>
         </details>

@@ -1,9 +1,9 @@
 /**
- * The `domain/` namespace — condition monitoring and failure physics.
+ * The `domain/` namespace: condition monitoring and failure physics.
  *
  * Compiled from public standards and published literature. Every numeric claim carries a
  * `sources:` entry or an explicit Unsourced callout, because a threshold without a citation is
- * folklore. Nothing here describes a machine on a real floor — that is what `fleet/` is for, and
+ * folklore. Nothing here describes a machine on a real floor; that is what `fleet/` is for, and
  * the two namespaces are allowed to disagree.
  */
 
@@ -38,7 +38,7 @@ looks at by default.
 
 | Stage | What is visible | What sees it |
 |---|---|---|
-| 1 | nothing in ordinary velocity or acceleration data | demodulation / PeakVue / spike energy / high-frequency band — [[domain/envelope-analysis]] |
+| 1 | nothing in ordinary velocity or acceleration data | demodulation / PeakVue / spike energy / high-frequency band; [[domain/envelope-analysis]] |
 | 2 | peaks at the defect frequency, high in the acceleration spectrum; fundamental often still absent | acceleration spectrum |
 | 3 | waveform amplitude rising; the **fundamental** defect frequency now visible in velocity; sidebands appear if inner-race or rolling-element | velocity spectrum + waveform |
 | 4 | more harmonics, higher amplitudes, sideband amplitudes growing | any |
@@ -52,9 +52,9 @@ the peaks are smearing and the noise floor is climbing, a smaller number is wors
 
 Not a fixed number, and anyone who gives you one is guessing. Observed spans:
 
-- **hours** — friction and overheating, e.g. coolant washing the grease out ([[domain/lubrication-failure]])
-- **months** — adequate lubrication but overloaded
-- **years** — mounting or handling damage that never progresses. One fan motor bearing showed
+- **hours**: friction and overheating, e.g. coolant washing the grease out ([[domain/lubrication-failure]])
+- **months**: adequate lubrication but overloaded
+- **years**: mounting or handling damage that never progresses. One fan motor bearing showed
   outer-race defect frequencies from first start in April 2000 and was still not in alarm in
   June 2006.
 
@@ -62,13 +62,13 @@ This is exactly why the [[domain/p-f-curve]] interval is per failure mode and pe
 than per component, and why a fixed "replace within 30 days on detection" rule is unsupportable.
 
 > **Conflict (2026-08-27):** the legacy document in [[sources/repo-maintenance-guidelines]] gives a
-> four-stage model with specific frequency bands (250–350 kHz, 2–60 kHz, 1–10 kHz) and fixed
-> remaining-life figures ("plan replacement in 30 days"). It cites nothing, its 250–350 kHz band is
+> four-stage model with specific frequency bands (250-350 kHz, 2-60 kHz, 1-10 kHz) and fixed
+> remaining-life figures ("plan replacement in 30 days"). It cites nothing, its 250-350 kHz band is
 > far above where accelerometers usefully respond, and its fixed timelines contradict the
 > hours-to-years range above. This page follows [[sources/crowe-2007-bearing-faults]].
 
 Run-to-failure data with real stage transitions is available from
-[[sources/femto-pronostia]] — though on an accelerated rig, so its absolute durations are compressed
+[[sources/femto-pronostia]], though on an accelerated rig, so its absolute durations are compressed
 by design.
 `,
 
@@ -126,7 +126,7 @@ When the geometry is unknown, these approximations land within about ±20 %:
 identifiable: a peak at 3.00× is looseness, a peak at 3.07× is a bearing. Anything synchronous is
 [[domain/misalignment-and-unbalance]], not a bearing.
 
-## Which component failed — read the sidebands
+## Which component failed: read the sidebands
 
 The frequency tells you *a* bearing is damaged. The sideband pattern tells you *which part*:
 
@@ -141,7 +141,7 @@ The frequency tells you *a* bearing is damaged. The sideband pattern tells you *
 - Enough spectral resolution to separate defect frequencies from everything else.
 - A waveform covering **at least 12 shaft revolutions**, or the cage frequency cannot be resolved.
 - The shaft speed must be known. On a multi-shaft machine, every shaft speed must be known.
-- Early defects appear at high frequency — the first peaks visible are usually *harmonics*, with the
+- Early defects appear at high frequency: the first peaks visible are usually *harmonics*, with the
   fundamental absent. Look in acceleration, not velocity. See [[domain/envelope-analysis]].
 
 ## What amplitude does not tell you
@@ -174,19 +174,19 @@ confidence: high
 # Condition Monitoring Architecture
 
 ISO 13374-1 breaks machine condition assessment into **six layered processing blocks**. The value of
-the model is not that it is prescriptive — it is that it gives every stage a name, so a conversation
+the model is not that it is prescriptive; it is that it gives every stage a name, so a conversation
 about "the model isn't working" can be pinned to the block where it actually isn't working.
 
 | # | Block | What it does |
 |---|---|---|
-| 1 | **Data Acquisition (DA)** | turns a transducer output into a digital parameter plus its context — time, calibration, data quality, sensor configuration |
+| 1 | **Data Acquisition (DA)** | turns a transducer output into a digital parameter plus its context: time, calibration, data quality, sensor configuration |
 | 2 | **Data Manipulation (DM)** | signal analysis, meaningful descriptors, virtual sensor readings derived from the raw measurements |
-| 3 | **State Detection (SD)** | maintains normal baseline profiles, looks for abnormality on each new reading, decides which zone it falls in — alert, alarm, or neither |
+| 3 | **State Detection (SD)** | maintains normal baseline profiles, looks for abnormality on each new reading, decides which zone it falls in: alert, alarm, or neither |
 | 4 | **Health Assessment (HA)** | diagnoses faults and rates current health, considering all state information |
 | 5 | **Prognostic Assessment (PA)** | projects future health states and failure modes given current health and expected load, including remaining useful life |
 | 6 | **Advisory Generation (AG)** | produces the actionable recommendation |
 
-The first three are **technology-specific** — a vibration pipeline and an oil-analysis pipeline share
+The first three are **technology-specific**: a vibration pipeline and an oil-analysis pipeline share
 nothing at these layers. The last three **combine technologies**, because a diagnosis worth acting on
 almost never rests on one sensor.
 
@@ -197,10 +197,10 @@ tribology, infrared thermography, performance, acoustics, and motor current.
 
 | Block | Here |
 |---|---|
-| DA | telemetry ingestion — batch upload and MQTT |
+| DA | telemetry ingestion: batch upload and MQTT |
 | DM | preprocessing recipes: resampling, derived features, encoding ([[concepts/feature-engineering-for-telemetry]]) |
 | SD | thresholds and zone comparison ([[domain/vibration-severity-zones]], [[domain/thermal-failure-modes]]) |
-| HA | the trained classifier — failure probability and severity |
+| HA | the trained classifier: failure probability and severity |
 | PA | the simulator, projecting risk over a horizon |
 | AG | the chat agent proposing a recommendation for human approval |
 
@@ -210,7 +210,7 @@ See [[concepts/data-drift]].
 
 ## What the standard does not give you
 
-Any number. ISO 13374 is an interoperability guideline — it defines the blocks and what passes
+Any number. ISO 13374 is an interoperability guideline: it defines the blocks and what passes
 between them, and deliberately sets no thresholds and no algorithms. Every limit in this corpus comes
 from somewhere else.
 
@@ -238,14 +238,14 @@ confidence: high
 
 # Envelope Analysis
 
-Early bearing damage is low in amplitude and high in frequency — precisely the combination a
+Early bearing damage is low in amplitude and high in frequency: precisely the combination a
 broadband velocity measurement discards. Envelope analysis (demodulation, and the vendor variants
 PeakVue, spike energy, HFD) high- or band-pass filters to isolate that high-frequency impact energy,
 then demodulates it so the *repetition rate* of the impacts becomes visible at low frequency.
 
 ## Why it beats broadband RMS early on
 
-- In ordinary acceleration data, an early defect shows only as **harmonics** — the fundamental defect
+- In ordinary acceleration data, an early defect shows only as **harmonics**: the fundamental defect
   frequency is missing, so a cursor placed where the fault "should" be finds nothing.
 - Under demodulation the **fundamental appears**, which is what makes the defect identifiable rather
   than merely present.
@@ -258,7 +258,7 @@ the same frequency, showed nothing.
 ## When it is the wrong tool
 
 Once the defect is advanced, the fundamental and its harmonics are visible in ordinary spectra and
-the extra processing buys little. Envelope analysis is a stage-1 and stage-2 instrument — see
+the extra processing buys little. Envelope analysis is a stage-1 and stage-2 instrument; see
 [[domain/bearing-degradation-stages]].
 
 ## Slow machines
@@ -268,7 +268,7 @@ high resolution, and that means long acquisitions. A roll chock bearing turning 
 nearly **25 minutes for a single average**; its inner-race defect frequency was 23.56 orders of
 running speed and the first twelve orders were still below 2 Hz.
 
-If your sampling window is short, you are not measuring slow machinery — you are measuring noise.
+If your sampling window is short, you are not measuring slow machinery; you are measuring noise.
 That constraint is the same one behind [[concepts/resampling-and-aggregation]].
 `,
 
@@ -297,17 +297,17 @@ problem, and FMEA is the allocation method.
 ## RPN, and why it was retired
 
 The classic score is the **Risk Priority Number**: Severity × Occurrence × Detection, each rated
-1–10, product 1–1 000.
+1-10, product 1-1 000.
 
 Its flaw is structural. Multiplying treats the three as interchangeable, so a failure mode that
-kills someone scores low if it is rare and easy to detect — and drops below a frequent, harmless,
+kills someone scores low if it is rare and easy to detect, and drops below a frequent, harmless,
 hard-to-spot nuisance. The arithmetic lets severity be traded away.
 
 The **2019 AIAG-VDA FMEA Handbook replaced RPN with Action Priority (AP)**: a fixed table mapping all
 1 000 S/O/D combinations to High, Medium or Low, ordered by **Severity first**, then Occurrence, then
 Detection. Severity can no longer be bought off with good detection.
 
-The AP table is not reproduced here — it is copyrighted, and paraphrasing 1 000 rows from a summary
+The AP table is not reproduced here: it is copyrighted, and paraphrasing 1 000 rows from a summary
 would be exactly the kind of unsourced number this corpus refuses to publish. See
 [[sources/aiag-vda-fmea-2019]].
 
@@ -323,7 +323,7 @@ Two reasons, both practical:
    positive, or twice as bad, is an FMEA question, not a modelling one. Picking a threshold without
    it is picking one arbitrarily.
 
-The same reasoning drives [[domain/maintenance-strategies]] — which failures get watched, and how.
+The same reasoning drives [[domain/maintenance-strategies]]: which failures get watched, and how.
 `,
 
   "domain/lubrication-failure": `---
@@ -349,18 +349,18 @@ confidence: low
 
 Lubrication failure is upstream of most bearing failure. It is also the fastest path to catastrophe:
 [[sources/crowe-2007-bearing-faults]] records a bearing going from first indication to catastrophic
-failure **in a few hours** when coolant washed the grease out — against months for the same
+failure **in a few hours** when coolant washed the grease out, against months for the same
 progression on a merely overloaded bearing.
 
 ## Mechanisms
 
-- **Film breakdown** — the elastohydrodynamic film thins until asperities contact. Friction and heat
+- **Film breakdown**: the elastohydrodynamic film thins until asperities contact. Friction and heat
   rise, which thins the film further.
-- **Contamination ingress** — particles act as abrasive; water destroys the film and corrodes.
-- **Wash-out** — coolant or process fluid displaces grease. The fastest mode.
-- **Over-greasing** — churning raises temperature and can blow the seal that was keeping
+- **Contamination ingress**: particles act as abrasive; water destroys the film and corrodes.
+- **Wash-out**: coolant or process fluid displaces grease. The fastest mode.
+- **Over-greasing**: churning raises temperature and can blow the seal that was keeping
   contamination out, so the "safe" error mode is not safe.
-- **Under-greasing** — increased vibration and audible bearing noise before anything else changes.
+- **Under-greasing**: increased vibration and audible bearing noise before anything else changes.
 
 ## Field signs
 
@@ -375,7 +375,7 @@ progression on a merely overloaded bearing.
 
 > **Unsourced:** from [[sources/repo-maintenance-guidelines]], which cites nothing. Intervals are
 > properly set by the bearing manufacturer's relubrication calculation from speed factor, temperature
-> and load — not from a table. These are recorded for traceability, not endorsed.
+> and load, not from a table. These are recorded for traceability, not endorsed.
 
 | Component | Lubricant | Interval |
 |---|---|---|
@@ -389,7 +389,7 @@ progression on a merely overloaded bearing.
 Lubrication state is rarely instrumented, so it acts as a **hidden variable**: two machines with
 identical telemetry can have completely different remaining life because one is being washed out and
 the other is not. A model that has never seen the lubrication state cannot distinguish them, and its
-confidence on both will look the same. That is a limit of the data, not of the algorithm — see
+confidence on both will look the same. That is a limit of the data, not of the algorithm; see
 [[concepts/remaining-useful-life]].
 `,
 
@@ -424,14 +424,14 @@ economics question answered per failure mode, not a technology question answered
 | **Predictive** | a model projects a future condition | there is enough history to learn a degradation trajectory, and acting early is cheaper than acting late |
 
 Nowlan and Heap's finding was that condition-based intervention outperforms age-based replacement for
-most failure patterns — most components do not wear out on a schedule, so replacing them on one both
+most failure patterns: most components do not wear out on a schedule, so replacing them on one both
 wastes life and misses failures. That result is the reason this application exists.
 
 ## Where predictive stops being worth it
 
 Predictive maintenance costs sensors, pipelines, models and attention. It repays that when:
 
-- the failure mode is high-consequence — see [[domain/fmea-and-criticality]]
+- the failure mode is high-consequence; see [[domain/fmea-and-criticality]]
 - the P-F interval is long enough to act within
 - the degradation is actually observable in the data you have
 
@@ -447,12 +447,12 @@ predicting a failure nobody can act on in time is a more expensive way of being 
 | Risk score | Health score | Priority | Response |
 |---|---|---|---|
 | >70 % | <50 | Critical | immediate, under 4 h |
-| 50–70 % | 50–70 | High | same day, under 8 h |
-| 30–50 % | 70–85 | Medium | within 48 h |
+| 50-70 % | 50-70 | High | same day, under 8 h |
+| 30-50 % | 70-85 | Medium | within 48 h |
 | <30 % | >85 | Low | next planned cycle |
 
 The thresholds in that table are choices, not measurements. What makes them defensible is the cost
-reasoning behind them — see [[concepts/threshold-selection]].
+reasoning behind them; see [[concepts/threshold-selection]].
 `,
 
   "domain/misalignment-and-unbalance": `---
@@ -478,18 +478,18 @@ confidence: medium
 # Misalignment and Unbalance
 
 The two most common rotating-machinery faults, and the two most commonly confused. Both are
-**synchronous** — they live at exact multiples of shaft speed — which is what separates them cleanly
+**synchronous** (they live at exact multiples of shaft speed), which is what separates them cleanly
 from [[domain/bearing-failure-modes]], whose frequencies never land on an exact multiple.
 
 | | Dominant order | Direction | Typical cause |
 |---|---|---|---|
-| **Unbalance** | 1× | radial | mass distribution — debris, erosion, a lost balance weight |
+| **Unbalance** | 1× | radial | mass distribution: debris, erosion, a lost balance weight |
 | **Misalignment** | 2× (with 1×) | often strong **axial** | coupling, soft foot, thermal growth, pipe strain |
 
 The axial component is the discriminator worth remembering: unbalance is a radial phenomenon, so a
 strong axial reading at 2× points at alignment rather than balance.
 
-> **Unsourced:** the further rule of thumb that looseness shows at 3–5× shaft speed comes from
+> **Unsourced:** the further rule of thumb that looseness shows at 3-5× shaft speed comes from
 > [[sources/repo-maintenance-guidelines]] and is not attributable to a standard or a primary
 > reference. It is widely repeated in the field and is recorded here as folklore, not as fact.
 
@@ -508,7 +508,7 @@ bearing.
 ## Where this shows up here
 
 Both are visible in broadband severity ([[domain/vibration-severity-zones]]) because both raise
-overall velocity — unlike early bearing damage, which does not. A machine whose overall velocity has
+overall velocity, unlike early bearing damage, which does not. A machine whose overall velocity has
 climbed into zone C without any high-frequency signature is far more likely misaligned than
 bearing-damaged.
 `,
@@ -533,19 +533,19 @@ confidence: medium
 
 # The P-F Curve
 
-From Nowlan and Heap's 1978 *Reliability-Centered Maintenance* — the idea the whole
+From Nowlan and Heap's 1978 *Reliability-Centered Maintenance*, the idea the whole
 condition-monitoring discipline rests on.
 
-- **P, potential failure** — "an identifiable physical condition which indicates that a functional
+- **P, potential failure**: "an identifiable physical condition which indicates that a functional
   failure is imminent". The first moment anything is detectable.
-- **F, functional failure** — the point at which the item no longer meets a stated standard of
+- **F, functional failure**: the point at which the item no longer meets a stated standard of
   performance. **Not** catastrophic failure: a machine can be running, and already functionally
   failed.
-- **The P-F interval** — the time between them. This is the number that matters.
+- **The P-F interval**: the time between them. This is the number that matters.
 
 ## Why the interval sets the sampling rate
 
-To catch a failure you must inspect more often than the P-F interval — conventionally at least twice
+To catch a failure you must inspect more often than the P-F interval, conventionally at least twice
 within it, so that a single missed or ambiguous reading does not cost you the whole warning. That
 single relationship decides:
 
@@ -565,7 +565,7 @@ P-F interval.
 
 And the interval is not a constant even then. [[sources/crowe-2007-bearing-faults]] reports the same
 bearing progression taking hours (coolant wash-out), months (overload) or years (handling damage). A
-single "P-F interval for bearings" figure does not exist, and this corpus does not state one — see
+single "P-F interval for bearings" figure does not exist, and this corpus does not state one; see
 [[domain/bearing-degradation-stages]].
 
 ## Relationship to RUL
@@ -598,7 +598,7 @@ confidence: low
 
 Heat is the cheapest thing on a machine to measure and the slowest to move, which makes it a
 confirming signal rather than an early one. By the time a bearing runs hot, vibration has usually
-been telling you for weeks — see [[domain/bearing-degradation-stages]].
+been telling you for weeks; see [[domain/bearing-degradation-stages]].
 
 ## Mechanisms
 
@@ -613,7 +613,7 @@ been telling you for weeks — see [[domain/bearing-degradation-stages]].
 
 That last mechanism is worth dwelling on, because it is the one this application actually models.
 The AI4I heat-dissipation failure mode fires when the **air-to-process temperature difference falls
-below 8.6 K while rotational speed is below 1 380 rpm** — a differential-and-load condition, not a
+below 8.6 K while rotational speed is below 1 380 rpm**: a differential-and-load condition, not a
 temperature threshold ([[sources/ai4i-2020-dataset]], [[fleet/ai4i-milling-machine]]). A single-sensor
 temperature alarm would never catch it.
 
@@ -627,17 +627,17 @@ temperature alarm would never catch it.
 
 | Equipment | Normal (°C) | Warning | Critical |
 |---|---|---|---|
-| CNC spindle motors | 60–75 | 85 | 95 |
-| Hydraulic systems | 40–60 | 70 | 80 |
-| Compressors | 70–85 | 95 | 105 |
-| Heat exchangers | 50–80 | 90 | 100 |
-| Conveyor motors | 40–55 | 65 | 75 |
+| CNC spindle motors | 60-75 | 85 | 95 |
+| Hydraulic systems | 40-60 | 70 | 80 |
+| Compressors | 70-85 | 95 | 105 |
+| Heat exchangers | 50-80 | 90 | 100 |
+| Conveyor motors | 40-55 | 65 | 75 |
 
 ## Reading a temperature signal
 
 - A single-point spike is usually the sensor or the coolant flow, not the machine.
 - A slow rise against a stable ambient is the one to act on. Always compare against ambient or against
-  the cooling medium, never against a fixed number alone — a 70 °C reading means different things in
+  the cooling medium, never against a fixed number alone: a 70 °C reading means different things in
   winter and in August.
 - Observed values for a specific machine belong on that machine's \`fleet/\` page, not here.
 `,
@@ -664,14 +664,14 @@ confidence: medium
 # Tool Wear
 
 Tool wear is the mechanism behind two of the five AI4I failure modes, and it is the cleanest example
-in this corpus of a failure that is **cumulative and monotonic** rather than event-driven — which
+in this corpus of a failure that is **cumulative and monotonic** rather than event-driven, which
 changes how it should be modelled.
 
 ## The two mechanisms in the data
 
-- **TWF, tool wear failure** — the tool is replaced or fails at a randomly chosen accumulated wear
+- **TWF, tool wear failure**: the tool is replaced or fails at a randomly chosen accumulated wear
   between **200 and 240 minutes**. Wear alone, no interaction.
-- **OSF, overstrain failure** — **tool wear × torque** exceeds **11 000 minNm** for the L quality
+- **OSF, overstrain failure**: **tool wear × torque** exceeds **11 000 minNm** for the L quality
   variant, **12 000** for M, **13 000** for H. This is the interesting one: neither wear nor torque
   alone predicts it, and a model given only the two raw columns has to learn the product. Supplying
   \`tool_wear * torque\` as a derived feature turns a non-linear boundary into a linear one. See
@@ -699,7 +699,7 @@ representative value, not a constant.
 ## Why wear is a good prognostic target
 
 Tool wear is one of the rare industrial signals that is genuinely monotonic and observable, so
-remaining-life estimation on it is unusually well-posed — the P in the [[domain/p-f-curve]] sense is
+remaining-life estimation on it is unusually well-posed: the P in the [[domain/p-f-curve]] sense is
 simply "wear crossed a line", and the interval to F is measurable in minutes of cutting. Contrast
 [[domain/bearing-degradation-stages]], where the same question has an answer spanning hours to years.
 `,
@@ -725,8 +725,8 @@ confidence: high
 
 # Vibration Severity Zones
 
-The broadband severity check: one number, **RMS vibration velocity in mm/s over 10–1 000 Hz**,
-measured on non-rotating parts — bearing housings, horizontal, vertical and axial. It answers "is
+The broadband severity check: one number, **RMS vibration velocity in mm/s over 10-1 000 Hz**,
+measured on non-rotating parts: bearing housings, horizontal, vertical and axial. It answers "is
 this machine acceptable", not "what is wrong with it". For the second question see
 [[domain/bearing-failure-modes]] and [[domain/misalignment-and-unbalance]].
 
@@ -736,7 +736,7 @@ this machine acceptable", not "what is wrong with it". For the second question s
 |---|---|
 | **A** | the vibration of a newly commissioned machine in good condition |
 | **B** | acceptable for unrestricted long-term operation |
-| **C** | unsatisfactory for long-term running — operate on a limited basis until you can intervene |
+| **C** | unsatisfactory for long-term running; operate on a limited basis until you can intervene |
 | **D** | severe enough to cause damage |
 
 ## Boundaries
@@ -745,17 +745,17 @@ Two standards are in play. **ISO 20816-3:2022** is current and supersedes **ISO 
 older numbers are what most instruments, spreadsheets and plant procedures still quote, so both are
 recorded.
 
-ISO 10816-3, by machine group and support class — group by power, class by whether the machine and
+ISO 10816-3, by machine group and support class: group by power, class by whether the machine and
 its foundation are rigid or flexible:
 
 | Class | A/B | B/C | C/D |
 |---|---|---|---|
-| Group 2 (≈15–300 kW), rigid | 1.4 | 2.8 | 4.5 |
+| Group 2 (≈15-300 kW), rigid | 1.4 | 2.8 | 4.5 |
 | Group 2, flexible | 2.3 | 4.5 | 7.1 |
-| Group 1 (≈300 kW–50 MW), rigid | 2.3 | 4.5 | 7.1 |
+| Group 1 (≈300 kW to 50 MW), rigid | 2.3 | 4.5 | 7.1 |
 | Group 1, flexible | 3.5 | 7.1 | 11.0 |
 
-ISO 20816-3 keeps the same ladder and extends the speed range to 120–30 000 r/min (ISO 10816-3
+ISO 20816-3 keeps the same ladder and extends the speed range to 120-30 000 r/min (ISO 10816-3
 stopped at 15 000 r/min), for machines rated above 15 kW.
 
 **The single most important thing on this page:** the boundary depends on the machine. 4.5 mm/s is
@@ -766,8 +766,8 @@ machine. A threshold quoted without its machine group and support class is not a
 > by the ISO 10816-3 secondary and 11.2 mm/s by the ISO 20816-3 secondary. Neither was verified
 > against a purchased standard. Do not lean on that last digit.
 
-> **Conflict (2026-08-27):** the legacy guidelines this project shipped with state A = 0–2.8,
-> B = 2.8–7.1, C = 7.1–18, D = >18 mm/s — see [[sources/repo-maintenance-guidelines]]. Those figures
+> **Conflict (2026-08-27):** the legacy guidelines this project shipped with state A = 0-2.8,
+> B = 2.8-7.1, C = 7.1-18, D = >18 mm/s; see [[sources/repo-maintenance-guidelines]]. Those figures
 > match no machine group in either standard and are roughly four times too permissive at the top end.
 > A machine at 6 mm/s reads "acceptable, monitor closely" on that table and "stop" on this one. Use
 > this page.

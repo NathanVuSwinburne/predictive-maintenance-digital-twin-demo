@@ -176,7 +176,7 @@ export default function KnowledgePage() {
   const readOnlyReason = !note
     ? null
     : note.namespace.startsWith("raw")
-      ? "raw/ is immutable. The original is what every claim about it can be checked against — summarise it into a sources/ page instead."
+      ? "raw/ is immutable. The original is what every claim about it can be checked against. Summarise it into a sources/ page instead."
       : note.namespace.startsWith("agent")
         ? "agent/ holds the assistant's own operating instructions. A person owns those, so they are not editable from the pane the assistant writes through."
         : null;
@@ -202,7 +202,7 @@ export default function KnowledgePage() {
           </h1>
           <p className="max-w-2xl text-sm text-muted-foreground">
             Interlinked markdown the assistant reads before it answers and writes to when a turn
-            produced something durable. The graph is not stored anywhere — it is derived from the
+            produced something durable. The graph is not stored anywhere. It is derived from the
             pages on read, so an edit here changes the shape of it in the same frame.
           </p>
         </div>
@@ -348,7 +348,7 @@ export default function KnowledgePage() {
             <div className="border-b bg-muted/25 p-2.5">
               <p className="instrument-label mb-1.5">
                 {hits.length} matches
-                {hits.length > 8 ? ", top 8 listed" : ""} — the graph dims everything else
+                {hits.length > 8 ? ", top 8 listed" : ""}. The graph dims everything else
               </p>
               <div className="flex flex-wrap gap-1">
                 {hits.slice(0, 8).map((hit) => (
@@ -461,7 +461,7 @@ export default function KnowledgePage() {
 
       <p className={cn("text-xs leading-5 text-muted-foreground")}>
         Everything on this page runs in the browser. The vault is markdown held in memory, the graph
-        and the search index are derived from it on read, and edits last until the tab is reloaded —
+        and the search index are derived from it on read, and edits last until the tab is reloaded,
         which is what &ldquo;Reset&rdquo; does deliberately.
       </p>
     </div>

@@ -1,5 +1,5 @@
 /**
- * The `agent/` namespace — how the assistant works, rather than what it knows.
+ * The `agent/` namespace: how the assistant works, rather than what it knows.
  *
  * Routing, the tool catalogue, the data contract, the traps. Deliberately rewritten for this demo
  * rather than carried over: the production vault's operational pages describe a real database and a
@@ -21,7 +21,7 @@ updated: 2026-08-28
 updated_by: seed
 ---
 
-# Supervisor Wiki — Index
+# Supervisor Wiki Index
 
 How the supervisor decides which tool to call and how to chain them. Read this index first, then
 drill into the page you need.
@@ -37,7 +37,7 @@ drill into the page you need.
 
 - Pass the \`machine_id\` (\`mach-utility-pump\`), never the display name ("Utility Pump 02").
 - Detection is available on all three machines. **Forecasting is not available on
-  [[fleet/ai4i-milling-machine]]** — it has no time axis. Explain that rather than calling the tool.
+  [[fleet/ai4i-milling-machine]]**: it has no time axis. Explain that rather than calling the tool.
 - Every number you report needs the baseline it is being compared against. See
   [[concepts/class-imbalance-in-failure-data]].
 - Conventions for the wiki itself live in [[AGENT-WIKI]]; the content catalogue is [[index]].
@@ -51,7 +51,7 @@ Say so if a user asks whether they are looking at live equipment.
 `,
 
   "agent/supervisor/routing-guide": `---
-title: Supervisor — Routing Guide
+title: Supervisor Routing Guide
 namespace: agent/supervisor
 type: concept
 tags: [agent, routing]
@@ -64,13 +64,13 @@ updated_by: seed
 
 # Routing Guide
 
-## Step 1 — identify the machine
+## Step 1: identify the machine
 
 Look up the exact \`machine_id\` in [[agent/supervisor/machine-capabilities]] before calling any
 action tool. If the user is ambiguous, call \`query_database("list the machines, their ids and
 status")\` first. Always pass the id, never the display name.
 
-## Step 2 — classify the intent
+## Step 2: classify the intent
 
 | User intent | First tool | Chain |
 |---|---|---|
@@ -86,17 +86,17 @@ status")\` first. Always pass the id, never the display name.
 
 ## Standard chains
 
-- **Anomaly investigation** — \`query_database(telemetry)\` → \`run_failure_prediction\` →
+- **Anomaly investigation**: \`query_database(telemetry)\` → \`run_failure_prediction\` →
   \`query_database(history)\` → \`propose_recommendation\`
-- **Complaint triage** — \`extract_signal_from_complaint\` → \`query_database(telemetry)\` →
+- **Complaint triage**: \`extract_signal_from_complaint\` → \`query_database(telemetry)\` →
   \`run_failure_prediction\`
-- **Knowledge lookup** — \`search_knowledge\` → \`read_knowledge_note\` → follow \`[[links]]\` and
+- **Knowledge lookup**: \`search_knowledge\` → \`read_knowledge_note\` → follow \`[[links]]\` and
   backlinks
 
 Navigate before you search. \`index\` → the page → its outbound links is faster and more reliable
 than a query, and it is the reason the wiki is interlinked at all.
 
-## Step 3 — capture what is durable
+## Step 3: capture what is durable
 
 After answering, ask whether this turn produced something still true next week: a diagnosis that
 held, a threshold observed on a specific machine, a dataset quirk, a correction the user gave you.
@@ -105,28 +105,28 @@ held, a threshold observed on a specific machine, a dataset quirk, a correction 
 |---|---|
 | How *this* machine actually behaves | the machine's \`fleet/\` page, under \`## Observations\` |
 | A general failure mechanism or a standard | \`domain/\` |
-| A modelling insight — imbalance, drift, leakage | \`concepts/\` |
+| A modelling insight: imbalance, drift, leakage | \`concepts/\` |
 | An external document you leaned on | \`sources/\` |
 
 Then link it to what was already there. Nothing else re-derives it afterwards.
 
 **Do not write** restatements of tool output, anything you are guessing at without marking
-\`confidence: low\`, or anything naming a person. Do not write to \`agent/\` or \`raw/\` at all — see
+\`confidence: low\`, or anything naming a person. Do not write to \`agent/\` or \`raw/\` at all; see
 [[AGENT-WIKI]].
 
 ## Capability guards
 
 | Tool | Allowed | Refuse for |
 |---|---|---|
-| \`run_failure_prediction\` | all three machines | — |
-| \`run_demo_simulation\` | \`mach-utility-pump\`, \`mach-packaging-drive\` | \`mach-ai4i-mill\` — no time axis |
+| \`run_failure_prediction\` | all three machines | none |
+| \`run_demo_simulation\` | \`mach-utility-pump\`, \`mach-packaging-drive\` | \`mach-ai4i-mill\`, no time axis |
 
 Refusing is an answer. Explaining why a machine cannot be forecast is more useful than an error
 message the user has to interpret.
 `,
 
   "agent/supervisor/tool-catalog": `---
-title: Supervisor — Tool Catalog
+title: Supervisor Tool Catalog
 namespace: agent/supervisor
 type: reference
 tags: [agent, tools]
@@ -162,7 +162,7 @@ See [[agent/sql/index]] for how the sub-agent plans, and [[agent/sql/gotchas]] f
 Score the latest readings against the machine's promoted model.
 
 - Returns a probability **and the baseline it beats**. A probability without its baseline is not a
-  result — see [[concepts/class-imbalance-in-failure-data]].
+  result; see [[concepts/class-imbalance-in-failure-data]].
 - On [[fleet/ai4i-milling-machine]] this is snapshot detection, with **no time horizon**. Do not
   describe its output as a forecast.
 
@@ -175,7 +175,7 @@ Project risk forward over a horizon.
 
 ## \`extract_signal_from_complaint(text)\`
 
-Turn a free-text operator symptom — "it was noisy yesterday" — into a structured signal: machine,
+Turn a free-text operator symptom ("it was noisy yesterday") into a structured signal: machine,
 symptom type, rough severity, time window. Call this **first** when the user describes a problem in
 their own words, before fetching anything.
 
@@ -192,11 +192,11 @@ something durable.
 | Tool | What it is for |
 |---|---|
 | \`list_knowledge_notes(namespace)\` | what exists |
-| \`read_knowledge_note(id)\` | a page **and its backlinks** — what points at a page is often more informative than the page |
+| \`read_knowledge_note(id)\` | a page **and its backlinks**: what points at a page is often more informative than the page |
 | \`search_knowledge(query)\` | ranked search when you do not know the page's name. Each hit says *why* it scored |
 | \`write_knowledge_note(id, content, reason)\` | create or replace. \`reason\` is required and lands in [[log]] |
 | \`append_to_knowledge_note(id, section, content)\` | append under a heading. The common case, and it cannot lose the rest of the page |
-| \`link_knowledge_notes(from, to, relation)\` | add a typed edge — \`relates_to\`, \`caused_by\`, \`detected_by\`, or one you invent |
+| \`link_knowledge_notes(from, to, relation)\` | add a typed edge: \`relates_to\`, \`caused_by\`, \`detected_by\`, or one you invent |
 | \`get_knowledge_graph(around, depth)\` | structure rather than prose: what else touches this subject |
 
 ### Where you may write
@@ -207,15 +207,15 @@ something durable.
 | \`domain/\` | what the standards say | yes |
 | \`concepts/\` | modelling knowledge | yes |
 | \`sources/\` | one page per external document, with its citation | yes |
-| \`agent/\` | this wiki — routing, tools, the data contract | **no** |
+| \`agent/\` | this wiki: routing, tools, the data contract | **no** |
 | \`raw/\` | immutable originals | **no** |
 
 \`domain/\` and \`fleet/\` may disagree. When a real machine contradicts the standard, record it on the
-fleet page, say so on both, and link them — that disagreement is usually the useful part.
+fleet page, say so on both, and link them; that disagreement is usually the useful part.
 `,
 
   "agent/supervisor/machine-capabilities": `---
-title: Supervisor — Machine Capabilities
+title: Supervisor Machine Capabilities
 namespace: agent/supervisor
 type: reference
 tags: [agent, fleet, capabilities]
@@ -232,7 +232,7 @@ updated_by: seed
 
 | Machine | \`machine_id\` | Schema | Detection | Forecasting | Order by |
 |---|---|---|---|---|---|
-| [[fleet/ai4i-milling-machine]] | \`mach-ai4i-mill\` | 4 | yes — snapshot, no horizon | **no** | row index; there is no real time axis |
+| [[fleet/ai4i-milling-machine]] | \`mach-ai4i-mill\` | 4 | yes: snapshot, no horizon | **no** | row index; there is no real time axis |
 | [[fleet/utility-pump-02]] | \`mach-utility-pump\` | 3 | yes | yes | \`timestamp\`, within \`session_id\` |
 | [[fleet/packaging-drive-01]] | \`mach-packaging-drive\` | 5 | yes | yes | \`timestamp\`, within \`session_id\` |
 
@@ -253,17 +253,17 @@ An accuracy that does not beat the number in the right-hand column is not a resu
 
 | Machine | Sampling | Sessions | Gap between sessions |
 |---|---|---|---|
-| \`mach-ai4i-mill\` | — | 8 nominal, metadata only | none — the sessions are labels, not runs |
+| \`mach-ai4i-mill\` | none | 8 nominal, metadata only | none: the sessions are labels, not runs |
 | \`mach-utility-pump\` | 30 s | 12 | about 26 h |
 | \`mach-packaging-drive\` | 500 ms | 8 | days |
 
-Never let a window span a session gap — see [[concepts/resampling-and-aggregation]]. Why every
+Never let a window span a session gap; see [[concepts/resampling-and-aggregation]]. Why every
 machine carries \`timestamp\` and \`session_id\` even when they mean nothing is on
 [[fleet/schema-generalisation]].
 `,
 
   "agent/supervisor/error-handling": `---
-title: Supervisor — Error Handling
+title: Supervisor Error Handling
 namespace: agent/supervisor
 type: reference
 tags: [agent, errors]
@@ -281,7 +281,7 @@ updated_by: seed
 | \`No telemetry available\` | the requested window is empty | widen the window, or check whether the machine has a session there at all |
 | \`Forecasting is not available for this machine\` | forecast asked for on the mill | explain the missing time axis, offer detection instead |
 | \`This model trains on the production worker\` | a browser-only build was asked to fit XGBoost, an LSTM, a GRU or a TCN | say which architectures do fit here; do not report a score |
-| \`No promoted model for this goal\` | nothing has been promoted yet | say so plainly — a stale model quietly served is worse than an honest gap |
+| \`No promoted model for this goal\` | nothing has been promoted yet | say so plainly: a stale model quietly served is worse than an honest gap |
 | \`Note 'X' not found\` | wrong page id | \`list_knowledge_notes\` or \`search_knowledge\` for the real one |
 
 ## Two rules
@@ -306,7 +306,7 @@ updated: 2026-08-28
 updated_by: seed
 ---
 
-# SQL Sub-agent Wiki — Index
+# SQL Sub-agent Wiki Index
 
 Everything the query planner needs to turn a plain-English question into a correct read-only plan.
 
@@ -328,13 +328,13 @@ Everything the query planner needs to turn a plain-English question into a corre
 
 ## What is behind this in the demo
 
-Nothing. There is no database in this build — the planner's target is the browser-side data
+Nothing. There is no database in this build: the planner's target is the browser-side data
 contract, and the "SQL" step exists to show the shape of the delegation, not to execute against a
 server. The constraint that matters is preserved: the sub-agent may only read.
 `,
 
   "agent/sql/data-contract": `---
-title: SQL Sub-agent — Data Contract
+title: SQL Sub-agent Data Contract
 namespace: agent/sql
 type: reference
 tags: [agent, sql, schema]
@@ -347,7 +347,7 @@ updated_by: seed
 
 # Data Contract
 
-The entities the planner can read. This is a contract, not a database schema — the same shape is
+The entities the planner can read. This is a contract, not a database schema: the same shape is
 served by a browser fixture here and would be served by a real store elsewhere, which is exactly the
 point of [[fleet/schema-generalisation]].
 
@@ -356,17 +356,17 @@ point of [[fleet/schema-generalisation]].
 | Field | Type | Notes |
 |---|---|---|
 | \`id\` | string | \`mach-ai4i-mill\`, \`mach-utility-pump\`, \`mach-packaging-drive\` |
-| \`name\` | string | display name — never use it as a key |
+| \`name\` | string | display name; never use it as a key |
 | \`line\` | string | production line |
 | \`machine_type\` | string | \`ai4i\` / \`sensor\` / \`real-sensor\` |
 | \`status\` | string | \`healthy\` / \`watch\` / \`risk\` / \`offline\` |
-| \`health_score\` | float | 0–100 |
-| \`risk_score\` | float | 0–100 |
+| \`health_score\` | float | 0 to 100 |
+| \`risk_score\` | float | 0 to 100 |
 | \`schema_version\` | int | which registry contract this machine is on |
 
 ## \`telemetry\`
 
-One shape for every machine — the whole reason the schema was generalised.
+One shape for every machine: the whole reason the schema was generalised.
 
 | Field | Type | Notes |
 |---|---|---|
@@ -384,8 +384,8 @@ registry entry. Do not assume a column exists because another machine has it.
 |---|---|---|
 | \`machine_id\` | string | |
 | \`generated_at\` | datetime | |
-| \`horizon_hours\` | int | **null for snapshot detection** — see [[fleet/ai4i-milling-machine]] |
-| \`probability\` | float | 0–1 |
+| \`horizon_hours\` | int | **null for snapshot detection**; see [[fleet/ai4i-milling-machine]] |
+| \`probability\` | float | 0 to 1 |
 | \`baseline\` | float | what always guessing the common outcome would have scored |
 | \`severity\` | string | low / medium / high / critical |
 
@@ -394,7 +394,7 @@ registry entry. Do not assume a column exists because another machine has it.
 
 ## \`history_events\`
 
-An audit log: what happened, when, to which machine. It records events — it is **not** an access
+An audit log: what happened, when, to which machine. It records events; it is **not** an access
 table and must not be used to answer "who works on this machine".
 
 ## \`recommendations\`
@@ -416,7 +416,7 @@ they are deliberately outside what the query planner can reach.
 `,
 
   "agent/sql/gotchas": `---
-title: SQL Sub-agent — Gotchas
+title: SQL Sub-agent Gotchas
 namespace: agent/sql
 type: reference
 tags: [agent, sql, pitfalls]
@@ -434,7 +434,7 @@ Known traps that produce a wrong plan, or a right-looking plan over the wrong ro
 ## The mill has no time axis
 
 \`ORDER BY timestamp\` on \`mach-ai4i-mill\` orders by a column that is null on every row. Order by the
-row index instead, and do not offer the user a time window for that machine — see
+row index instead, and do not offer the user a time window for that machine; see
 [[fleet/ai4i-milling-machine]].
 
 ## Sessions are not one continuous stream

@@ -4,7 +4,7 @@
  * The demo's MLOps state, held in module scope.
  *
  * A dataset that took a recipe to build, and a model that took a dataset to train, should
- * still be there when you walk to the simulator and come back — so this outlives any one
+ * still be there when you walk to the simulator and come back, so this outlives any one
  * React tree. It does not outlive a reload, and that is deliberate: nothing about this
  * workspace is persisted anywhere, because there is nowhere to persist it to.
  */
@@ -257,19 +257,3 @@ export function resetWorkspace() {
   emit({ datasets: [], runs: [], deployments: [] });
 }
 
-/** Derived: how far this machine and goal have got through the five stages. */
-export function workflowProgress(
-  machine: DemoMachine | null,
-  capability: Capability,
-  recipeReady: boolean,
-) {
-  const datasets = machine ? datasetsFor(machine.id, capability) : [];
-  const runs = machine ? runsFor(machine.id, capability) : [];
-  return {
-    machine: machine !== null,
-    data: machine !== null && machine.sampleRows.length > 0,
-    prepare: datasets.some((dataset) => dataset.status === "ready") || recipeReady,
-    train: runs.some((run) => run.status === "succeeded"),
-    promote: machine !== null && activeDeployment(machine.id, capability) !== undefined,
-  };
-}

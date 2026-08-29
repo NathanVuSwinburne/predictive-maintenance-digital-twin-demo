@@ -39,7 +39,7 @@ function LinkedText({
   const parts: React.ReactNode[] = [];
   let cursor = 0;
   let match: RegExpExecArray | null;
-  // A fresh regex per call — a shared global one carries `lastIndex` between calls.
+  // A fresh regex per call: a shared global one carries `lastIndex` between calls.
   const pattern = new RegExp(WIKILINK.source, "g");
 
   while ((match = pattern.exec(text)) !== null) {
@@ -60,7 +60,7 @@ function LinkedText({
             ? "text-primary"
             : "text-muted-foreground decoration-dashed hover:text-foreground",
         )}
-        title={exists ? target : `${target} — not written yet. Click to create it.`}
+        title={exists ? target : `${target}: not written yet. Click to create it.`}
       >
         {label}
       </button>,

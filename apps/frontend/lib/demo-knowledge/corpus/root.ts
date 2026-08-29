@@ -1,7 +1,7 @@
 /**
  * The root pages: the conventions, the catalogue, and the log.
  *
- * `AGENT-WIKI` is the schema — the one page that is co-evolved rather than owned by either side.
+ * `AGENT-WIKI` is the schema, the one page that is co-evolved rather than owned by either side.
  * `index` is the content catalogue, and navigating it is meant to be faster than searching.
  * `log` is append-only, and every write in the pane lands there with the reason the writer gave.
  */
@@ -19,12 +19,12 @@ confidence: high
 
 # How This Wiki Works
 
-This is the assistant's second brain. It is not a corpus that gets queried and forgotten — it is a
+This is the assistant's second brain. It is not a corpus that gets queried and forgotten; it is a
 persistent artifact that compounds. Every diagnosis that held, every threshold learned from a real
 machine, every dataset quirk that cost an hour to find belongs here: written down once, linked, and
 never re-derived.
 
-The vault is plain markdown with YAML frontmatter. The graph is not stored anywhere — it is derived
+The vault is plain markdown with YAML frontmatter. The graph is not stored anywhere; it is derived
 from the files on read, so nothing can drift out of sync with the text, because **the text is the
 graph**. Edit a page and the assistant uses the new words on its next turn. There is no reindex and
 no embedding to rebuild.
@@ -33,9 +33,9 @@ no embedding to rebuild.
 
 | Layer | Where | Who owns it |
 |---|---|---|
-| **Raw sources** — immutable | \`raw/\` | dropped in by a person. Read, never modified. |
-| **The wiki** — compiled, interlinked | \`domain/\` \`concepts/\` \`fleet/\` \`sources/\` \`agent/\` | the assistant writes; a person may edit anything |
-| **The schema** — these conventions | this page | co-evolved. If a convention stops fitting, change it here first. |
+| **Raw sources**: immutable | \`raw/\` | dropped in by a person. Read, never modified. |
+| **The wiki**: compiled, interlinked | \`domain/\` \`concepts/\` \`fleet/\` \`sources/\` \`agent/\` | the assistant writes; a person may edit anything |
+| **The schema**: these conventions | this page | co-evolved. If a convention stops fitting, change it here first. |
 
 ## Namespaces
 
@@ -49,7 +49,7 @@ no embedding to rebuild.
 | \`raw/\` | Immutable originals. |
 
 \`domain/\` and \`fleet/\` are allowed to disagree. The standard says one thing; a real machine on a
-real floor does another. When they disagree, say so on both pages and link them — that disagreement
+real floor does another. When they disagree, say so on both pages and link them; that disagreement
 is often the most useful thing in the vault.
 
 ## Page format
@@ -71,7 +71,7 @@ detected_by:
   - "[[domain/envelope-analysis]]"
 updated: 2026-08-28
 updated_by: agent           # agent | user | seed
-confidence: high            # high | medium | low — the writer's own assessment
+confidence: high            # high | medium | low, the writer's own assessment
 ---
 
 # Rolling-Element Bearing Failure
@@ -80,7 +80,7 @@ Body prose, with \`[[wikilinks]]\` used liberally.
 \`\`\`
 
 Any list-valued frontmatter key whose values are wikilinks becomes a **typed edge** in the graph.
-Invent \`mitigated_by\` or \`precedes\` when a relationship deserves a name — no code change is needed
+Invent \`mitigated_by\` or \`precedes\` when a relationship deserves a name; no code change is needed
 for it to appear.
 
 ## Rules
@@ -106,7 +106,7 @@ for it to appear.
 then update every page it touches, flagging contradictions. Log it.
 
 **Query.** Navigate: [[index]] → the page → its outbound links. Search only when navigation does not
-find it. Read the backlinks — what points *at* a page is often more informative than the page.
+find it. Read the backlinks: what points *at* a page is often more informative than the page.
 
 **Lint.** Periodically: which pages are orphans, which wanted pages are unwritten, which links are
 broken, which numbers are unsourced. Fix what it reports. Everything the lint names is a piece of
@@ -114,7 +114,7 @@ work, not a violation.
 
 ## Undo
 
-Every write snapshots the previous version, so nothing written here is unrecoverable — which is
+Every write snapshots the previous version, so nothing written here is unrecoverable, which is
 exactly why the assistant is allowed to write freely.
 `,
 
@@ -130,12 +130,12 @@ confidence: high
 
 # Wiki Index
 
-The content catalogue. Every page, one line each. Start here and follow the links — that is faster
+The content catalogue. Every page, one line each. Start here and follow the links; that is faster
 and more reliable than searching.
 
 Conventions live in [[AGENT-WIKI]]. Every write is recorded in [[log]].
 
-## domain — condition monitoring and failure physics
+## domain: condition monitoring and failure physics
 
 What the standards and the literature say. Values here are the textbook's, not this fleet's;
 observed values live in \`fleet/\`, and the two are allowed to disagree.
@@ -143,19 +143,19 @@ observed values live in \`fleet/\`, and the two are allowed to disagree.
 | Page | What it covers |
 |---|---|
 | [[domain/condition-monitoring-architecture]] | The ISO 13374 six-block model, and which block each part of this app is |
-| [[domain/vibration-severity-zones]] | ISO 20816-3 / 10816-3 zones A–D, the actual mm/s boundaries, and why a limit without a machine group is not a limit |
+| [[domain/vibration-severity-zones]] | ISO 20816-3 / 10816-3 zones A to D, the actual mm/s boundaries, and why a limit without a machine group is not a limit |
 | [[domain/bearing-failure-modes]] | BPFO / BPFI / BSF / FTF, the formulas, and reading sidebands to tell which component failed |
 | [[domain/bearing-degradation-stages]] | The six-stage progression, why detection moves down in frequency, and why stage 6 looks like recovery |
 | [[domain/envelope-analysis]] | Demodulation: what sees a bearing defect before velocity does |
 | [[domain/thermal-failure-modes]] | Overheating, thermal cycling, heat-dissipation loss. Operating bands, marked unsourced |
-| [[domain/lubrication-failure]] | Film breakdown, contamination, wash-out — upstream of most bearing failure |
+| [[domain/lubrication-failure]] | Film breakdown, contamination, wash-out; upstream of most bearing failure |
 | [[domain/misalignment-and-unbalance]] | 1× vs 2×, axial vs radial, and why these are causes rather than just faults |
 | [[domain/tool-wear]] | Flank wear, overstrain, and the wear × torque interaction |
 | [[domain/p-f-curve]] | Potential to functional failure, and how the interval sets the sampling rate |
 | [[domain/fmea-and-criticality]] | RPN, why AIAG-VDA replaced it with Action Priority, and where severity enters the model |
 | [[domain/maintenance-strategies]] | Reactive / preventive / condition-based / predictive, and when each is right |
 
-## concepts — modelling and evaluation
+## concepts: modelling and evaluation
 
 The language for explaining this application's own ML output.
 
@@ -173,36 +173,36 @@ The language for explaining this application's own ML output.
 | [[concepts/remaining-useful-life]] | What RUL needs, censoring, and why this fleet does not publish one |
 | [[concepts/data-drift]] | Covariate shift vs concept drift, and why a dying sensor looks like both |
 
-## fleet — the machines in this registry
+## fleet: the machines in this registry
 
 What *these* machines actually do. Every number here is one the MLOps workspace will show you.
 
 | Page | |
 |---|---|
-| [[fleet/ai4i-milling-machine]] | \`mach-ai4i-mill\`. Snapshot detection only — no time axis, so nothing can be forecast |
+| [[fleet/ai4i-milling-machine]] | \`mach-ai4i-mill\`. Snapshot detection only: no time axis, so nothing can be forecast |
 | [[fleet/utility-pump-02]] | \`mach-utility-pump\`. Five sensors on a 30-second grid, both goals, real dropouts |
 | [[fleet/packaging-drive-01]] | \`mach-packaging-drive\`. Three axes at 500 ms in sessions days apart |
 | [[fleet/schema-generalisation]] | Why the drive's bespoke pipeline was rewritten as a registry entry, and what that cost |
 
-## sources — provenance
+## sources: provenance
 
 Every numeric claim in \`domain/\` and \`concepts/\` traces to one of these.
 
 | Page | Kind |
 |---|---|
-| [[sources/iso-13374-1]] | Primary — the standard's own text, read from the publisher's preview |
+| [[sources/iso-13374-1]] | Primary: the standard's own text, read from the publisher's preview |
 | [[sources/iso-20816-3]] | Paywalled; catalogue as authority, secondary for the numbers |
 | [[sources/iso-10816-3]] | Superseded, still what the field quotes |
-| [[sources/crowe-2007-bearing-faults]] | Primary — conference paper, read in full |
+| [[sources/crowe-2007-bearing-faults]] | Primary: conference paper, read in full |
 | [[sources/ai4i-2020-dataset]] | The published rules, and where this demo's reconstruction differs |
-| [[sources/cmapss-turbofan]] | Secondary — NASA run-to-failure benchmark |
-| [[sources/femto-pronostia]] | Secondary — measured bearing run-to-failure rig |
-| [[sources/nowlan-heap-1978-rcm]] | Secondary — origin of the P-F curve |
-| [[sources/aiag-vda-fmea-2019]] | Secondary — RPN replaced by Action Priority |
-| [[sources/repo-maintenance-guidelines]] | Internal, uncited, superseded — kept so its claims stay traceable |
+| [[sources/cmapss-turbofan]] | Secondary: NASA run-to-failure benchmark |
+| [[sources/femto-pronostia]] | Secondary: measured bearing run-to-failure rig |
+| [[sources/nowlan-heap-1978-rcm]] | Secondary: origin of the P-F curve |
+| [[sources/aiag-vda-fmea-2019]] | Secondary: RPN replaced by Action Priority |
+| [[sources/repo-maintenance-guidelines]] | Internal, uncited, superseded; kept so its claims stay traceable |
 | [[sources/industrial-predictive-maintenance-guidelines]] | Written by the assistant from the raw file, not yet reviewed by a person |
 
-## agent — operational knowledge
+## agent: operational knowledge
 
 How the assistant works, rather than what it knows. Read-only to the assistant itself.
 
@@ -217,7 +217,7 @@ How the assistant works, rather than what it knows. Read-only to the assistant i
 | [[agent/sql/data-contract]] | Entities, fields, relationships |
 | [[agent/sql/gotchas]] | Where the contract surprises you |
 
-## raw — immutable
+## raw: immutable
 
 | Page | |
 |---|---|
@@ -228,14 +228,14 @@ How the assistant works, rather than what it knows. Read-only to the assistant i
 The corpus records its conflicts rather than quietly picking winners. The ones worth knowing before
 you lean on a number:
 
-- The legacy vibration table is roughly four times too permissive at the top end —
+- The legacy vibration table is roughly four times too permissive at the top end:
   [[domain/vibration-severity-zones]], [[sources/repo-maintenance-guidelines]].
 - The AI4I file disagrees with its own published description on TWF and RNF counts, and RNF barely
-  connects to the failure label — [[sources/ai4i-2020-dataset]].
-- The two vibration standards disagree in the last digit of one zone boundary —
+  connects to the failure label: [[sources/ai4i-2020-dataset]].
+- The two vibration standards disagree in the last digit of one zone boundary:
   [[sources/iso-20816-3]].
 - This demo's reconstruction of AI4I has a different failure rate from the published file, so the
-  two baselines are not interchangeable — [[fleet/ai4i-milling-machine]].
+  two baselines are not interchangeable: [[fleet/ai4i-milling-machine]].
 - [[fleet/packaging-drive-01]] reports acceleration in g while the ISO zones are written in mm/s
   velocity; no zone letter applies to that machine.
 `,
@@ -252,13 +252,13 @@ updated_by: seed
 # Wiki Log
 
 Append-only chronology of every ingest, write and lint pass. A reason is required, and "updated" is
-not a reason — this line is the only thing a future reader gets.
+not a reason; this line is the only thing a future reader gets.
 
-## [2026-08-26 15:01 UTC] seed | vault — 49 pages seeded, 0 local edits preserved (seed)
-## [2026-08-27 04:46 UTC] ingest | sources/industrial-predictive-maintenance-guidelines — compiled from raw/legacy-maintenance-guidelines; flagged as unreviewed (agent)
-## [2026-08-27 04:47 UTC] update | index — catalogued the ingested source (agent)
-## [2026-08-27 09:12 UTC] update | domain/vibration-severity-zones — recorded the conflict with the legacy table rather than silently replacing it (agent)
-## [2026-08-28 07:30 UTC] create | fleet/schema-generalisation — wrote down why the drive's bespoke pipeline was replaced, before anyone forgot what it cost (user)
-## [2026-08-28 07:52 UTC] update | fleet/ai4i-milling-machine — separated the published dataset counts from this build's reconstruction; they were being read as the same number (user)
+## [2026-08-26 15:01 UTC] seed | vault: 49 pages seeded, 0 local edits preserved (seed)
+## [2026-08-27 04:46 UTC] ingest | sources/industrial-predictive-maintenance-guidelines: compiled from raw/legacy-maintenance-guidelines; flagged as unreviewed (agent)
+## [2026-08-27 04:47 UTC] update | index: catalogued the ingested source (agent)
+## [2026-08-27 09:12 UTC] update | domain/vibration-severity-zones: recorded the conflict with the legacy table rather than silently replacing it (agent)
+## [2026-08-28 07:30 UTC] create | fleet/schema-generalisation: wrote down why the drive's bespoke pipeline was replaced, before anyone forgot what it cost (user)
+## [2026-08-28 07:52 UTC] update | fleet/ai4i-milling-machine: separated the published dataset counts from this build's reconstruction; they were being read as the same number (user)
 `,
 };

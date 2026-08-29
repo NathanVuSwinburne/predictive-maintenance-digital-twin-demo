@@ -1,5 +1,5 @@
 /**
- * The `raw/` namespace — originals, immutable.
+ * The `raw/` namespace: originals, immutable.
  *
  * One page, and it is here to make a point that a summary cannot: the wiki's numbers are
  * checkable. `sources/repo-maintenance-guidelines` says this document's vibration table is wrong;
@@ -27,7 +27,7 @@ confidence: low
 > from it is [[sources/industrial-predictive-maintenance-guidelines]].
 
 > **Unsourced:** the document cites nothing and names no author. Its vibration table in particular
-> is wrong by roughly a factor of four at the top end — see [[domain/vibration-severity-zones]].
+> is wrong by roughly a factor of four at the top end; see [[domain/vibration-severity-zones]].
 > It is kept because a claim you can trace is worth more than a claim you have deleted.
 # Industrial Predictive Maintenance Guidelines
 
@@ -46,11 +46,11 @@ Predictive maintenance (PdM) aims to predict equipment failures before they occu
 ### Normal Operating Ranges
 | Equipment Type | Normal Range (°C) | Warning Threshold | Critical Threshold |
 |---------------|-------------------|-------------------|-------------------|
-| CNC Spindle Motors | 60–75 | 85 | 95 |
-| Hydraulic Systems | 40–60 | 70 | 80 |
-| Compressors | 70–85 | 95 | 105 |
-| Heat Exchangers | 50–80 | 90 | 100 |
-| Conveyor Motors | 40–55 | 65 | 75 |
+| CNC Spindle Motors | 60-75 | 85 | 95 |
+| Hydraulic Systems | 40-60 | 70 | 80 |
+| Compressors | 70-85 | 95 | 105 |
+| Heat Exchangers | 50-80 | 90 | 100 |
+| Conveyor Motors | 40-55 | 65 | 75 |
 
 ### Temperature-Related Failure Modes
 - **Overheating**: Sustained operation >10% above nominal triggers lubricant degradation within 48 hours
@@ -69,38 +69,38 @@ Predictive maintenance (PdM) aims to predict equipment failures before they occu
 ### Vibration Severity Standards (ISO 10816)
 | Severity Zone | RMS Velocity (mm/s) | Action |
 |--------------|---------------------|--------|
-| A (Good) | 0–2.8 | Normal operation |
-| B (Acceptable) | 2.8–7.1 | Monitor closely |
-| C (Warning) | 7.1–18 | Plan maintenance |
+| A (Good) | 0-2.8 | Normal operation |
+| B (Acceptable) | 2.8-7.1 | Monitor closely |
+| C (Warning) | 7.1-18 | Plan maintenance |
 | D (Danger) | >18 | Stop immediately |
 
 ### Vibration Frequency Signatures
-- **1× RPM**: Unbalance — balance rotor
-- **2× RPM**: Misalignment — check coupling alignment
-- **3–5× RPM**: Looseness — tighten mounting bolts
-- **Ball Pass Frequency (BPF)**: Bearing defect — replace bearing
+- **1× RPM**: Unbalance; balance rotor
+- **2× RPM**: Misalignment; check coupling alignment
+- **3-5× RPM**: Looseness; tighten mounting bolts
+- **Ball Pass Frequency (BPF)**: Bearing defect; replace bearing
 - **High-frequency broadband**: Lubrication failure
 
 ### Bearing Failure Progression
-1. Stage 1 (ultrasonic, 250–350 kHz): Initial micro-cracks — plan replacement in 30 days
-2. Stage 2 (2–60 kHz): Crack growth — plan replacement in 7 days
-3. Stage 3 (audible, 1–10 kHz): Visible wear — replace immediately
-4. Stage 4 (visual/tactile, <1 kHz): Catastrophic — emergency shutdown
+1. Stage 1 (ultrasonic, 250-350 kHz): Initial micro-cracks; plan replacement in 30 days
+2. Stage 2 (2-60 kHz): Crack growth; plan replacement in 7 days
+3. Stage 3 (audible, 1-10 kHz): Visible wear; replace immediately
+4. Stage 4 (visual/tactile, <1 kHz): Catastrophic; emergency shutdown
 
 ---
 
 ## 4. Pressure Systems
 
 ### Hydraulic System Guidelines
-- **Normal operating pressure**: Verify against OEM spec (typically 100–300 bar)
+- **Normal operating pressure**: Verify against OEM spec (typically 100-300 bar)
 - **Pressure fluctuations >10%**: Indicates seal wear or valve erosion
-- **Pressure drop >20%**: Imminent seal failure — schedule within 24 hours
+- **Pressure drop >20%**: Imminent seal failure; schedule within 24 hours
 - **Fluid analysis interval**: Every 500 operating hours or 3 months
 
 ### Common Hydraulic Failure Causes
 | Failure | Indicators | Action |
 |---------|-----------|--------|
-| Seal Failure | Pressure drop, external leaks | Replace seals (2–4h downtime) |
+| Seal Failure | Pressure drop, external leaks | Replace seals (2-4h downtime) |
 | Pump Cavitation | High noise, pressure oscillation | Check fluid level, inspect inlet |
 | Valve Erosion | Sluggish response, pressure spikes | Inspect/replace control valve |
 | Fluid Contamination | Discolored fluid, high heat | Flush system, replace filters |
@@ -110,10 +110,10 @@ Predictive maintenance (PdM) aims to predict equipment failures before they occu
 ## 5. Tool Wear (CNC Machines)
 
 ### Tool Wear Categories
-- **Flank Wear (VB)**: Normal — replace at VB = 0.3 mm
-- **Crater Wear**: High-speed cutting — reduce RPM by 10%
-- **Thermal Cracking**: Coolant issues — check coolant concentration
-- **Chipping**: Intermittent cutting — reduce feed rate
+- **Flank Wear (VB)**: Normal; replace at VB = 0.3 mm
+- **Crater Wear**: High-speed cutting; reduce RPM by 10%
+- **Thermal Cracking**: Coolant issues; check coolant concentration
+- **Chipping**: Intermittent cutting; reduce feed rate
 
 ### Tool Life Model (Taylor's Equation)
 - T × V^n = C (where T = tool life minutes, V = cutting speed, n ≈ 0.25)
@@ -123,9 +123,9 @@ Predictive maintenance (PdM) aims to predict equipment failures before they occu
 ### Condition Indicators
 | Parameter | Normal | Warning | Replace |
 |-----------|--------|---------|---------|
-| Spindle Power | <90% of nominal | 90–105% | >105% |
-| Surface Finish (Ra) | <1.6 μm | 1.6–3.2 μm | >3.2 μm |
-| Dimensional Drift | <0.01 mm | 0.01–0.05 mm | >0.05 mm |
+| Spindle Power | <90% of nominal | 90-105% | >105% |
+| Surface Finish (Ra) | <1.6 μm | 1.6-3.2 μm | >3.2 μm |
+| Dimensional Drift | <0.01 mm | 0.01-0.05 mm | >0.05 mm |
 
 ---
 
@@ -173,8 +173,8 @@ Predictive maintenance (PdM) aims to predict equipment failures before they occu
 | Risk Score | Health Score | Priority | Response Time |
 |-----------|-------------|----------|---------------|
 | >70% | <50 | Critical | Immediate (<4h) |
-| 50–70% | 50–70 | High | Same day (<8h) |
-| 30–50% | 70–85 | Medium | Within 48 hours |
+| 50-70% | 50-70 | High | Same day (<8h) |
+| 30-50% | 70-85 | Medium | Within 48 hours |
 | <30% | >85 | Low | Next planned cycle |
 
 ---
@@ -182,12 +182,12 @@ Predictive maintenance (PdM) aims to predict equipment failures before they occu
 ## 9. Root Cause Analysis (RCA) Framework
 
 For any failure event:
-1. **Define** — Document exact failure mode and time
-2. **Contain** — Implement temporary fix to restore production
-3. **Analyse** — Use 5-Why or Fishbone diagram
-4. **Correct** — Implement permanent fix
-5. **Prevent** — Update maintenance schedule/procedure
-6. **Verify** — Confirm fix effectiveness over 30-day monitoring window
+1. **Define**: Document exact failure mode and time
+2. **Contain**: Implement temporary fix to restore production
+3. **Analyse**: Use 5-Why or Fishbone diagram
+4. **Correct**: Implement permanent fix
+5. **Prevent**: Update maintenance schedule/procedure
+6. **Verify**: Confirm fix effectiveness over 30-day monitoring window
 
 ---
 

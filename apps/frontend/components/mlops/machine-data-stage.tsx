@@ -117,7 +117,7 @@ export function MachineDataStage({ machine, onContinue }: Props) {
             <p className="instrument-label">Step 2 · Machine data</p>
             <CardTitle className="text-lg">What {machine.name} sends</CardTitle>
             <CardDescription>
-              The registered column contract. Timestamp and session stay metadata — they
+              The registered column contract. Timestamp and session stay metadata: they
               order and group the rows, and never become model inputs.
             </CardDescription>
           </CardHeader>
@@ -136,22 +136,22 @@ export function MachineDataStage({ machine, onContinue }: Props) {
                 <TableRow className="bg-muted/20">
                   <TableCell className="font-mono text-xs">{machine.timeColumn}</TableCell>
                   <TableCell className="text-xs">timestamp</TableCell>
-                  <TableCell className="text-xs">—</TableCell>
+                  <TableCell className="text-xs">n/a</TableCell>
                   <TableCell className="text-right font-mono text-xs">0</TableCell>
-                  <TableCell className="text-xs text-muted-foreground">Metadata — orders rows</TableCell>
+                  <TableCell className="text-xs text-muted-foreground">Metadata: orders rows</TableCell>
                 </TableRow>
                 <TableRow className="bg-muted/20">
                   <TableCell className="font-mono text-xs">{machine.sessionColumn}</TableCell>
                   <TableCell className="text-xs">text</TableCell>
-                  <TableCell className="text-xs">—</TableCell>
+                  <TableCell className="text-xs">n/a</TableCell>
                   <TableCell className="text-right font-mono text-xs">0</TableCell>
-                  <TableCell className="text-xs text-muted-foreground">Metadata — groups a run</TableCell>
+                  <TableCell className="text-xs text-muted-foreground">Metadata: groups a run</TableCell>
                 </TableRow>
                 {machine.features.map((feature) => (
                   <TableRow key={feature.name}>
                     <TableCell className="font-mono text-xs">{feature.name}</TableCell>
                     <TableCell className="text-xs">{feature.dtype}</TableCell>
-                    <TableCell className="text-xs">{feature.unit ?? "—"}</TableCell>
+                    <TableCell className="text-xs">{feature.unit ?? "n/a"}</TableCell>
                     <TableCell className="text-right font-mono text-xs">
                       {missingCounts[feature.name] > 0 ? (
                         <span className="text-[var(--status-watch)]">{missingCounts[feature.name]}</span>
@@ -166,7 +166,7 @@ export function MachineDataStage({ machine, onContinue }: Props) {
                   <TableRow className="bg-primary/5">
                     <TableCell className="font-mono text-xs">{machine.target.column}</TableCell>
                     <TableCell className="text-xs">{machine.target.taskType}</TableCell>
-                    <TableCell className="text-xs">—</TableCell>
+                    <TableCell className="text-xs">n/a</TableCell>
                     <TableCell className="text-right font-mono text-xs">0</TableCell>
                     <TableCell className="text-xs text-muted-foreground">
                       Target · {machine.target.classes.join(" / ")}
@@ -285,7 +285,7 @@ export function MachineDataStage({ machine, onContinue }: Props) {
 
       <div className="flex justify-end">
         <Button onClick={onContinue}>
-          Prepare this data <ArrowRightIcon data-icon="inline-end" />
+          Preprocess this data <ArrowRightIcon data-icon="inline-end" />
         </Button>
       </div>
     </div>

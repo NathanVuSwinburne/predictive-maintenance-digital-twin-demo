@@ -216,7 +216,7 @@ export function PreprocessingWorkspace({
             <summary className="cursor-pointer text-sm font-medium">Column types</summary>
             <p className="mt-2 text-xs leading-5 text-muted-foreground">
               How each column is read, for this dataset only. Change one when the registered
-              type is wrong for this recipe — a sensor that arrived as text, or a 0/1 flag
+              type is wrong for this recipe: a sensor that arrived as text, or a 0/1 flag
               that is really a category. Retyping moves the column between the lists below.
             </p>
             <div className="mt-2 max-h-56 space-y-1 overflow-auto">
@@ -363,7 +363,7 @@ export function PreprocessingWorkspace({
                           </p>
                           {selected.ordinalOrder.length === 0 ? (
                             <p className="mt-1 text-xs text-destructive">
-                              No categories known yet — preview once with One-hot to discover them.
+                              No categories known yet. Preview once with One-hot to discover them.
                             </p>
                           ) : (
                             <ol className="mt-1 space-y-1">
@@ -722,7 +722,7 @@ export function PreprocessingWorkspace({
                         );
                       })}
                       {recipe.target && (
-                        <TableCell className="font-mono text-xs">{row.encodedTarget ?? "—"}</TableCell>
+                        <TableCell className="font-mono text-xs">{row.encodedTarget ?? "n/a"}</TableCell>
                       )}
                     </TableRow>
                   ))}

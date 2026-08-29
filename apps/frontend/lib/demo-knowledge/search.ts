@@ -6,8 +6,8 @@
  * is *compiled and linked*, so the primary way to find something is `index` → the page → its
  * `[[links]]`. Search is the fallback for when the reader does not know what the page is called.
  *
- * At this size BM25 is faster than a vector round trip, fully explainable — every hit can say
- * "it matched the title" — costs nothing, works offline, and needs no reindex after a write. The
+ * At this size BM25 is faster than a vector round trip, fully explainable (every hit can say
+ * "it matched the title"), costs nothing, works offline, and needs no reindex after a write. The
  * point at which that stops being true is somewhere around a few hundred pages; a vault that
  * outgrows it should say so out loud rather than quietly getting worse.
  */

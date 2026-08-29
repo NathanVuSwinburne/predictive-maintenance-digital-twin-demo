@@ -1,8 +1,8 @@
 /**
  * Training, in the browser, for real.
  *
- * The models here are small — logistic regression, a bagged CART forest, gradient-boosted
- * stumps, a one-hidden-layer network, ridge regression on lagged readings — but they are
+ * The models here are small: logistic regression, a bagged CART forest, gradient-boosted
+ * stumps, a one-hidden-layer network, ridge regression on lagged readings, but they are
  * genuinely fitted on the Train split and genuinely scored on rows they never saw. That
  * matters more than the size of the model: the point of this pane is that a recipe which
  * throws away the informative columns produces a model that loses to always guessing the
@@ -65,7 +65,7 @@ export const ARCHITECTURES: ArchitectureOption[] = [
     id: "mlp",
     label: "Small neural network",
     capability: "predict",
-    description: "One hidden tanh layer trained by gradient descent. Needs scaled inputs — leave the scaler on None and watch it struggle.",
+    description: "One hidden tanh layer trained by gradient descent. Needs scaled inputs; leave the scaler on None and watch it struggle.",
     parameters: [
       { key: "hidden_units", label: "Hidden units", description: "Width of the single hidden layer.", type: "integer", default: 12, minimum: 2, maximum: 48 },
       { key: "learning_rate", label: "Learning rate", description: "Step size for gradient descent.", type: "number", default: 0.08, minimum: 0.001, maximum: 1 },
@@ -204,7 +204,7 @@ function splitForTraining(rows: SampleRow[], recipe: PreprocessingRecipe): { tra
 
 /**
  * Turn the recipe into the numeric design matrix a learner can eat. Every statistic used
- * here — imputation, clipping bounds, scaling, category vocabulary — is fitted on Train
+ * here (imputation, clipping bounds, scaling, category vocabulary) is fitted on Train
  * and then applied unchanged to Test, exactly as the preview claims.
  */
 function prepareMatrices(machine: DemoMachine, recipe: PreprocessingRecipe): Prepared {
@@ -631,10 +631,10 @@ function scoreClassifier(prepared: Prepared, predict: (row: number[]) => number)
     qualityNote = `This model does not beat the trivial answer. Always guessing "${labels[majority]}" would be at least as informative on the same held-out rows.`;
   } else if (accuracy <= baselineAccuracy + 1e-9) {
     // A class-balanced model routinely loses plain accuracy to catch the rare outcome.
-    // That is a trade, not a failure — but it has to be made deliberately, so it is
+    // That is a trade, not a failure, but it has to be made deliberately, so it is
     // spelled out here rather than hidden behind a green tick or a red cross.
     qualityStatus = "borderline";
-    qualityNote = `It finds the rare outcome far more often than the trivial answer and pays for it in plain accuracy — ${(accuracy * 100).toFixed(1)} % against ${(baselineAccuracy * 100).toFixed(1)} %. That is the right trade only where a missed ${labels[1 - majority] ?? "event"} costs more than a false alarm.`;
+    qualityNote = `It finds the rare outcome far more often than the trivial answer and pays for it in plain accuracy, ${(accuracy * 100).toFixed(1)} % against ${(baselineAccuracy * 100).toFixed(1)} %. That is the right trade only where a missed ${labels[1 - majority] ?? "event"} costs more than a false alarm.`;
   } else if (minorityRecall < 0.25 || metrics.test_accuracy_lift < 0.01) {
     qualityStatus = "borderline";
     qualityNote =
@@ -659,7 +659,7 @@ function scoreClassifier(prepared: Prepared, predict: (row: number[]) => number)
 /**
  * One-step-ahead forecasting, scored against persistence.
  *
- * Lags never reach across a session boundary — a window that spanned the four-day gap
+ * Lags never reach across a session boundary: a window that spanned the four-day gap
  * between two runs would average two unrelated episodes into a row that never happened.
  */
 function trainForecaster(
@@ -782,7 +782,7 @@ function trainForecaster(
     qualityNote = "It beats persistence by under five percent. That is real, but it is not much to hang a maintenance decision on.";
   }
   if (recipe.splitStrategy === "random") {
-    qualityNote += " The split was random, so neighbouring readings sit on both sides of it — read this score as optimistic.";
+    qualityNote += " The split was random, so neighbouring readings sit on both sides of it; read this score as optimistic.";
     if (qualityStatus === "recommended") qualityStatus = "borderline";
   }
 

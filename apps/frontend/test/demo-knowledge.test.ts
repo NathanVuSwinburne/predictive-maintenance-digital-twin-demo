@@ -142,7 +142,7 @@ describe("the graph", () => {
     }
   });
 
-  it("leaves the seeded vault reachable — index links to every namespace", () => {
+  it("leaves the seeded vault reachable: index links to every namespace", () => {
     const detail = noteDetail(index, "index")!;
     const namespaces = new Set(detail.outbound.map((link) => link.id.split("/")[0]));
     for (const expected of ["domain", "concepts", "fleet", "sources", "agent", "raw"]) {

@@ -2,7 +2,7 @@
  * The vault, in memory.
  *
  * A module-scope store read through `useSyncExternalStore`, the same seam the MLOps workspace uses.
- * There is no backend in this build, so "the file on disk" is a string in a Map — but everything
+ * There is no backend in this build, so "the file on disk" is a string in a Map, but everything
  * downstream of that string is real: the graph, the search index and the lint report are all
  * derived from the markdown on read, so an edit in the pane changes the graph in the same frame,
  * exactly as it would against a filesystem.
@@ -163,7 +163,7 @@ function guardWritable(id: string) {
   const head = id.split("/")[0];
   if (head === "raw") {
     throw new VaultError(
-      "raw/ is immutable. Originals are never edited — summarise this into a sources/ page instead.",
+      "raw/ is immutable. Originals are never edited; summarise this into a sources/ page instead.",
     );
   }
   if (head === "agent") {
@@ -217,7 +217,7 @@ export function createPage(
   const head = namespace.split("/")[0];
   if (!(WRITABLE_NAMESPACES as readonly string[]).includes(head)) {
     throw new VaultError(
-      `New pages go in ${WRITABLE_NAMESPACES.join(", ")} — not ${head}.`,
+      `New pages go in ${WRITABLE_NAMESPACES.join(", ")}; not ${head}.`,
     );
   }
   const slug = slugify(title);
@@ -246,7 +246,7 @@ export function createPage(
       `# ${title}`,
       "",
       "Written from the knowledge pane. Nothing here is sourced yet, which is what",
-      "`confidence: low` is for — link it to the pages that wanted it, then fill it in.",
+      "`confidence: low` is for. Link it to the pages that wanted it, then fill it in.",
       "",
     ].join("\n");
 

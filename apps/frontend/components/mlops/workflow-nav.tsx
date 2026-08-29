@@ -8,7 +8,7 @@ import type { Stage } from "@/lib/demo-mlops/types";
 export const STAGES: Array<{ id: Stage; label: string; caption: string }> = [
   { id: "machine", label: "Machine", caption: "Pick the registry entry" },
   { id: "data", label: "Machine data", caption: "Inspect what it sends" },
-  { id: "prepare", label: "Prepare", caption: "Write the recipe" },
+  { id: "preprocess", label: "Preprocessing", caption: "Write the recipe" },
   { id: "train", label: "Train", caption: "Fit and score a model" },
 ];
 

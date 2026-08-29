@@ -2,15 +2,15 @@
  * The knowledge graph, derived from the markdown on read.
  *
  * There is no graph database and no stored adjacency list. Nodes are pages and edges are links
- * written inside the pages themselves, so nothing can drift out of sync with the text — because the
+ * written inside the pages themselves, so nothing can drift out of sync with the text, because the
  * text *is* the graph. That is the property that lets someone edit a page in the pane and see the
  * new edge appear in the same frame.
  *
  * Edges come from three places:
  *
- * - `[[Wikilinks]]` in the body — edge type `link`
- * - any list-valued frontmatter key whose values are wikilinks — edge type is the key itself
- * - `tags:` — edges to synthetic tag nodes, off by default
+ * - `[[Wikilinks]]` in the body: edge type `link`
+ * - any list-valued frontmatter key whose values are wikilinks: edge type is the key itself
+ * - `tags:` gives edges to synthetic tag nodes, off by default
  *
  * A link to a page that does not exist yet becomes a **wanted** node rather than a dropped edge.
  * Those are not errors; they are the worklist.
@@ -62,7 +62,7 @@ function record(id: string, content: string): NoteRecord {
 
 /**
  * Builds the whole index in one pass over the pages. Cheap enough at this size that it is rebuilt
- * from scratch on every write rather than patched — a patched index is one more thing that can be
+ * from scratch on every write rather than patched; a patched index is one more thing that can be
  * wrong, and being wrong here is invisible.
  */
 export function buildIndex(pages: Record<string, string>): VaultIndex {

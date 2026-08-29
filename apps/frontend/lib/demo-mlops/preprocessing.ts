@@ -4,7 +4,7 @@
  * Nothing here is faked: the split, the fitted statistics, the clipping bounds and the
  * scaling are all computed from the bundled rows, and every statistic is fitted on Train
  * only and then applied unchanged to Test. That constraint is the reason this file exists
- * rather than a table of pre-baked numbers — it is the part of the workflow that is easy
+ * rather than a table of pre-baked numbers: it is the part of the workflow that is easy
  * to get quietly wrong, so the demo has to actually do it.
  */
 

@@ -51,7 +51,7 @@ export type DemoMachine = {
   sessionColumn: string | null;
   target: TargetContract | null;
   sources: DataSource[];
-  /** How this machine's schema got to where it is — the generalisation story. */
+  /** How this machine's schema got to where it is, the generalisation story. */
   migrations: SchemaMigrationEntry[];
   sampleRows: SampleRow[];
   /** Full population figures the bundled sample stands in for. */
@@ -221,4 +221,4 @@ export type ModelDeployment = {
   overrideReason: string | null;
 };
 
-export type Stage = "machine" | "data" | "prepare" | "train";
+export type Stage = "machine" | "data" | "preprocess" | "train";
