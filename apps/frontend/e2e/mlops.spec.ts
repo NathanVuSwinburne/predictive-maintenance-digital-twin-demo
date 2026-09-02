@@ -11,16 +11,18 @@ test("walks a machine from raw columns to an approved model", async ({ page }) =
   page.on("pageerror", (error) => errors.push(error.message));
 
   await page.goto("/mlops");
-  await expect(page.getByRole("heading", { name: "MLOps workspace" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Machine Registry" })).toBeVisible();
 
   // Step 1, the registry, shaped like the production one: a list and a register form.
-  await expect(page.getByRole("button", { name: /AI4I Milling Machine/ }).first()).toBeVisible();
   await expect(page.getByRole("button", { name: /Register machine/i })).toBeDisabled();
-  await page.getByRole("button", { name: /Open .*'s data/i }).click();
+  // Choosing a machine opens its data, exactly as production does it: one act, not two.
+  await page.getByRole("button", { name: /Add data for AI4I Milling Machine/i }).click();
+  await expect(page).toHaveURL(/stage=data/);
+  await expect(page.getByRole("heading", { name: /Add Data for AI4I Milling Machine/i })).toBeVisible();
 
   // Step 2: the column contract.
   await expect(page.getByText("Machine failure").first()).toBeVisible();
-  await page.getByRole("button", { name: /Preprocess this data/i }).click();
+  await page.getByRole("button", { name: /^Prepare training data$/i }).click();
 
   // Step 3: the recipe, previewed against the bundled rows.
   await expect(page.getByText(/Fitted Train-only statistics/i)).toBeVisible();
@@ -47,8 +49,8 @@ test("walks a machine from raw columns to an approved model", async ({ page }) =
 
 test("refuses an architecture it cannot honestly train", async ({ page }) => {
   await page.goto("/mlops");
-  await page.getByRole("button", { name: /Open .*'s data/i }).click();
-  await page.getByRole("button", { name: /Preprocess this data/i }).click();
+  await page.getByRole("button", { name: /Add data for AI4I Milling Machine/i }).click();
+  await page.getByRole("button", { name: /^Prepare training data$/i }).click();
   await page.getByRole("button", { name: /Freeze this recipe into a dataset/i }).click();
 
   await expect(page.getByText("Fit a model")).toBeVisible();

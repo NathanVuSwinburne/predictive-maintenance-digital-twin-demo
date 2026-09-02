@@ -39,7 +39,7 @@ const navigation = [
   { href: "/history", label: "History", icon: ClockCounterClockwiseIcon },
   { href: "/chat", label: "AI Assistant", icon: ChatCircleDotsIcon },
   { href: "/simulator", label: "Simulator", icon: GaugeIcon },
-  { href: "/mlops", label: "MLOps", icon: FlaskIcon },
+  { href: "/mlops", label: "Machine Registry", icon: FlaskIcon },
   { href: "/knowledge", label: "Knowledge Wiki", icon: GraphIcon },
   {
     href: "/account/security",

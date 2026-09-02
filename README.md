@@ -77,7 +77,7 @@ These names identify data profiles, not three physical machines connected to the
 > [!IMPORTANT]
 > The public Vercel experience is a **sanitized portfolio demo**. Its “live” values are deterministic demo data. Machine C uses sanitized client-derived fixtures and clearly labelled synthetic continuations. Private raw readings, backend services, databases, and API keys are not deployed.
 >
-> Two panes are an exception worth knowing about. The [MLOps workspace](#a-trained-model-is-not-yet-a-workflow) and the [knowledge wiki](#memory-the-agent-can-read-and-so-can-you) are frontend-only but not scripted: they really compute, in your browser, over public and synthetic data only.
+> Two panes are an exception worth knowing about. The [machine registry](#a-trained-model-is-not-yet-a-workflow) and the [knowledge wiki](#memory-the-agent-can-read-and-so-can-you) are frontend-only but not scripted: they really compute, in your browser, over public and synthetic data only.
 
 <sub>↑ [Map](#start-anywhere) · → **Next:** [First, understand the machines](#first-understand-the-machines) · ↔ **Related:** [Run it yourself](#run-it-yourself)</sub>
 
@@ -187,20 +187,20 @@ It cost something. Domain knowledge moved out of code and into configuration, wh
 
 What the rewrite bought is everything below.
 
-![The MLOps machine registry, with the schema history of the AI4I machine beside it](assets/mlops_machine_registry.png)
+![The machine registry, with the schema history of the AI4I machine beside it](assets/mlops_machine_registry.png)
 
-<strong>The registry is deliberately dull.</strong> A list and a register form, the same shape the production app uses, with the register button off because writing one needs a database. Open **Schema history** and each machine unfolds every version of its own column contract, ending where it stopped needing code written specially for it.
+<strong>The registry is deliberately dull.</strong> A list and a register form, the same shape the production app uses, with the register button off because writing one needs a database. Choosing a machine opens its data step straight away, as it does in production: the registry is the way into a machine, not a form asking you to confirm the choice you just made. Open **Schema history** and each machine unfolds every version of its own column contract, ending where it stopped needing code written specially for it.
 
 ### Four stages, and a decision that is not the trainer's to make
 
-The workflow ships as a frontend-only workspace at **`/mlops`**, over three public or synthetic machines. Nothing is scripted: the recipe recomputes and the models fit, in your browser, on every click.
+The workflow ships as a frontend-only **Machine Registry** at **`/mlops`**, over three public or synthetic machines. The four steps carry the production app's names, and the step, machine and goal live in the URL, so any step can be linked to and survives a reload. Nothing is scripted: the recipe recomputes and the models fit, in your browser, on every click.
 
 | Stage | What happens |
 |---|---|
-| **Machine** | The registry, plus each machine's **column history** as a timeline. Five versions for the drive, because a version number with no record of what changed is a number, not a history. |
-| **Data** | The columns, where they came from, and a readiness check per goal. A machine with no time axis is told plainly that it cannot forecast, instead of being offered a button that would fail. |
-| **Preprocessing** | Split, missing values, scaling, resampling, and an editor for writing **new columns as formulas** over the existing ones. Freezing the recipe produces a dataset version that can no longer change. |
-| **Train** | Model types split into *runs in your browser* and *production worker only*, and hyperparameters edited as **JSON**, the way the production app edits them. There were per-parameter number fields here once; two ways to set one value is only ever a way for the two to disagree. |
+| **Add Machine** | The registry, plus each machine's **column history** as a timeline. Five versions for the drive, because a version number with no record of what changed is a number, not a history. |
+| **Add Machine Data** | The columns, where they came from, and a readiness check per goal. A machine with no time axis is told plainly that it cannot forecast, instead of being offered a button that would fail. |
+| **Prepare Training Data** | Split, missing values, scaling, resampling, and an editor for writing **new columns as formulas** over the existing ones. Freezing the recipe produces a dataset version that can no longer change. |
+| **Train Model** | Model types split into *runs in your browser* and *production worker only*, and hyperparameters edited as **JSON**, the way the production app edits them. There were per-parameter number fields here once; two ways to set one value is only ever a way for the two to disagree. |
 
 Training ends there, and deliberately. It produces candidates, nothing more. Moving one to production is an admin decision on a separate page, **`/admin/models`**, which is where it lives in the real app too.
 
@@ -455,7 +455,7 @@ One interface, `DigitalTwinDataProvider`, decides where data comes from. Everyth
 | Backend | FastAPI · SQLAlchemy · Pydantic · PostgreSQL |
 | ML | PyTorch LSTM · XGBoost · Random Forest · scikit-learn · pandas · NumPy |
 | Agent system | Supervisor · six domain tools · read-only SQL sub-agent · working memory · knowledge wiki · persisted traces |
-| MLOps workspace | Registry schema versions · frozen recipes with content digests · JSON training configuration · in-browser logistic regression, CART forest, gradient boosting, MLP and ridge-lag forecaster · quality gates |
+| Machine registry | Registry schema versions · frozen recipes with content digests · JSON training configuration · in-browser logistic regression, CART forest, gradient boosting, MLP and ridge-lag forecaster · quality gates |
 | Knowledge wiki | Markdown + YAML frontmatter corpus · `[[wikilinks]]` · BM25 retrieval · d3-force graph · lint and provenance |
 | Quality | Vitest · Playwright · linting · production build checks |
 
@@ -472,7 +472,7 @@ Machines, telemetry profiles, predictions, recommendations, history, simulations
 - Fleet health, risk, uptime, weekly events, and machine telemetry
 - Random Forest classification and autoregressive LSTM forecasting flows
 - Baseline-versus-intervention simulations
-- A four-stage MLOps workspace that really prepares data and really trains models in the browser, and an admin approvals page that decides which version serves
+- A four-stage machine registry that really prepares data and really trains models in the browser, and an admin approvals page that decides which version serves
 - An agent knowledge wiki: graph, BM25 search, editable pages, backlinks, provenance and lint
 - AI-assisted investigation with visible tool traces
 - Roles, per-machine access, history, and account security

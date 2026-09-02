@@ -114,7 +114,7 @@ export function MachineDataStage({ machine, onContinue }: Props) {
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(300px,1fr)]">
         <Card className="gap-0 overflow-hidden py-0">
           <CardHeader className="gap-1 border-b bg-muted/30 py-4">
-            <p className="instrument-label">Step 2 · Machine data</p>
+            <p className="instrument-label">Column contract</p>
             <CardTitle className="text-lg">What {machine.name} sends</CardTitle>
             <CardDescription>
               The registered column contract. Timestamp and session stay metadata: they
@@ -285,7 +285,7 @@ export function MachineDataStage({ machine, onContinue }: Props) {
 
       <div className="flex justify-end">
         <Button onClick={onContinue}>
-          Preprocess this data <ArrowRightIcon data-icon="inline-end" />
+          Prepare training data <ArrowRightIcon data-icon="inline-end" />
         </Button>
       </div>
     </div>

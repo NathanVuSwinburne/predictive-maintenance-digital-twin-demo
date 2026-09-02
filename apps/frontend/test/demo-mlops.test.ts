@@ -9,7 +9,13 @@ import {
 } from "@/lib/demo-mlops/formula";
 import { defaultRecipe, digestOf, previewRecipe } from "@/lib/demo-mlops/preprocessing";
 import { architecturesFor, BROWSER_ARCHITECTURES, trainModel } from "@/lib/demo-mlops/training";
-import type { DemoMachine, PreprocessingRecipe } from "@/lib/demo-mlops/types";
+import type {
+  DatasetVersion,
+  DemoMachine,
+  PreprocessingRecipe,
+  TrainingRun,
+} from "@/lib/demo-mlops/types";
+import { deriveWorkflow, getStagePrerequisite, isStage } from "@/lib/demo-mlops/workflow";
 
 const ai4i = findMachine("mach-ai4i-mill") as DemoMachine;
 
@@ -238,5 +244,58 @@ describe("training", () => {
     expect(() =>
       trainModel(ai4i, { ...defaultRecipe(ai4i, "predict"), featureNames: [] }, "logistic-regression", {}),
     ).toThrowError();
+  });
+});
+
+describe("machine model workflow", () => {
+  const base = {
+    hasMachine: true,
+    hasData: true,
+    capability: "predict" as const,
+    datasets: [],
+    runs: [],
+  };
+
+  it("names the four steps the production app names", () => {
+    expect(deriveWorkflow(base).map((step) => step.label)).toEqual([
+      "Add Machine",
+      "Add Machine Data",
+      "Prepare Training Data",
+      "Train Model",
+    ]);
+  });
+
+  it("completes a step from existing state, never from having walked past it", () => {
+    const readyDataset = { capability: "predict", status: "ready" } as DatasetVersion;
+    const succeeded = { capability: "predict", status: "succeeded" } as TrainingRun;
+
+    const untouched = deriveWorkflow(base);
+    expect(untouched.map((step) => step.complete)).toEqual([true, true, false, false]);
+
+    const trained = deriveWorkflow({ ...base, datasets: [readyDataset], runs: [succeeded] });
+    expect(trained.map((step) => step.complete)).toEqual([true, true, true, true]);
+  });
+
+  it("ignores a dataset and a run belonging to the other goal", () => {
+    const forecastDataset = { capability: "simulate", status: "ready" } as DatasetVersion;
+    const steps = deriveWorkflow({ ...base, datasets: [forecastDataset] });
+    expect(steps.find((step) => step.id === "prepare")?.complete).toBe(false);
+  });
+
+  it("says what is missing when a step is opened too early", () => {
+    const steps = deriveWorkflow(base);
+    expect(getStagePrerequisite("machine", steps)).toBeNull();
+    expect(getStagePrerequisite("data", steps)).toBeNull();
+    expect(getStagePrerequisite("prepare", steps)).toBeNull();
+    expect(getStagePrerequisite("train", steps)).toMatch(/prepare training data/i);
+
+    const withoutData = deriveWorkflow({ ...base, hasData: false });
+    expect(getStagePrerequisite("prepare", withoutData)).toMatch(/add more machine data/i);
+  });
+
+  it("recognises only the four stage ids, so a stale link cannot open a fifth", () => {
+    expect(isStage("prepare")).toBe(true);
+    expect(isStage("preprocess")).toBe(false);
+    expect(isStage(null)).toBe(false);
   });
 });

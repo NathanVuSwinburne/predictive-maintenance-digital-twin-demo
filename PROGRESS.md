@@ -482,6 +482,69 @@ with the three calculated features, against a 94.3 % trivial answer.
 `tsc --noEmit`, `eslint`, `vitest run` (19 files, 106 tests), `npm run build`, and Playwright
 10 passed. Dash count across `apps/frontend`: 0.
 
+## Session 2026-09-02: the MLOps pane is the production Machine Registry (on `main`)
+
+The ask: the pane did not reflect the production app's UI or UX, and specifically, clicking a
+machine should take you straight into that machine's data. Scope was the MLOps pane only.
+
+Three parity decisions were the user's to make, and were asked before any code changed: use
+production's step labels (which reverses last session's **Preprocessing** rename of stage
+three), rename the pane to **Machine Registry**, and put the step in the URL. All three: yes.
+
+### Selecting a machine is the same act as opening its data
+
+Production's registry calls `selectEntity(entityId, true)`, which sets `entityId` and
+`stage=data` in one write. The demo had a selected state and a separate **Open X's data**
+button underneath, so choosing a machine asked you to confirm the choice you had just made.
+The row is now the navigation, labelled `Add data for {machine}`, and the button is gone.
+
+### The rest of the shell, matched to production
+
+- `lib/demo-mlops/workflow.ts` is new and mirrors production's `lib/mlops/workflow.ts`:
+  stage ids, labels, `deriveWorkflow()` and `getStagePrerequisite()`. A step is complete only
+  because state exists (rows, a ready dataset, a succeeded run), never because someone walked
+  past it. Six unit tests cover it.
+- Stage ids: `preprocess` becomes `prepare` again, so the id, the label and the URL agree.
+- The nav is production's compact four-button row, not the demo's captioned cards. Its number
+  column uses theme tokens; production hardcodes black on white, which has no dark mode to
+  survive.
+- A page header card (title, description, `3 registered machines`, `Current machine: X`) and
+  banded **Step N** headers above each stage, both lifted from production's layout.
+- The **Model goal** switch moved out of the page header into the nav card, and only appears
+  on Prepare and Train for a machine with both goals, which is where production shows it.
+- Opening a step too early now says what is missing (`Prepare training data first.`) instead
+  of showing an empty stage. Reachable in the demo: a fresh workspace, step 4.
+- `stage`, `entityId` and `capability` are query parameters. The back button is a navigation
+  like any other, read back during render rather than in an effect, because
+  `react-hooks/set-state-in-effect` is on here and an effect would cost a second render.
+
+### Renamed with it
+
+Sidebar and breadcrumb read **Machine Registry**; the two approvals-page sentences that sent
+people to "the MLOps workspace" now say machine registry. The knowledge corpus still calls
+the concept MLOps, which is what it is.
+
+### Screenshots
+
+`mlops_machine_registry`, `mlops_prepare_recipe`, `mlops_model_scorecard` and
+`mlops_promotion_gate` recaptured through a throwaway spec: `main` at a 1592px viewport,
+device scale 2 to match the existing 2656px-wide set, viewport sized to the content so a
+short page is not padded with empty ground. `mlops_training_config.png` is cropped to the
+hints and JSON box, which did not change, and was left alone.
+
+The scorecard is the scripted two-run comparison again, and reproduces the README's headline
+table exactly: random forest at workspace defaults, 83.7 % balanced / 69.6 % failure recall
+on the registered columns against 93.1 % / 87.0 % with the three calculated features, over a
+94.3 % trivial answer.
+
+### Verified
+
+`tsc --noEmit`, `eslint` (0 problems), `vitest run` (19 files, 111 tests), `npm run build`
+with `/mlops` still prerendered static, and `npx playwright test` 10 passed. Dash count
+across the changed files: 0.
+
+---
+
 ---
 
 ## Working rules to keep honouring

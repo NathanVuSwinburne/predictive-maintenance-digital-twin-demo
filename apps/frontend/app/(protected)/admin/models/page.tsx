@@ -126,7 +126,7 @@ export default function MachineModelApprovalsPage() {
               <ShieldCheckIcon /> Registered machine
             </CardTitle>
             <CardDescription className="mt-2">
-              Candidates come from the <Link href="/mlops" className="underline underline-offset-2">MLOps workspace</Link>.
+              Candidates come from the <Link href="/mlops" className="underline underline-offset-2">machine registry</Link>.
               Train one there and it appears here.
             </CardDescription>
           </div>
@@ -241,7 +241,7 @@ export default function MachineModelApprovalsPage() {
               {candidates.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
-                    No candidate versions for this machine yet. Train one in the MLOps workspace.
+                    No candidate versions for this machine yet. Train one in the machine registry.
                   </TableCell>
                 </TableRow>
               )}
