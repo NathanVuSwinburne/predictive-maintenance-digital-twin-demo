@@ -2,62 +2,52 @@
 
 import { CheckCircleIcon } from "@phosphor-icons/react";
 
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { Stage } from "@/lib/demo-mlops/types";
-
-export const STAGES: Array<{ id: Stage; label: string; caption: string }> = [
-  { id: "machine", label: "Machine", caption: "Pick the registry entry" },
-  { id: "data", label: "Machine data", caption: "Inspect what it sends" },
-  { id: "preprocess", label: "Preprocessing", caption: "Write the recipe" },
-  { id: "train", label: "Train", caption: "Fit and score a model" },
-];
+import type { WorkflowStep } from "@/lib/demo-mlops/workflow";
 
 type Props = {
-  current: Stage;
-  complete: Record<Stage, boolean>;
-  onChange: (stage: Stage) => void;
+  currentStage: Stage;
+  steps: WorkflowStep[];
+  onStageChange: (stage: Stage) => void;
 };
 
-export function WorkflowNav({ current, complete, onChange }: Props) {
+export function WorkflowNav({ currentStage, steps, onStageChange }: Props) {
   return (
-    <nav aria-label="Workflow steps" className="overflow-x-auto">
-      <ol className="grid min-w-[600px] grid-cols-4 gap-2">
-        {STAGES.map((stage, index) => {
-          const isCurrent = stage.id === current;
-          const isComplete = complete[stage.id];
+    <nav aria-label="Machine model setup" className="overflow-x-auto">
+      <ol className="grid min-w-[640px] grid-cols-4 gap-2">
+        {steps.map((step, index) => {
+          const current = step.id === currentStage;
+
           return (
-            <li key={stage.id}>
-              <button
+            <li key={step.id}>
+              <Button
                 type="button"
-                aria-current={isCurrent ? "step" : undefined}
-                onClick={() => onChange(stage.id)}
-                className={cn(
-                  "group flex w-full items-start gap-3 rounded-lg border p-3 text-left transition-colors",
-                  isCurrent
-                    ? "border-primary bg-primary/8"
-                    : "border-border bg-card hover:border-primary/40 hover:bg-accent/40",
-                )}
+                variant={current ? "secondary" : "ghost"}
+                className="h-auto w-full justify-start px-3 py-2 text-left"
+                aria-current={current ? "step" : undefined}
+                aria-label={`${index + 1} ${step.label}${step.complete ? ", complete" : ""}`}
+                onClick={() => onStageChange(step.id)}
               >
                 <span
                   aria-hidden="true"
                   className={cn(
-                    "mt-0.5 grid size-6 shrink-0 place-items-center rounded-full font-mono text-[11px] font-semibold",
-                    isComplete
-                      ? "bg-[var(--status-healthy)] text-background"
-                      : isCurrent
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted text-muted-foreground",
+                    // Production hardcodes black on white here, which has no dark mode to
+                    // survive. Same hierarchy, told in theme tokens instead.
+                    "flex w-5 shrink-0 items-center justify-center font-mono text-xs font-semibold",
+                    step.complete
+                      ? "text-[var(--status-healthy)]"
+                      : current
+                        ? "text-foreground"
+                        : "text-muted-foreground",
                   )}
                 >
-                  {isComplete ? <CheckCircleIcon weight="fill" className="size-4" /> : index + 1}
+                  {step.complete ? <CheckCircleIcon weight="fill" /> : index + 1}
                 </span>
-                <span className="min-w-0">
-                  <span className="block truncate text-sm font-medium">{stage.label}</span>
-                  <span className="mt-0.5 block truncate text-xs text-muted-foreground">
-                    {stage.caption}
-                  </span>
-                </span>
-              </button>
+
+                <span>{step.label}</span>
+              </Button>
             </li>
           );
         })}

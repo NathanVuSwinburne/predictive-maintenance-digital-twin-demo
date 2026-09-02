@@ -19,11 +19,11 @@ import { cn } from "@/lib/utils";
 type Props = {
   machines: DemoMachine[];
   selectedId: string | null;
+  /** Selecting a machine is the same act as opening its data, exactly as in production. */
   onSelect: (machineId: string) => void;
-  onContinue: () => void;
 };
 
-export function MachineRegistryStage({ machines, selectedId, onSelect, onContinue }: Props) {
+export function MachineRegistryStage({ machines, selectedId, onSelect }: Props) {
   const selected = machines.find((machine) => machine.id === selectedId) ?? null;
 
   return (
@@ -41,6 +41,7 @@ export function MachineRegistryStage({ machines, selectedId, onSelect, onContinu
                 key={machine.id}
                 type="button"
                 aria-pressed={isSelected}
+                aria-label={`Add data for ${machine.name}`}
                 onClick={() => onSelect(machine.id)}
                 className={cn(
                   "group grid w-full gap-3 border-b p-4 text-left transition-colors last:border-b-0 sm:grid-cols-[42px_1fr_auto] sm:items-center",
@@ -56,7 +57,7 @@ export function MachineRegistryStage({ machines, selectedId, onSelect, onContinu
                     <Badge variant="outline">Data source configured</Badge>
                   </span>
                   <span className="mt-1 block text-sm text-muted-foreground">
-                    Select to review this machine&rsquo;s historical data.
+                    Select to add or review this machine&rsquo;s persisted data.
                   </span>
                 </span>
                 <ArrowRightIcon className="hidden text-muted-foreground transition-transform group-hover:translate-x-1 sm:block" />
@@ -81,6 +82,9 @@ export function MachineRegistryStage({ machines, selectedId, onSelect, onContinu
                 disabled
                 readOnly
               />
+              <p className="text-xs leading-5 text-muted-foreground">
+                Data, sensors, and model goals are added after registration.
+              </p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="entity-image">
@@ -142,11 +146,6 @@ export function MachineRegistryStage({ machines, selectedId, onSelect, onContinu
             </ol>
           </details>
         )}
-
-        <Button onClick={onContinue} disabled={!selected} className="w-full">
-          {selected ? `Open ${selected.name}'s data` : "Select a machine"}
-          <ArrowRightIcon data-icon="inline-end" />
-        </Button>
       </div>
     </div>
   );

@@ -141,7 +141,7 @@ export function TrainingStage({
     <div className="grid items-start gap-4 xl:grid-cols-[minmax(340px,0.72fr)_minmax(0,1fr)]">
       <Card className="gap-0 py-0">
         <CardHeader className="gap-1 border-b bg-muted/30 py-4">
-          <p className="instrument-label">Step 4 · Train</p>
+          <p className="instrument-label">Training configuration</p>
           <CardTitle className="text-lg">Fit a model</CardTitle>
           <CardDescription>
             A run cites one frozen dataset version. Change the recipe and you get a new

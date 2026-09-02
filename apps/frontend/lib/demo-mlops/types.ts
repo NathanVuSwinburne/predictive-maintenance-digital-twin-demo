@@ -221,4 +221,4 @@ export type ModelDeployment = {
   overrideReason: string | null;
 };
 
-export type Stage = "machine" | "data" | "preprocess" | "train";
+export type Stage = "machine" | "data" | "prepare" | "train";
