@@ -212,6 +212,12 @@ function labelHistoryAt(machineId: string, second: number): EntityLiveLabelSpan[
 function horizonAt(machineId: string, second: number): EntityLiveHorizon {
   const cadence = 30;
   const attempted = Math.floor(second / cadence) * cadence;
+  const forecastBase = trend(machineId, attempted, true);
+  const earlier: Record<string, number> = trend(machineId, attempted - 120, true);
+  const slopes = Object.fromEntries(Object.entries(forecastBase).map(([key, value]) => [key, (value - earlier[key]) / 120]));
+  const profile = profileOf(machineId);
+  const [bx, by, bz] = profile.base;
+  const levels: Record<string, number> = { VibrationX: bx, VibrationY: by, VibrationZ: bz, Temperature: profile.temperature };
   return {
     status: "ok",
     message: null,
@@ -221,8 +227,16 @@ function horizonAt(machineId: string, second: number): EntityLiveHorizon {
     cadenceSeconds: cadence,
     points: Array.from({ length: 121 }, (_, index) => {
       const at = attempted + index * cadence;
-      const smooth = trend(machineId, at, true);
-      return { timestamp: iso(at), values: Object.fromEntries(Object.entries(smooth).map(([key, value]) => [key, round(value)])) };
+      const values = Object.fromEntries(
+        Object.entries(forecastBase).map(([key, now]) => {
+          // A learned forecaster cannot know the future cycle. It carries the recent slope
+          // a little way, easing off smoothly, then relaxes toward the machine's usual level.
+          const ahead = index * cadence;
+          const carried = now + slopes[key] * 240 * (1 - Math.exp(-ahead / 240));
+          return [key, round(levels[key] + (carried - levels[key]) * Math.exp(-ahead / 1500))];
+        }),
+      );
+      return { timestamp: iso(at), values };
     }),
     modelName: `${machineId}-forecaster`,
     modelVersion: "2",
