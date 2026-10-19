@@ -34,7 +34,7 @@ Connected pages, not a sequence. Read it straight through or drop into the part 
 | [A prediction you can challenge](#a-prediction-is-more-useful-when-you-can-challenge-it) | The digital twin: baseline against simulated intervention |
 | [The dashboard needed a brain](#the-dashboard-needed-a-brain) | The supervisor agent, its tools, and its visible traces |
 | [Memory the agent can read](#memory-the-agent-can-read-and-so-can-you) | **Knowledge wiki**: why the agent's memory is readable pages and not a numeric index |
-| [Close the loop](#close-the-loop-with-live-ingestion) | The MQTT ingestion prototype |
+| [Close the loop](#close-the-loop-with-live-ingestion) | **Live Monitor**: live readings, vibration in 3D, and a one-hour outlook |
 | [The demo, in pictures](#the-demo-in-pictures) | Every screen, and where it is explained |
 | [Under the hood](#under-the-hood) | Architecture, stack, and what gets persisted |
 | [Run it yourself](#run-it-yourself) | Demo mode in four commands, or the whole stack |
@@ -318,7 +318,7 @@ It reaches each machine through the same tools the app itself uses, so the answe
 <table>
   <tr>
     <td width="50%">
-      <img src="assets/chatbot_tracing.png" alt="Visible four-step agent tool trace" />
+      <img src="assets/demo_chat_trace.png" alt="The assistant answering whether Packaging Drive 01 is running, with its two-step trace: listed the fleet, checked the live feed" />
       <br />
       <strong>Show the actions.</strong> The trace shows which tools the supervisor called, what each one returned, and how the result reached the final response.
     </td>
@@ -387,24 +387,39 @@ The vault at **`/knowledge`** carries 50 interlinked pages: ISO vibration zones,
 
 ## Close the loop with live ingestion
 
-The bridge back to the physical machines. Configurable MQTT subscriptions, so a telemetry source can be mapped without hard-coding one broker or one machine.
+> **In plain terms:** a model is only useful if it sees the machine as it runs. The Live Monitor shows what a connected machine is doing right now, what the model thinks of it, and where it is heading over the next hour.
+
+The production app subscribes to a Balluff CMTK gateway over MQTT, checks and stores each reading, and runs the approved models on the latest readings: a vibration-level prediction about every 5 seconds and a one-hour outlook about every 30 seconds. A machine counts as **Live** only while its last reading is less than 15 seconds old. Anything older is shown as the last values received, not as the current state.
+
+The dashboard opens on that picture: which machines are live, which have dropped out, and the predicted vibration level for each one that is streaming.
+
+![The dashboard's live data health card: one disconnected source, three live machines with their predicted vibration level, and machines with no live source](assets/demo_dashboard.png)
+
+Open a live machine and the monitor shows the current readings, the level the gateway reports beside the level the model predicts, and two separate health checks. One asks *is this unusual for this machine?*, against the 99th percentile of its own history at the same level. The other asks *is this objectively high?*, against an ISO 20816-3 zone, labelled as not confirmed for this machine.
+
+![The machine monitor: live state, current X/Y/Z and temperature readings, the reported and predicted vibration level, and the two health checks](assets/demo_monitor_live.png)
 
 <table>
   <tr>
-    <td width="42%">
-      <img src="assets/MQTT_subscription.png" alt="Form for configuring a new MQTT subscription" />
+    <td width="50%">
+      <img src="assets/demo_monitor_3d.png" alt="The last 300 vibration readings plotted in 3D, with the newest reading ringed and the axis-range control" />
       <br />
-      <strong>Configure the source:</strong> endpoint, port, QoS, and topic.
+      <strong>Vibration in 3D.</strong> The last 300 X/Y/Z readings as a cloud, newest ringed. Drag to rotate; spikes beyond the axis range are pinned to the box edge rather than hidden.
     </td>
-    <td width="58%">
-      <img src="assets/MQTT_subscription_2.png" alt="MQTT topic-to-machine subscription management interface" />
+    <td width="50%">
+      <img src="assets/demo_monitor_outlook.png" alt="The one-hour outlook: the last five minutes measured, then sixty minutes forecast for each sensor, against both health limits" />
       <br />
-      <strong>Manage the mapping:</strong> see connection state and assign topics to machine streams.
+      <strong>The next hour.</strong> Five minutes measured, sixty forecast, per sensor, drawn against both limits, with a one-line summary of where each is heading.
     </td>
   </tr>
 </table>
 
-This is a prototype for future data ingestion. The public Vercel demo is not connected to live industrial equipment, and nothing here claims otherwise.
+Connections are managed and diagnosed in one admin pane: the broker, the saved subscriptions, and whether messages are actually arriving, accepted and on time. A subscription that is *enabled* is only an intention; the health panel is what says the data is flowing.
+
+![Manage MQTT: broker status, a subscription definition, and pipeline health with throughput and reconnects](assets/demo_mqtt_health.png)
+
+> [!NOTE]
+> The hosted demo is not connected to any machine. Its CMTK feed is a **deterministic synthetic replay**: every reading is a fixed function of the machine and the clock, so the monitor, the 3D view and the dashboard move as they would live, without any private sensor data. Actions that need a real broker (adding a subscription, probing a gateway, recording a session) say so in the demo instead of pretending to work.
 
 <sub>↑ [Map](#start-anywhere) · → **Next:** [The demo, in pictures](#the-demo-in-pictures) · ↔ **Related:** [Under the hood](#under-the-hood)</sub>
 
@@ -425,8 +440,12 @@ Every screen appears somewhere above. Jump straight to one:
 | [A searched-and-opened wiki page](assets/knowledge_wiki_page.png) | [Memory the agent can read](#memory-the-agent-can-read-and-so-can-you) |
 | [The provenance panel](assets/knowledge_wiki_provenance.png) | [Memory the agent can read](#memory-the-agent-can-read-and-so-can-you) |
 | [Digital-twin simulation](assets/similation_pane_with_mockdata.png) | [A prediction you can challenge](#a-prediction-is-more-useful-when-you-can-challenge-it) |
-| [Agent traces and telemetry retrieval](assets/chatbot_tracing.png) | [From a complaint to an investigation](#from-a-complaint-to-an-investigation) |
-| [MQTT subscription prototype](assets/MQTT_subscription_2.png) | [Close the loop](#close-the-loop-with-live-ingestion) |
+| [Agent answer and its trace](assets/demo_chat_trace.png) | [From a complaint to an investigation](#from-a-complaint-to-an-investigation) |
+| [Live data health on the dashboard](assets/demo_dashboard.png) | [Close the loop](#close-the-loop-with-live-ingestion) |
+| [The machine monitor](assets/demo_monitor_live.png) | [Close the loop](#close-the-loop-with-live-ingestion) |
+| [Vibration in 3D](assets/demo_monitor_3d.png) | [Close the loop](#close-the-loop-with-live-ingestion) |
+| [The one-hour outlook](assets/demo_monitor_outlook.png) | [Close the loop](#close-the-loop-with-live-ingestion) |
+| [MQTT pipeline health](assets/demo_mqtt_health.png) | [Close the loop](#close-the-loop-with-live-ingestion) |
 
 ---
 
@@ -439,6 +458,7 @@ flowchart LR
     Models --> API["FastAPI<br/>inference · simulation · agents"]
     API --> DB[(PostgreSQL)]
     API --> UI["Next.js digital twin<br/>fleet · machine · simulation · chat"]
+    Live["Live CMTK feed<br/>MQTT · 5 s level · 1 h outlook"] --> API
     Wiki["Knowledge wiki<br/>markdown · wikilinks · BM25"] --> Agent["Supervisor agent"]
     DB --> Agent
     Models --> Agent

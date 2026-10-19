@@ -11,6 +11,7 @@ const PROTECTED_PREFIXES = [
   "/machines",
   "/history",
   "/chat",
+  "/knowledge",
   "/simulator",
   "/admin",
 ]

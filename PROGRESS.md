@@ -556,3 +556,61 @@ across the changed files: 0.
 - Preserve unrelated work; do not revert existing changes.
 - Final report must list exactly what changed, screenshots created, checks run, and
   anything intentionally left out.
+
+---
+
+## Session 2026-10-19: production UI sync (branch `feat/sync-prod-ui-2026-10`)
+
+Brought the demo frontend up to production `origin/main` f0f57dc (2026-10-16). Production is
+the source of truth for UI and behaviour; the demo layer (demo provider, fixtures, notice,
+theme toggle, `vercel.json`, browser MLOps and wiki) is kept.
+
+**Ported as is:** pages, components, hooks, `lib/domain`, `lib/errors`, `lib/time.ts`, UI
+primitives, `globals.css` (production blue theme; demo-only helpers such as `--status-*` and
+`.instrument-label` are now aliases onto production tokens), the BFF route
+`app/api/[...path]` and `/api/session-state`, the activation page, error boundaries, and the
+matching unit tests. Includes the dashboard refresh with the live data health card and live
+risk bar, colour-coded status, unified `ErrorNotice` errors (the lint rule banning
+`toast.error` too), the app shell/header/sidebar refresh, Live Monitor (`/monitor`) with the
+3D vibration view, health checks and one-hour outlook, admin MQTT health and subscriptions
+(`/admin/managemqtt`), invitations, the merged one-page simulator, and the chat trace for the
+single supervisor agent with eleven tools.
+
+**Demo stand-ins** (all in `lib/data/demo-provider.ts`, now implementing the full production
+`DigitalTwinDataProvider`):
+- `lib/demo-engineering/live.ts`: a deterministic CMTK/MQTT replay. Every reading is a pure
+  function of (machine, second), so the feed advances with the clock on production's 2 s
+  poll. Drives `machine-c-01..03` stream VibrationX/Y/Z (mm/s) and Temperature; drive 01
+  cycles through low, medium and high. Cooling Fan 03 is a source that went silent
+  (`disconnected`); the rest have no live source. Also: inference and forecast history, label
+  spans, the 60-minute outlook, learned per-level baselines (history only) and the published
+  ISO 20816-3 Group 2 zones marked provisional, CMTK setup, MQTT pipeline health.
+- `lib/demo-engineering/catalog.ts`: the ten assets projected onto canonical machines and
+  registry entities. AI4I machines keep the legacy manual prediction; pumps and fan have
+  promoted generic predict (and, except the silent fan, forecast) models; drives have both
+  plus the legacy session simulator.
+- `lib/data/demo-knowledge-adapter.ts`: the production knowledge contract over the browser
+  vault, so the chat's "Save to Knowledge Base" writes a page the Knowledge pane opens
+  (`/knowledge?note=` now deep-links).
+- Chat streams each scripted tool step, then the answer, before committing the turn.
+- Anything that needs the real backend (broker writes, CMTK connect/probe, recordings, CSV
+  upload, training worker, invitations, LLM keys, MFA) throws `DemoUnavailableError`, which
+  `toUserFacingError` renders as "Not available in the demo" plus one sentence.
+- History is anchored to the current hour and service dates move with the clock.
+
+**Kept demo-specific, with production's later UI changes applied:** `/mlops` and
+`/admin/models` (browser training; production's MQTT recordings stage is represented by an
+honest card linking to Live Monitor), `/knowledge` (header moved to the app shell,
+`ErrorNotice`, collapsed related-links disclosure).
+
+**Not ported:** production e2e mock-API suite (targets FastAPI mode; the demo e2e covers demo
+mode), Dockerfiles, `.agents`, production module `CONTEXT.md` files. The "guided system tour"
+in production is a README section, not UI, so there was nothing to port. The repo's own
+`apps/backend` is older than this client; non-demo mode is not expected to work against it.
+
+**Privacy:** the copied threshold test fixture was rewritten with round synthetic numbers.
+
+Verified: `npm run lint`, `npx tsc --noEmit`, `npm run test:unit` (368 passing),
+`NEXT_PUBLIC_DEMO_MODE=true npm run build`, `npx playwright test` (11 passing), plus a
+headless walk of 19 routes against `next start` with no console errors (one React
+controlled/uncontrolled Select warning that also exists in production's dashboard).

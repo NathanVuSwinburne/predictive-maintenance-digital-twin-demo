@@ -7,9 +7,10 @@ import {
   UserIcon,
   WrenchIcon,
 } from "@phosphor-icons/react";
-import { toast } from "sonner";
 
 import { useAuth } from "@/components/auth/auth-context";
+import { ErrorNotice } from "@/components/feedback/error-notice";
+import { SourceAttribution } from "@/components/provenance/source-attribution";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,6 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import { Separator } from "@/components/ui/separator";
 import { useDataProvider } from "@/hooks/use-data-provider";
 import {
@@ -40,6 +42,7 @@ import type {
   MachineSummary,
   UserPersona,
 } from "@/lib/domain/types";
+import { toUserFacingError, type UserFacingError } from "@/lib/errors/user-facing-error";
 
 export default function HistoryPage() {
   const provider = useDataProvider();
@@ -54,7 +57,13 @@ export default function HistoryPage() {
   const [typeFilter, setTypeFilter] = useState<HistoryEventType | "all">("all");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [filtersLoaded, setFiltersLoaded] = useState(false);
+  const [filtersError, setFiltersError] = useState<UserFacingError | null>(null);
+  const [filterAttempt, setFilterAttempt] = useState(0);
+  const [loadError, setLoadError] = useState<UserFacingError | null>(null);
+  const [loadAttempt, setLoadAttempt] = useState(0);
+  const invalidDateRange = Boolean(dateFrom && dateTo && dateFrom > dateTo);
 
   useEffect(() => {
     if (!activePersona) {
@@ -65,6 +74,7 @@ export default function HistoryPage() {
     let active = true;
 
     async function bootstrap() {
+      setFiltersError(null);
       try {
         const isStandardUser = currentPersona.role === "user";
         const [loadedUsers, loadedMachines] = await Promise.all([
@@ -84,11 +94,12 @@ export default function HistoryPage() {
 
         setUsers(loadedUsers);
         setMachines(loadedMachines);
-        setUserFilter(isStandardUser ? currentPersona.id : "all");
+        setFiltersLoaded(true);
       } catch (error) {
-        toast.error(
-          error instanceof Error ? error.message : "Unable to load filters",
-        );
+        if (active) setFiltersError(toUserFacingError(error, "data.load", {
+          title: "History filters could not be loaded",
+          message: "Try again to load the user and machine filters.",
+        }));
       }
     }
 
@@ -97,10 +108,10 @@ export default function HistoryPage() {
     return () => {
       active = false;
     };
-  }, [activePersona, provider]);
+  }, [activePersona, filterAttempt, provider]);
 
   useEffect(() => {
-    if (!activePersona) {
+    if (!activePersona || !filtersLoaded || invalidDateRange) {
       return;
     }
 
@@ -109,6 +120,7 @@ export default function HistoryPage() {
 
     async function loadEvents() {
       setIsLoading(true);
+      setLoadError(null);
       try {
         const isStandardUser = currentPersona.role === "user";
         const historyEvents = await provider.listHistoryEvents({
@@ -130,9 +142,10 @@ export default function HistoryPage() {
           setEvents(historyEvents);
         }
       } catch (error) {
-        toast.error(
-          error instanceof Error ? error.message : "Unable to load history",
-        );
+        if (active) setLoadError(toUserFacingError(error, "data.load", {
+          title: "History could not be loaded",
+          message: "Operational events are temporarily unavailable.",
+        }));
       } finally {
         if (active) {
           setIsLoading(false);
@@ -149,12 +162,18 @@ export default function HistoryPage() {
     activePersona,
     dateFrom,
     dateTo,
+    filtersLoaded,
+    invalidDateRange,
+    loadAttempt,
     machineFilter,
     machines,
     provider,
     typeFilter,
     userFilter,
   ]);
+
+  const hasFilters = Boolean((activePersona?.role === "admin" && userFilter !== "all") || machineFilter !== "all" || typeFilter !== "all" || dateFrom || dateTo);
+  const showCurrentResults = filtersLoaded && !filtersError && !isLoading && !loadError && !invalidDateRange;
 
   const eventTypeCounts = useMemo(() => {
     return events.reduce<Record<string, number>>((acc, event) => {
@@ -164,102 +183,123 @@ export default function HistoryPage() {
   }, [events]);
 
   return (
-    <div className="flex flex-col gap-5">
-      <div className="flex flex-col gap-1">
-        <p className="instrument-label">Operational record</p>
-        <h1 className="text-2xl font-semibold tracking-[-0.04em] md:text-3xl">History and events</h1>
-        <p className="max-w-2xl text-sm text-muted-foreground">Review anomalies, predictions, simulations, and maintenance decisions across the fleet.</p>
-      </div>
+    <div className="flex flex-col gap-4">
+      {filtersError ? (
+        <ErrorNotice error={filtersError} actionLabel="Try Again" onAction={() => setFilterAttempt((value) => value + 1)} />
+      ) : null}
+      {loadError ? (
+        <ErrorNotice error={loadError} actionLabel="Try Again" onAction={() => setLoadAttempt((value) => value + 1)} />
+      ) : null}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-sm">Operations History</CardTitle>
-          <CardDescription className="text-sm">
-            Browse through telemetry anomalies, predictions, maintenance
-            actions, simulations and chat outcomes.
-          </CardDescription>
-        </CardHeader>
         <CardContent className="flex flex-col gap-3">
           <div className="grid gap-3 lg:grid-cols-5">
-            <Select value={userFilter} onValueChange={setUserFilter}>
-              <SelectTrigger
-                className="w-full text-sm"
-                disabled={activePersona?.role === "user"}
+            <div className="flex min-w-0 flex-col gap-2">
+              <label htmlFor="history-user" className="text-sm font-medium">User</label>
+              <Select value={activePersona?.role === "user" ? activePersona.id : userFilter} onValueChange={setUserFilter}>
+                <SelectTrigger
+                  id="history-user"
+                  className="w-full text-sm"
+                  disabled={activePersona?.role === "user"}
+                >
+                  <SelectValue placeholder="User" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectItem value="all">All users</SelectItem>
+                    {users.map((user) => (
+                      <SelectItem key={user.id} value={user.id}>
+                        {user.name}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+
+            </div>
+            <div className="flex min-w-0 flex-col gap-2">
+              <label htmlFor="history-machine" className="text-sm font-medium">Machine</label>
+              <Select value={machineFilter} onValueChange={setMachineFilter}>
+                <SelectTrigger id="history-machine" className="w-full text-sm">
+                  <SelectValue placeholder="Machine" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectItem value="all">All machines</SelectItem>
+                    {machines.map((machine) => (
+                      <SelectItem key={machine.id} value={machine.id}>
+                        {machine.name}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+
+            </div>
+            <div className="flex min-w-0 flex-col gap-2">
+              <label htmlFor="history-type" className="text-sm font-medium">Event type</label>
+              <Select
+                value={typeFilter}
+                onValueChange={(value) =>
+                  setTypeFilter(value as HistoryEventType | "all")
+                }
               >
-                <SelectValue placeholder="User" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  <SelectItem value="all">All users</SelectItem>
-                  {users.map((user) => (
-                    <SelectItem key={user.id} value={user.id}>
-                      {user.name}
+                <SelectTrigger id="history-type" className="w-full text-sm">
+                  <SelectValue placeholder="Event type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectItem value="all">All types</SelectItem>
+                    <SelectItem value="telemetry-anomaly">
+                      Telemetry anomaly
                     </SelectItem>
-                  ))}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-
-            <Select value={machineFilter} onValueChange={setMachineFilter}>
-              <SelectTrigger className="w-full text-sm">
-                <SelectValue placeholder="Machine" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  <SelectItem value="all">All machines</SelectItem>
-                  {machines.map((machine) => (
-                    <SelectItem key={machine.id} value={machine.id}>
-                      {machine.name}
+                    <SelectItem value="fault-prediction">
+                      Fault prediction
                     </SelectItem>
-                  ))}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
+                    <SelectItem value="maintenance-action">
+                      Maintenance action
+                    </SelectItem>
+                    <SelectItem value="simulation-run">Simulation run</SelectItem>
+                    <SelectItem value="chat-insight">Chat insight</SelectItem>
+                    <SelectItem value="failure-label">Failure label</SelectItem>
+                    <SelectItem value="training-run">Training run</SelectItem>
+                    <SelectItem value="model-import">Model import</SelectItem>
+                    <SelectItem value="model-promotion">Model promotion</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
 
-            <Select
-              value={typeFilter}
-              onValueChange={(value) =>
-                setTypeFilter(value as HistoryEventType | "all")
-              }
-            >
-              <SelectTrigger className="w-full text-sm">
-                <SelectValue placeholder="Event type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  <SelectItem value="all">All types</SelectItem>
-                  <SelectItem value="telemetry-anomaly">
-                    Telemetry anomaly
-                  </SelectItem>
-                  <SelectItem value="fault-prediction">
-                    Fault prediction
-                  </SelectItem>
-                  <SelectItem value="maintenance-action">
-                    Maintenance action
-                  </SelectItem>
-                  <SelectItem value="simulation-run">Simulation run</SelectItem>
-                  <SelectItem value="chat-insight">Chat insight</SelectItem>
-                </SelectGroup>
-              </SelectContent>
-            </Select>
+            </div>
+            <div className="flex min-w-0 flex-col gap-2">
+              <label htmlFor="history-from" className="text-sm font-medium">From date</label>
+              <input
+                id="history-from"
+                type="date"
+                className="h-8 border border-input bg-background px-2 text-sm"
+                value={dateFrom}
+                onChange={(event) => setDateFrom(event.target.value)}
+              />
 
-            <input
-              type="date"
-              className="h-8 border border-input bg-background px-2 text-sm"
-              value={dateFrom}
-              onChange={(event) => setDateFrom(event.target.value)}
-            />
-
-            <input
-              type="date"
-              className="h-8 border border-input bg-background px-2 text-sm"
-              value={dateTo}
-              onChange={(event) => setDateTo(event.target.value)}
-            />
+            </div>
+            <div className="flex min-w-0 flex-col gap-2">
+              <label htmlFor="history-to" className="text-sm font-medium">To date</label>
+              <input
+                id="history-to"
+                aria-invalid={invalidDateRange}
+                aria-describedby={invalidDateRange ? "history-date-error" : undefined}
+                type="date"
+                className="h-8 border border-input bg-background px-2 text-sm"
+                value={dateTo}
+                onChange={(event) => setDateTo(event.target.value)}
+              />
+              {invalidDateRange && <p id="history-date-error" role="alert" className="text-sm text-destructive">Choose an end date on or after the start date.</p>}
+            </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
             <FunnelSimpleIcon />
-            {events.length} events found.
+            <span role="status">
+              {showCurrentResults ? `${events.length} ${events.length === 1 ? "event" : "events"} found.` : invalidDateRange ? "Check the date range." : filtersError || loadError ? "History results unavailable." : "Loading history…"}
+            </span>
             <Button
               size="xs"
               variant="ghost"
@@ -280,7 +320,7 @@ export default function HistoryPage() {
           </div>
 
           <div className="flex flex-wrap gap-2">
-            {Object.entries(eventTypeCounts).map(([type, count]) => (
+            {showCurrentResults && Object.entries(eventTypeCounts).map(([type, count]) => (
               <Badge key={type} variant="outline">
                 {labelForEventType(type as HistoryEventType)}: {count}
               </Badge>
@@ -289,14 +329,17 @@ export default function HistoryPage() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card role="region" aria-label="History timeline">
         <CardHeader>
           <CardTitle className="text-sm">Timeline</CardTitle>
           <CardDescription className="text-sm">
             Newest events first.
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-col gap-2">
+        <CardContent className="flex flex-col gap-2" aria-busy={isLoading && !filtersError && !invalidDateRange}>
+          {!showCurrentResults && events.length > 0 && (
+            <p className="text-sm text-muted-foreground">Showing previously loaded events; they may not match the selected filters.</p>
+          )}
           {events.map((event) => (
             <div key={event.id} className="border border-border p-3 text-sm">
               <div className="flex flex-wrap items-center gap-2">
@@ -304,6 +347,7 @@ export default function HistoryPage() {
                 <Badge variant={badgeVariantForSeverity(event.severity)}>
                   {event.severity}
                 </Badge>
+                <SourceAttribution provenance={event.provenance} />
                 <span className="text-muted-foreground">
                   {formatDateTime(event.timestamp)}
                 </span>
@@ -313,32 +357,35 @@ export default function HistoryPage() {
               <p className="text-muted-foreground">{event.description}</p>
 
               <div className="mt-2 flex flex-wrap items-center gap-3 text-muted-foreground">
-                {event.machineId && (
+                {(event.entityId ?? event.machineId) && (
                   <span>
                     <WrenchIcon className="mr-1 inline" />
-                    {event.machineId}
+                    {machines.find((machine) => machine.id === event.entityId || machine.id === event.machineId)?.name ?? "Machine unavailable"}
                   </span>
                 )}
                 {event.userId && (
                   <span>
                     <UserIcon className="mr-1 inline" />
-                    {event.userId}
+                    {users.find((user) => user.id === event.userId)?.name ?? "Operator unavailable"}
                   </span>
                 )}
               </div>
             </div>
           ))}
 
-          {isLoading && (
+          {isLoading && !filtersError && !invalidDateRange && (
             <p className="text-sm text-muted-foreground">
               Loading history timeline...
             </p>
           )}
 
-          {!isLoading && events.length === 0 && (
-            <p className="text-sm text-muted-foreground">
-              No history records match the current filters.
-            </p>
+          {showCurrentResults && events.length === 0 && (
+            <Empty className="border border-dashed border-border">
+              <EmptyHeader>
+                <EmptyTitle>{hasFilters ? "No history records match the current filters." : "No activity recorded yet"}</EmptyTitle>
+                <EmptyDescription className="text-sm">{hasFilters ? "Try a different date range, machine, or event type, or clear the filters." : "Recorded predictions, simulations, and maintenance activity will appear here."}</EmptyDescription>
+              </EmptyHeader>
+            </Empty>
           )}
         </CardContent>
       </Card>

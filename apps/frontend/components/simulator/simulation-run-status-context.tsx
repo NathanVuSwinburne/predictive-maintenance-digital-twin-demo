@@ -13,6 +13,7 @@ import type {
   SimulationRun,
   SimulationScenarioInput,
 } from "@/lib/domain/types";
+import { toUserFacingError, type UserFacingError } from "@/lib/errors/user-facing-error";
 
 type SimulationRunStatus = "idle" | "running" | "completed" | "failed";
 
@@ -32,7 +33,7 @@ type SimulationRunStatusContextValue = {
   activeScenarioName: string | null;
   activeMachineName: string | null;
   completedRun: SimulationRun | null;
-  error: string | null;
+  error: UserFacingError | null;
   hasUnviewedCompletedRun: boolean;
   startSimulation(args: StartSimulationArgs): Promise<StartSimulationResult>;
   markCompletedRunViewed(runId?: string): void;
@@ -56,7 +57,7 @@ export function SimulationRunStatusProvider({
     null,
   );
   const [completedRun, setCompletedRun] = useState<SimulationRun | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<UserFacingError | null>(null);
   const [hasUnviewedCompletedRun, setHasUnviewedCompletedRun] = useState(false);
 
   const startSimulation = useCallback(
@@ -81,9 +82,7 @@ export function SimulationRunStatusProvider({
         setHasUnviewedCompletedRun(true);
         return { run, runs };
       } catch (caught) {
-        const message =
-          caught instanceof Error ? caught.message : "Simulation run failed";
-        setError(message);
+        setError(toUserFacingError(caught, "simulation.run"));
         setStatus("failed");
         setHasUnviewedCompletedRun(false);
         throw caught;

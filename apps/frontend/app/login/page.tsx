@@ -1,4 +1,5 @@
 import { LoginForm } from "@/components/auth/login-form"
+import { getDataProvider } from "@/lib/data/provider-factory"
 
 export default async function LoginPage({
   searchParams,
@@ -6,5 +7,6 @@ export default async function LoginPage({
   searchParams: Promise<{ next?: string }>
 }) {
   const params = await searchParams
-  return <LoginForm nextPath={params.next ?? "/dashboard"} />
+  const setupRequired = await getDataProvider().getSetupStatus().then((value) => value.setupRequired).catch(() => false)
+  return <LoginForm nextPath={params.next ?? "/dashboard"} setupRequired={setupRequired} />
 }

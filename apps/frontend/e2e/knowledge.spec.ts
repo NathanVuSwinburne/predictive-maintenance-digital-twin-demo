@@ -11,7 +11,7 @@ test("navigates the vault by graph, link and search", async ({ page }) => {
   page.on("pageerror", (error) => errors.push(error.message));
 
   await page.goto("/knowledge");
-  await expect(page.getByRole("heading", { name: "Agent knowledge wiki" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Knowledge", exact: true })).toBeVisible();
 
   // The index is the landing page, and navigating from it is meant to beat searching.
   await expect(page.getByTestId("note-title")).toHaveText("Wiki Index");
@@ -28,6 +28,7 @@ test("navigates the vault by graph, link and search", async ({ page }) => {
 
   // Backlinks are the other half of the page: what points here.
   await expect(page.getByTestId("note-links")).toContainText(/pages point here/);
+  await page.getByTestId("note-links").locator("summary").click();
   await page.getByTestId("note-links").getByRole("button", { name: "Bearing Degradation Stages" }).first().click();
   await expect(page.getByTestId("note-title")).toHaveText("Bearing Degradation Stages");
 

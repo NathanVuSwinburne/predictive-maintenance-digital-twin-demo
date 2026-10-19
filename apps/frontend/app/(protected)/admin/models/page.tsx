@@ -5,6 +5,7 @@ import { useState, useSyncExternalStore } from "react";
 import { CheckCircleIcon, SealCheckIcon, ShieldCheckIcon } from "@phosphor-icons/react";
 import { toast } from "sonner";
 
+import { ErrorNotice } from "@/components/feedback/error-notice";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,6 +29,7 @@ import {
   subscribe,
 } from "@/lib/demo-mlops/store";
 import type { Capability, QualityStatus, TrainingRun } from "@/lib/demo-mlops/types";
+import type { UserFacingError } from "@/lib/errors/user-facing-error";
 
 const percent = new Intl.NumberFormat(undefined, { style: "percent", maximumFractionDigits: 1 });
 const decimal = new Intl.NumberFormat(undefined, { maximumFractionDigits: 4 });
@@ -75,6 +77,7 @@ export default function MachineModelApprovalsPage() {
 
   const [machineId, setMachineId] = useState(DEMO_MACHINES[0].id);
   const [overrideReasons, setOverrideReasons] = useState<Record<string, string>>({});
+  const [approvalError, setApprovalError] = useState<UserFacingError | null>(null);
 
   const machine = findMachine(machineId) ?? DEMO_MACHINES[0];
   const candidates = machine.capabilities.flatMap((capability) =>
@@ -91,12 +94,13 @@ export default function MachineModelApprovalsPage() {
     const quality = run.outputContract?.qualityStatus ?? "incompatible";
     const reason = overrideReasons[run.id]?.trim() ?? "";
     if (quality === "not_recommended" && reason.length < 12) {
-      toast.error("This one needs a reason", {
-        description:
-          "At least a sentence. The gate is not asking to be dismissed, it is asking to be answered.",
+      setApprovalError({
+        title: "This approval needs a reason",
+        message: "Write at least a sentence explaining why this model should serve despite the quality gate.",
       });
       return;
     }
+    setApprovalError(null);
     promoteRun(run, quality === "not_recommended" ? reason : null);
     setOverrideReasons((current) => ({ ...current, [run.id]: "" }));
     toast.success(`Model version v${run.modelVersion} is now @production for this goal.`, {
@@ -109,15 +113,12 @@ export default function MachineModelApprovalsPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-1">
-        <p className="instrument-label">Model operations</p>
-        <h1 className="text-2xl font-semibold tracking-[-0.04em]">Machine model approvals</h1>
-        <p className="max-w-2xl text-sm text-muted-foreground">
-          Training makes candidates. Only this page moves one to production, and it moves an
-          alias rather than a file, so everything asking this machine for a prediction follows
-          one decision made here.
-        </p>
-      </div>
+      <p className="max-w-3xl text-sm text-muted-foreground">
+        Training makes candidates. Only this page moves one to production, and it moves an
+        alias rather than a file, so everything asking this machine for a prediction follows
+        one decision made here.
+      </p>
+      {approvalError ? <ErrorNotice error={approvalError} actionLabel="Dismiss" onAction={() => setApprovalError(null)} /> : null}
 
       <Card>
         <CardHeader className="gap-3 sm:flex-row sm:items-end sm:justify-between">

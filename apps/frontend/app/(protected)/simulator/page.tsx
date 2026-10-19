@@ -1,7 +1,7 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   CartesianGrid,
   Line,
@@ -21,12 +21,22 @@ import {
 import { toast } from "sonner";
 
 import { useAuth } from "@/components/auth/auth-context";
+import { ErrorNotice } from "@/components/feedback/error-notice";
 import { NoMachineAccessState } from "@/components/machines/no-machine-access-state";
-import { ManualPredictionPanel } from "@/components/simulator/manual-prediction-panel";
+import { SchemaDrivenSimulator } from "@/components/simulator/schema-driven-simulator";
+import { SimulationSessionMetadata } from "@/components/simulator/simulation-session-metadata";
+import {
+  SimulatorMachineSelector,
+  type SimulatorMachineOption,
+} from "@/components/simulator/simulator-machine-selector";
+import {
+  UnifiedPredictionPanel,
+  hasPredictionPath,
+  predictionCapableMachines,
+} from "@/components/simulator/unified-prediction-panel";
 import { SimulationMachineFields } from "@/components/simulator/simulation-machine-fields";
 import { SimulationParameterSections } from "@/components/simulator/simulation-parameter-sections";
 import { SimulationParameterState } from "@/components/simulator/simulation-parameter-state";
-import { SimulationSessionMetadata } from "@/components/simulator/simulation-session-metadata";
 import { useSimulationRunStatus } from "@/components/simulator/simulation-run-status-context";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -61,20 +71,28 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDataProvider } from "@/hooks/use-data-provider";
 import {
   badgeVariantForSeverity,
   formatDateTime,
+  usesVibrationLevelLabels,
 } from "@/lib/domain/presentation";
+import { formatInAppTimeZone } from "@/lib/time";
+import {
+  shouldLoadLegacySession,
+  simulatorSelectorOptions,
+} from "@/lib/domain/simulator-selection";
 import type {
+  CanonicalMachine,
   MachineSimulationSchema,
-  MachineSummary,
   SimulationConfig,
   SimulationSensorChartGroup,
   SimulationSessionPreview,
   SimulationRun,
+  SimulatorEntityModel,
+  SimulatorEntityOption,
 } from "@/lib/domain/types";
+import { toUserFacingError, type UserFacingError } from "@/lib/errors/user-facing-error";
 import {
   createSimulationDraftValues,
   type SimulationParameterDraftValues,
@@ -84,39 +102,6 @@ import {
   resolveMachineSimulationSchema,
   type MachineSimulationSchemaResolution,
 } from "@/lib/simulation/resolver";
-
-const workflowSteps = [
-  {
-    label: "Select Machine",
-    phase: "Prepare",
-    tone: "primary",
-  },
-  {
-    label: "Select Simulation Session",
-    phase: "Prepare",
-    tone: "primary",
-  },
-  {
-    label: "Review Source Data",
-    phase: "Prepare",
-    tone: "primary",
-  },
-  {
-    label: "Choose Simulation Horizon",
-    phase: "Prepare",
-    tone: "primary",
-  },
-  {
-    label: "Run Simulation",
-    phase: "Run & Review",
-    tone: "success",
-  },
-  {
-    label: "Review Results",
-    phase: "Run & Review",
-    tone: "success",
-  },
-];
 
 const simulationHorizons = [
   {
@@ -223,7 +208,9 @@ function riskToSeverity(risk: number) {
   return "low" as const;
 }
 
-function stepToneClasses(tone: (typeof workflowSteps)[number]["tone"]) {
+type StepTone = "primary" | "secondary" | "success";
+
+function stepToneClasses(tone: StepTone) {
   if (tone === "secondary") {
     return {
       badge: "border-secondary bg-secondary text-secondary-foreground",
@@ -257,7 +244,7 @@ function StepHeader({
   step: number;
   title: string;
   description: string;
-  tone?: (typeof workflowSteps)[number]["tone"];
+  tone?: StepTone;
   complete?: boolean;
 }) {
   const toneClasses = stepToneClasses(tone);
@@ -278,42 +265,6 @@ function StepHeader({
   );
 }
 
-function WorkflowRail() {
-  return (
-    <div className="flex flex-col gap-3 md:grid md:grid-cols-6 md:gap-2 mb-10">
-      {workflowSteps.map((step, index) => {
-        const toneClasses = stepToneClasses(step.tone);
-
-        return (
-          <div
-            key={step.label}
-            className="relative flex gap-3 md:flex md:h-full md:flex-col"
-          >
-            {index < workflowSteps.length - 1 && (
-              <div className="absolute top-8 bottom-[-0.75rem] left-4 w-px bg-border md:top-4 md:right-[-0.5rem] md:bottom-auto md:left-auto md:h-px md:w-full" />
-            )}
-            <div
-              className={`relative z-10 grid size-8 shrink-0 place-items-center border text-xs font-semibold ${toneClasses.badge}`}
-            >
-              {index + 1}
-            </div>
-            <div
-              className={`min-h-20 flex-1 border p-3 h-full md:mt-1 ${toneClasses.card}`}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <p className={`text-xs font-medium ${toneClasses.text}`}>
-                  {step.phase}
-                </p>
-              </div>
-              <p className="mt-2 text-sm font-medium">{step.label}</p>
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
 function PendingResultsPane() {
   return (
     <div className="flex flex-col gap-3 border border-dashed border-success/40 bg-background/70 p-4 text-muted-foreground">
@@ -322,33 +273,22 @@ function PendingResultsPane() {
         Results will appear after a simulation run
       </div>
       <p>
-        Run a simulation to see generated future sensor data, risk level,
-        estimated downtime, classifier-inferred future state, and
-        recommendations for action.
+        Run a simulation to see generated future sensor data, the projected
+        vibration level, the probability of high vibration, estimated
+        downtime, and recommendations for action.
       </p>
     </div>
   );
 }
 
-function machineStateForRisk(risk: number) {
-  if (risk >= 80) {
-    return "Critical risk";
-  }
-
-  if (risk >= 65) {
-    return "High risk";
-  }
-
-  if (risk >= 45) {
-    return "Watch";
-  }
-
-  return "Stable";
+/** Legacy Machine C runs report a vibration level (low/medium/high); older runs may not. */
+function projectedVibrationLevel(run: SimulationRun) {
+  return run.projectedLabel ?? "Not returned";
 }
 
 function labelForMachineType(
   resolution: MachineSimulationSchemaResolution,
-  machine: MachineSummary | null,
+  machine: CanonicalMachine | null,
 ) {
   const machineType = resolution.machineType ?? machine?.machineType;
 
@@ -376,7 +316,7 @@ function formatTelemetryTimestamp(
   }
 
   if (options?.includeSeconds) {
-    return parsed.toLocaleString("en-AU", {
+    return formatInAppTimeZone(parsed, {
       day: "numeric",
       month: "short",
       year: "numeric",
@@ -393,9 +333,14 @@ function formatTelemetryNumber(value: number, decimals = 2) {
   return Number.isFinite(value) ? value.toFixed(decimals) : "-";
 }
 
+/**
+ * Legacy Machine C `projectedRisk` is the classifier's probability of the HIGH
+ * vibration level (×100), so these bands describe how likely high vibration is,
+ * not failure risk.
+ */
 function labelForRisk(risk: number) {
   if (risk >= 80) {
-    return "Critical";
+    return "Very high";
   }
 
   if (risk >= 65) {
@@ -504,9 +449,9 @@ function sortReadingsByNewest<T extends { timestamp: string }>(readings: T[]) {
 }
 
 function legendSensorLabel(dataKey: unknown) {
-  if (typeof dataKey !== "string") return "Sensor";
-  const sensor = metricLabel(dataKey.replace(/(Actual|Generated)$/, ""));
-  return `${sensor}: ${dataKey.endsWith("Actual") ? "Observed/client-derived fixture" : "Synthetic forecast"}`;
+  return typeof dataKey === "string"
+    ? metricLabel(dataKey.replace(/(Actual|Generated)$/, ""))
+    : "Sensor";
 }
 
 function SensorChartLegend({
@@ -612,10 +557,8 @@ function resultExplanation(args: {
   const horizon = args.run.simulationHorizonMinutes
     ? `${args.run.simulationHorizonMinutes}-minute`
     : "future";
-  const state = (
-    args.run.projectedLabel ?? machineStateForRisk(args.run.projectedRisk)
-  ).toLowerCase();
-  const risk = `${labelForRisk(args.run.projectedRisk).toLowerCase()} risk`;
+  const level = args.run.projectedLabel?.toLowerCase() ?? null;
+  const likelihood = labelForRisk(args.run.projectedRisk).toLowerCase();
 
   return (
     <>
@@ -630,9 +573,16 @@ function resultExplanation(args: {
         : "machine sensor"}{" "}
       readings from{" "}
       <strong>{args.machineName ?? "the selected machine"}</strong> to generate
-      a <strong>{horizon}</strong> future sequence. The machine is marked as{" "}
-      <strong>{state}</strong> because the run produced a{" "}
-      <strong>{risk}</strong> level with an estimated downtime impact of{" "}
+      a <strong>{horizon}</strong> future sequence.{" "}
+      {level ? (
+        <>
+          The projected vibration level is <strong>{level}</strong>, with a{" "}
+        </>
+      ) : (
+        <>The run did not return a vibration level. It reports a </>
+      )}
+      <strong>{likelihood}</strong> likelihood of high vibration and an
+      estimated downtime impact of{" "}
       <strong>{formatDowntime(args.run.projectedDowntimeHours)}</strong>.
     </>
   );
@@ -652,7 +602,7 @@ function buildMachineCSimulationSchema(
         type: "select",
         required: true,
         description:
-          "Select the client monitoring session that will provide the final context window for forecasting.",
+          "Select the augmented Machine C session that will provide the final context window for forecasting.",
         category: "Session Selection",
         displayOrder: 10,
         options: config.sessions.map((session) => ({
@@ -762,10 +712,11 @@ function getAvailableSensorFields(machineType?: string | null) {
 export default function SimulatorPage() {
   const provider = useDataProvider();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const { activePersona } = useAuth();
   const simulationRunStatus = useSimulationRunStatus();
 
-  const [machines, setMachines] = useState<MachineSummary[]>([]);
+  const [machines, setMachines] = useState<CanonicalMachine[]>([]);
   const [runs, setRuns] = useState<SimulationRun[]>([]);
   const [latestRun, setLatestRun] = useState<SimulationRun | null>(null);
   const [latestRunExplanationContext, setLatestRunExplanationContext] =
@@ -776,22 +727,23 @@ export default function SimulatorPage() {
   const [sessionPreview, setSessionPreview] =
     useState<SimulationSessionPreview | null>(null);
   const [isSessionPreviewLoading, setIsSessionPreviewLoading] = useState(false);
-  const [sessionPreviewError, setSessionPreviewError] = useState<string | null>(
+  const [sessionPreviewError, setSessionPreviewError] = useState<UserFacingError | null>(
     null,
   );
   const [simulationConfig, setSimulationConfig] =
     useState<SimulationConfig | null>(null);
   const [isSimulationConfigLoading, setIsSimulationConfigLoading] =
     useState(false);
-  const [simulationConfigError, setSimulationConfigError] = useState<
-    string | null
-  >(null);
+  const [simulationConfigError, setSimulationConfigError] = useState<UserFacingError | null>(null);
+  const [workflowError, setWorkflowError] = useState<UserFacingError | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [workspaceMode, setWorkspaceMode] = useState<"predict" | "simulate">(
-    "predict",
-  );
+  const [genericModels, setGenericModels] = useState<SimulatorEntityModel[]>([]);
+  const [genericSimulatorEntities, setGenericSimulatorEntities] = useState<SimulatorEntityOption[]>([]);
+  const [areGenericModelsLoading, setAreGenericModelsLoading] = useState(true);
+  const [areSimulatorEntitiesLoading, setAreSimulatorEntitiesLoading] = useState(true);
 
   const [machineId, setMachineId] = useState("");
+  const [useLegacySimulator, setUseLegacySimulator] = useState(false);
   const [scenarioName, setScenarioName] = useState(
     "Adaptive operating scenario",
   );
@@ -799,7 +751,7 @@ export default function SimulatorPage() {
   const [parameterValues, setParameterValues] =
     useState<SimulationParameterDraftValues>({});
 
-  const requestedMachineId = searchParams.get("machineId") ?? "";
+  const requestedMachineId = searchParams.get("entityId") ?? searchParams.get("machineId") ?? "";
   const requestedMode = searchParams.get("mode");
   const requestedSessionId = searchParams.get("sessionId") ?? "";
   const requestedHorizon = searchParams.get("horizon") ?? "";
@@ -809,12 +761,83 @@ export default function SimulatorPage() {
   const simulationMachines = useMemo(
     () =>
       machines.filter(
-        (machine) =>
-          machine.machineType === "real-sensor" ||
-          machine.machineType === "kaggle",
+        (machine) => machine.legacyCompatible && machine.capabilities.includes("simulate"),
       ),
     [machines],
   );
+  const genericPredictionModels = useMemo(
+    () => genericModels.filter((model) => model.objectives.includes("predict")),
+    [genericModels],
+  );
+  const simulatorOptions = useMemo(() => {
+    return simulatorSelectorOptions(genericSimulatorEntities);
+  }, [genericSimulatorEntities]);
+  // One selector for both tabs: every machine that can be predicted or simulated.
+  const machineOptions = useMemo<SimulatorMachineOption[]>(() => {
+    const byId = new Map<string, SimulatorMachineOption>();
+    for (const machine of predictionCapableMachines(machines, genericPredictionModels)) {
+      byId.set(machine.id, {
+        id: machine.id,
+        name: machine.name,
+        canPredict: hasPredictionPath(machine, genericPredictionModels),
+        canSimulate: false,
+        simulateReady: false,
+      });
+    }
+    for (const option of simulatorOptions) {
+      const existing = byId.get(option.id);
+      byId.set(option.id, {
+        id: option.id,
+        name: existing?.name ?? option.name,
+        canPredict: existing?.canPredict ?? false,
+        canSimulate: true,
+        simulateReady: option.eligible,
+      });
+    }
+    return [...byId.values()].sort((a, b) => a.name.localeCompare(b.name));
+  }, [genericPredictionModels, machines, simulatorOptions]);
+  const selectedLegacyMachine = useMemo(
+    () => simulationMachines.find((machine) => machine.id === machineId) ?? null,
+    [machineId, simulationMachines],
+  );
+  const legacyEntityIds = useMemo(
+    () => simulationMachines.map((machine) => machine.id),
+    [simulationMachines],
+  );
+
+  useEffect(() => {
+    let active = true;
+    setAreGenericModelsLoading(true);
+    provider
+      .listSimulatorEntityModels()
+      .then((models) => {
+        if (active) setGenericModels(models);
+      })
+      .catch(() => {
+        if (active) setGenericModels([]);
+      })
+      .finally(() => {
+        if (active) setAreGenericModelsLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [provider]);
+
+  useEffect(() => {
+    let active = true;
+    setAreSimulatorEntitiesLoading(true);
+    provider.listSimulatorEntities().then((entities) => {
+      if (active) setGenericSimulatorEntities(entities);
+    }).catch(() => {
+      if (active) setGenericSimulatorEntities([]);
+    }).finally(() => {
+      if (active) setAreSimulatorEntitiesLoading(false);
+    });
+    return () => {
+      active = false;
+    };
+  }, [provider]);
 
   useEffect(() => {
     if (!activePersona) {
@@ -828,7 +851,7 @@ export default function SimulatorPage() {
       setIsLoading(true);
       try {
         const isStandardUser = currentPersona.role === "user";
-        const loadedMachines = await provider.listMachines({
+        const loadedMachines = await provider.listCanonicalMachines({
           sortBy: "name",
           sortDirection: "asc",
           authorizedForUserId: isStandardUser ? currentPersona.id : undefined,
@@ -841,26 +864,6 @@ export default function SimulatorPage() {
         }
 
         setMachines(loadedMachines);
-        setMachineId((current) => {
-          const availableSimulationMachineIds = loadedMachines
-            .filter(
-              (machine) =>
-                machine.machineType === "real-sensor" ||
-                machine.machineType === "kaggle",
-            )
-            .map((machine) => machine.id);
-
-          if (
-            requestedMachineId &&
-            availableSimulationMachineIds.includes(requestedMachineId)
-          ) {
-            return requestedMachineId;
-          }
-
-          return current && availableSimulationMachineIds.includes(current)
-            ? current
-            : (availableSimulationMachineIds[0] ?? "");
-        });
 
         const scopedRuns = isStandardUser
           ? loadedRuns.filter((run) =>
@@ -885,9 +888,10 @@ export default function SimulatorPage() {
               : (scopedRuns[0] ?? null),
         );
       } catch (error) {
-        toast.error(
-          error instanceof Error ? error.message : "Unable to load simulator",
-        );
+        if (active) setWorkflowError(toUserFacingError(error, "data.load", {
+          title: "Simulator could not be loaded",
+          message: "Machines and previous simulation results are unavailable.",
+        }));
       } finally {
         if (active) {
           setIsLoading(false);
@@ -902,11 +906,6 @@ export default function SimulatorPage() {
     };
   }, [activePersona, provider, requestedMachineId, requestedRunId]);
 
-  useEffect(() => {
-    if (requestedMode === "predict" || requestedMode === "simulate") {
-      setWorkspaceMode(requestedMode);
-    }
-  }, [requestedMode]);
 
   useEffect(() => {
     if (
@@ -923,13 +922,58 @@ export default function SimulatorPage() {
     }
   }, [requestedScenario]);
 
+  const areMachineOptionsLoading = isLoading || areSimulatorEntitiesLoading;
+
+  // Old deep links used `mode` to pick a tab; the merged page scrolls to the matching section instead.
+  const scrolledModeRef = useRef<string | null>(null);
   useEffect(() => {
-    if (simulationMachines.length === 0) {
+    if (!machineId || areMachineOptionsLoading) return;
+    if (requestedMode !== "predict" && requestedMode !== "simulate") return;
+    if (scrolledModeRef.current === requestedMode) return;
+    scrolledModeRef.current = requestedMode;
+    const target = document.getElementById(
+      requestedMode === "simulate" ? "simulator-forecast" : "simulator-current-state",
+    );
+    if (!target) return;
+    target.scrollIntoView({ block: "start" });
+    target.focus({ preventScroll: true });
+    // Content above the section (the live panel, prediction inputs) arrives a moment
+    // later and would push the target back out of view, so keep it in place briefly
+    // unless the operator scrolls themselves.
+    let active = true;
+    const stop = () => {
+      active = false;
+    };
+    window.addEventListener("wheel", stop, { passive: true });
+    window.addEventListener("touchmove", stop, { passive: true });
+    window.addEventListener("keydown", stop);
+    const observer =
+      typeof ResizeObserver === "undefined"
+        ? null
+        : new ResizeObserver(() => {
+            if (active) target.scrollIntoView({ block: "start" });
+          });
+    observer?.observe(document.body);
+    const timer = setTimeout(() => {
+      active = false;
+      observer?.disconnect();
+    }, 4000);
+    return () => {
+      clearTimeout(timer);
+      observer?.disconnect();
+      window.removeEventListener("wheel", stop);
+      window.removeEventListener("touchmove", stop);
+      window.removeEventListener("keydown", stop);
+    };
+  }, [areMachineOptionsLoading, machineId, requestedMode]);
+
+  useEffect(() => {
+    if (machineOptions.length === 0) {
       setMachineId("");
       return;
     }
 
-    const visibleMachineIds = simulationMachines.map((machine) => machine.id);
+    const visibleMachineIds = machineOptions.map((machine) => machine.id);
 
     setMachineId((current) => {
       if (
@@ -939,11 +983,28 @@ export default function SimulatorPage() {
         return requestedMachineId;
       }
 
-      return current && visibleMachineIds.includes(current)
-        ? current
-        : (simulationMachines[0]?.id ?? "");
+      if (current && visibleMachineIds.includes(current)) {
+        // A later-arriving list must never replace a machine the operator already chose.
+        return current;
+      }
+
+      // Both machine lists feed the one selector; wait for both so the default is
+      // the same machine on every load rather than whichever list answered first.
+      return areMachineOptionsLoading ? current : (machineOptions[0]?.id ?? "");
     });
-  }, [requestedMachineId, simulationMachines]);
+  }, [areMachineOptionsLoading, machineOptions, requestedMachineId]);
+
+  useEffect(() => {
+    setUseLegacySimulator(false);
+  }, [machineId]);
+
+  function selectSimulatorEntity(entityId: string) {
+    setMachineId(entityId);
+    const next = new URLSearchParams(searchParams.toString());
+    next.set("entityId", entityId);
+    next.delete("machineId");
+    router.replace(`/simulator?${next.toString()}`, { scroll: false });
+  }
 
   useEffect(() => {
     if (!machineId) {
@@ -958,13 +1019,10 @@ export default function SimulatorPage() {
   }, [machineId]);
 
   useEffect(() => {
-    const currentSelectedMachine =
-      machines.find((machine) => machine.id === machineId) ?? null;
-
     if (
       !machineId ||
-      (currentSelectedMachine?.machineType !== "real-sensor" &&
-        currentSelectedMachine?.machineType !== "kaggle")
+      !useLegacySimulator ||
+      !selectedLegacyMachine
     ) {
       setSimulationConfig(null);
       setSimulationConfigError(null);
@@ -990,11 +1048,10 @@ export default function SimulatorPage() {
           return;
         }
         setSimulationConfig(null);
-        setSimulationConfigError(
-          error instanceof Error
-            ? error.message
-            : "Unable to load Machine C simulation sessions",
-        );
+        setSimulationConfigError(toUserFacingError(error, "data.load", {
+          title: "Simulation sessions could not be loaded",
+          message: "Machine C source sessions are unavailable.",
+        }));
       } finally {
         if (active) {
           setIsSimulationConfigLoading(false);
@@ -1007,7 +1064,7 @@ export default function SimulatorPage() {
     return () => {
       active = false;
     };
-  }, [machineId, machines, provider]);
+  }, [machineId, provider, selectedLegacyMachine, useLegacySimulator]);
 
   const effectiveSessionId =
     parameterValues.sessionId ||
@@ -1029,11 +1086,12 @@ export default function SimulatorPage() {
   useEffect(() => {
     const selectedSessionId = Number(effectiveSessionId);
 
-    if (
-      !machineId ||
-      !Number.isFinite(selectedSessionId) ||
-      selectedSessionId <= 0
-    ) {
+    if (!shouldLoadLegacySession(
+      machineId,
+      effectiveSessionId,
+      useLegacySimulator,
+      legacyEntityIds,
+    )) {
       setSessionPreview(null);
       setSessionPreviewError(null);
       setIsSessionPreviewLoading(false);
@@ -1064,11 +1122,10 @@ export default function SimulatorPage() {
         }
 
         setSessionPreview(null);
-        setSessionPreviewError(
-          error instanceof Error
-            ? error.message
-            : "Unable to load the selected Machine C session preview.",
-        );
+        setSessionPreviewError(toUserFacingError(error, "data.load", {
+          title: "Session preview could not be loaded",
+          message: "The selected Machine C source window is unavailable.",
+        }));
       } finally {
         if (active) {
           setIsSessionPreviewLoading(false);
@@ -1081,7 +1138,7 @@ export default function SimulatorPage() {
     return () => {
       active = false;
     };
-  }, [effectiveSessionId, machineId, provider]);
+  }, [effectiveSessionId, legacyEntityIds, machineId, provider, useLegacySimulator]);
 
   useEffect(() => {
     if (!latestRun) {
@@ -1135,20 +1192,20 @@ export default function SimulatorPage() {
     () => machines.find((machine) => machine.id === machineId) ?? null,
     [machineId, machines],
   );
+  const selectedGenericEntity = useMemo(
+    () => genericSimulatorEntities.find((entity) => entity.entityId === machineId) ?? null,
+    [genericSimulatorEntities, machineId],
+  );
   const selectedSimulationMachine = useMemo(() => {
-    if (
-      (selectedMachine?.machineType === "real-sensor" ||
-        selectedMachine?.machineType === "kaggle") &&
-      simulationConfig
-    ) {
+    if (selectedLegacyMachine && simulationConfig) {
       return {
-        ...selectedMachine,
+        ...selectedLegacyMachine,
         simulationSchema: buildMachineCSimulationSchema(simulationConfig),
       };
     }
 
     return selectedMachine;
-  }, [selectedMachine, simulationConfig]);
+  }, [selectedLegacyMachine, selectedMachine, simulationConfig]);
   const schemaResolution = useMemo(
     () => resolveMachineSimulationSchema(selectedSimulationMachine),
     [selectedSimulationMachine],
@@ -1189,7 +1246,6 @@ export default function SimulatorPage() {
     ? [
         selectedMachine.model,
         selectedMachineTypeLabel ? `(${selectedMachineTypeLabel})` : null,
-        `currently at ${selectedMachine.riskScore}% risk`,
       ]
         .filter(Boolean)
         .join(" ")
@@ -1239,6 +1295,8 @@ export default function SimulatorPage() {
     schemaResolution.machineType ?? selectedMachine?.machineType,
   );
   const sourceDataReady =
+    useLegacySimulator &&
+    Boolean(selectedLegacyMachine) &&
     Boolean(selectedSessionMeta) &&
     !isSimulationConfigLoading &&
     !simulationConfigError &&
@@ -1313,7 +1371,13 @@ export default function SimulatorPage() {
     }
   }, [latestRun?.id, simulationFinished, simulationRunStatus]);
 
-  if (!isLoading && activePersona?.role === "user" && machines.length === 0) {
+  if (
+    !isLoading &&
+    !areGenericModelsLoading &&
+    activePersona?.role === "user" &&
+    machines.length === 0 &&
+    genericModels.length === 0
+  ) {
     return (
       <NoMachineAccessState description="You do not currently have access to any machines to simulate. Please contact an administrator." />
     );
@@ -1321,9 +1385,13 @@ export default function SimulatorPage() {
 
   async function onRun(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setWorkflowError(null);
 
     if (!activePersona) {
-      toast.error("No user selected");
+      setWorkflowError(toUserFacingError(null, "simulation.run", {
+        title: "A signed-in user is required",
+        message: "Sign in again before running the simulation.",
+      }));
       return;
     }
 
@@ -1334,33 +1402,50 @@ export default function SimulatorPage() {
     const parsedSessionId = Number(latestValidation.parsedParameters.sessionId);
 
     if (!machineId) {
-      toast.error("Select a machine first");
+      setWorkflowError(toUserFacingError(null, "simulation.run", {
+        title: "Select a machine",
+        message: "Choose a machine before running the simulation.",
+      }));
+      return;
+    }
+
+    if (!useLegacySimulator || !selectedLegacyMachine) {
+      setWorkflowError(toUserFacingError(null, "simulation.run", {
+        title: "Open the Machine C simulator",
+        message: "Turn on the Machine C compatibility simulator and try again.",
+      }));
       return;
     }
 
     if (!sourceDataReady) {
-      toast.error(
-        "Select a valid Machine C session before running a simulation",
-      );
+      setWorkflowError(toUserFacingError(null, "simulation.run", {
+        title: "Select valid source data",
+        message: "Choose a session with an available source preview.",
+      }));
       return;
     }
 
     if (schemaResolution.status !== "ready") {
-      toast.error(
-        "This machine does not currently expose a valid simulation schema",
-      );
+      setWorkflowError(toUserFacingError(null, "simulation.run", {
+        title: "Simulation settings are unavailable",
+        message: "Choose another machine or review its model setup.",
+      }));
       return;
     }
 
     if (scenarioNameError) {
-      toast.error(scenarioNameError);
+      setWorkflowError(toUserFacingError(null, "simulation.run", {
+        title: "Review the scenario name",
+        message: `${scenarioNameError} Correct the highlighted name and try again.`,
+      }));
       return;
     }
 
     if (!latestValidation.isValid || !Number.isFinite(parsedSessionId)) {
-      toast.error(
-        "Resolve the highlighted simulation inputs before submitting",
-      );
+      setWorkflowError(toUserFacingError(null, "simulation.run", {
+        title: "Review the simulation inputs",
+        message: "Correct the highlighted incomplete or invalid inputs and try again.",
+      }));
       return;
     }
 
@@ -1377,84 +1462,117 @@ export default function SimulatorPage() {
       });
       toast.success("Simulation completed");
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Simulation run failed",
-      );
+      setWorkflowError(toUserFacingError(error, "simulation.run"));
     }
   }
 
+  const selectedMachineOption = machineOptions.find((option) => option.id === machineId);
+  const selectedSimulateOption = simulatorOptions.find((option) => option.id === machineId);
+  const firstSimulateReadyOption = simulatorOptions.find((option) => option.eligible);
+
   return (
-    <Tabs
-      value={workspaceMode}
-      onValueChange={(value) =>
-        setWorkspaceMode(value as "predict" | "simulate")
-      }
-      className="gap-4"
-    >
-      <TabsList variant="line">
-        <TabsTrigger value="predict">Predict</TabsTrigger>
-        <TabsTrigger
-          value="simulate"
-          disabled={simulationMachines.length === 0}
-        >
-          Simulate
-        </TabsTrigger>
-      </TabsList>
+    <div className="flex flex-col gap-6">
+      <SimulatorMachineSelector
+        options={machineOptions}
+        value={machineId}
+        onChange={selectSimulatorEntity}
+        isLoading={areMachineOptionsLoading}
+      />
 
-      <TabsContent value="predict">
-        <ManualPredictionPanel
-          machines={machines}
-          requestedMachineId={requestedMachineId}
-          requestedPredictionId={requestedPredictionId}
-        />
-      </TabsContent>
-
-      <TabsContent value="simulate">
-        {simulationMachines.length === 0 ? (
-          <NoMachineAccessState description="You do not currently have access to Machine C, which is required for simulation." />
+      <section
+        id="simulator-current-state"
+        aria-labelledby="simulator-current-state-heading"
+        tabIndex={-1}
+        className="flex scroll-mt-20 flex-col gap-3 outline-none"
+      >
+        <h2 id="simulator-current-state-heading" className="text-lg font-semibold">
+          Current state
+        </h2>
+        {!machineId && areMachineOptionsLoading ? (
+          <p className="text-sm text-muted-foreground">Loading machines…</p>
         ) : (
-          <>
-            <div className="mb-4 border border-primary/30 bg-primary/5 p-3 text-sm text-muted-foreground">
-              Session-driven simulation is currently available for Machine C
-              only. It uses client monitoring session context for the LSTM forecast and
-              the classifier&apos;s high-risk probability as the projected
-              failure probability.
-            </div>
-            {simulationConfig?.warnings?.length ? (
-              <div className="mb-4 border border-warning/40 bg-warning/10 p-3 text-sm text-muted-foreground">
-                {simulationConfig.warnings.join(" ")}
-              </div>
+          <UnifiedPredictionPanel
+            machines={machines}
+            models={genericPredictionModels}
+            entityId={machineId}
+            requestedPredictionId={requestedPredictionId}
+          />
+        )}
+      </section>
+
+      <section
+        id="simulator-forecast"
+        aria-labelledby="simulator-forecast-heading"
+        tabIndex={-1}
+        className="flex scroll-mt-20 flex-col gap-3 outline-none"
+      >
+        <h2 id="simulator-forecast-heading" className="text-lg font-semibold">
+          Forecast ahead
+        </h2>
+        {workflowError ? <ErrorNotice error={workflowError} /> : null}
+        {!machineId && areMachineOptionsLoading ? (
+          <p className="text-sm text-muted-foreground">Loading machines…</p>
+        ) : selectedSimulateOption ? (
+          <SchemaDrivenSimulator
+            entities={genericSimulatorEntities}
+            requestedEntityId={requestedMachineId}
+            entityId={machineId}
+            onEntityIdChange={selectSimulatorEntity}
+            showEntitySelector={false}
+          />
+        ) : (
+          <div
+            className="flex flex-wrap items-center justify-between gap-3 border border-dashed border-border bg-muted/30 p-3 text-sm"
+            role="status"
+          >
+            <span>
+              <span className="font-medium">
+                Forecasting isn&apos;t available for {selectedMachineOption?.name ?? "this machine"}.
+              </span>{" "}
+              <span className="text-muted-foreground">
+                It has no forecasting model set up yet (Machine Registry).
+              </span>
+            </span>
+            {firstSimulateReadyOption ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => selectSimulatorEntity(firstSimulateReadyOption.id)}
+              >
+                Switch to {firstSimulateReadyOption.name}
+              </Button>
             ) : null}
-            <div className="grid gap-4 xl:grid-cols-[1.25fr_0.9fr]">
-              <form className="flex flex-col gap-4" onSubmit={onRun}>
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-sm">
-                      Simulator Overview
-                    </CardTitle>
-                    <CardDescription className="text-sm">
-                      Use recent machine sensor data to generate a future
-                      sequence and estimate potential machine risk or downtime.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="flex flex-col gap-8 text-sm">
-                    <p className="text-muted-foreground">
-                      Select a machine, choose a Machine C session, review the
-                      source data, choose how far ahead to simulate, then run
-                      the scenario.
-                    </p>
-                    <WorkflowRail />
-                  </CardContent>
-                </Card>
-
-                <div className="flex items-center gap-3 pt-2">
-                  <div className="h-px flex-1 bg-primary/40" />
-                  <span className="text-xs font-semibold uppercase tracking-wide text-primary">
-                    Prepare
-                  </span>
-                  <div className="h-px flex-1 bg-primary/40" />
+          </div>
+        )}
+          {selectedLegacyMachine ? (
+            <div className="flex flex-wrap items-center justify-between gap-3 border border-border bg-muted/30 p-3 text-sm">
+              <span className="text-muted-foreground">
+                {selectedGenericEntity?.eligible
+                  ? "The simulator above uses the active model. The earlier Machine C session simulator is still available."
+                  : "The active model is not ready; the earlier Machine C session simulator remains available."}
+              </span>
+              <Button type="button" variant="outline" onClick={() => setUseLegacySimulator((current) => !current)}>
+                {useLegacySimulator ? "Hide legacy Machine C simulator" : "Use legacy Machine C simulator"}
+              </Button>
+            </div>
+          ) : null}
+          {useLegacySimulator && selectedLegacyMachine ? (
+            <>
+              <div className="border border-primary/30 bg-primary/5 p-3 text-sm text-muted-foreground">
+                Session-driven simulation is currently available for Machine C
+                only. It uses augmented session context for the LSTM forecast and
+                reports the classifier&apos;s probability of high vibration. Low,
+                medium and high are Machine C&apos;s vibration intensity levels,
+                not failure risk.
+              </div>
+              {simulationConfig?.warnings?.length ? (
+                <div className="border border-warning/40 bg-warning/10 p-3 text-sm text-muted-foreground">
+                  {simulationConfig.warnings.join(" ")}
                 </div>
-
+              ) : null}
+              <div className="grid gap-4 xl:grid-cols-[1.25fr_0.9fr]">
+                <form className="flex flex-col gap-4" onSubmit={onRun}>
                 <Card className="border-primary/40 bg-primary/5">
                   <CardHeader>
                     <StepHeader
@@ -1473,6 +1591,7 @@ export default function SimulatorPage() {
                       scenarioNameError={scenarioNameError}
                       onMachineIdChange={setMachineId}
                       onScenarioNameChange={setScenarioName}
+                      showMachineSelector={false}
                     />
                   </CardContent>
                 </Card>
@@ -1482,7 +1601,7 @@ export default function SimulatorPage() {
                     <StepHeader
                       step={2}
                       title="Select simulation session"
-                      description="Choose the client monitoring session that will provide the final context window for forecasting."
+                      description="Choose the augmented Machine C session that will provide the final context window for forecasting."
                       complete={validation.isValid}
                     />
                   </CardHeader>
@@ -1532,7 +1651,7 @@ export default function SimulatorPage() {
                   </CardHeader>
                   <CardContent className="flex flex-col gap-3 text-sm">
                     <p className="text-muted-foreground">
-                      This simulation will use the selected client monitoring
+                      This simulation will use the selected augmented Machine C
                       session as the starting point for generating future
                       machine behaviour.
                     </p>
@@ -1629,15 +1748,10 @@ export default function SimulatorPage() {
 
                     {isSimulationConfigLoading ? (
                       <div className="min-h-28 border border-dashed border-primary/40 bg-background/60 p-4 text-muted-foreground">
-                        Loading client monitoring sessions for simulation.
+                        Loading augmented Machine C sessions for simulation.
                       </div>
                     ) : simulationConfigError ? (
-                      <div className="min-h-28 border border-dashed border-destructive/50 bg-destructive/5 p-4 text-muted-foreground">
-                        <p className="font-medium text-foreground">
-                          Session configuration could not be loaded.
-                        </p>
-                        <p className="mt-1">{simulationConfigError}</p>
-                      </div>
+                      <ErrorNotice error={simulationConfigError} className="min-h-28" />
                     ) : !selectedSessionMeta ? (
                       <div className="min-h-28 border border-dashed border-primary/40 bg-background/60 p-4 text-muted-foreground">
                         Choose a Machine C session to preview the exact source
@@ -1648,12 +1762,7 @@ export default function SimulatorPage() {
                         Loading the selected Machine C session preview.
                       </div>
                     ) : sessionPreviewError ? (
-                      <div className="min-h-28 border border-dashed border-destructive/50 bg-destructive/5 p-4 text-muted-foreground">
-                        <p className="font-medium text-foreground">
-                          Session preview could not be loaded.
-                        </p>
-                        <p className="mt-1">{sessionPreviewError}</p>
-                      </div>
+                      <ErrorNotice error={sessionPreviewError} className="min-h-28" />
                     ) : !hasSessionPreview ? (
                       <div className="min-h-28 border border-dashed border-warning/50 bg-warning/10 p-4 text-muted-foreground">
                         No preview readings are available for the selected
@@ -1784,20 +1893,12 @@ export default function SimulatorPage() {
                   </CardContent>
                 </Card>
 
-                <div className="flex items-center gap-3 pt-2">
-                  <div className="h-px flex-1 bg-success/40" />
-                  <span className="text-xs font-semibold uppercase tracking-wide text-success">
-                    Run & Review
-                  </span>
-                  <div className="h-px flex-1 bg-success/40" />
-                </div>
-
                 <Card className="border-success/40 bg-success/5">
                   <CardHeader>
                     <StepHeader
                       step={5}
                       title="Run simulation"
-                      description="Start the scenario, then review estimated risk, downtime, and recommended next actions."
+                      description="Start the scenario, then review the projected vibration level, estimated downtime, and recommended next actions."
                       tone="success"
                       complete={Boolean(latestRun)}
                     />
@@ -1871,7 +1972,7 @@ export default function SimulatorPage() {
                         <p>
                           The simulator is generating future sensor readings,
                           comparing them with recent actual machine data, and
-                          preparing the risk and downtime summary.
+                          preparing the vibration level and downtime summary.
                         </p>
                         {simulationRunStatus.activeScenarioName ? (
                           <p className="text-xs">
@@ -1883,12 +1984,7 @@ export default function SimulatorPage() {
                         ) : null}
                       </div>
                     ) : simulationError ? (
-                      <div className="flex flex-col gap-2 border border-dashed border-destructive/50 bg-destructive/5 p-4 text-muted-foreground">
-                        <p className="font-medium text-foreground">
-                          Simulation results could not be generated
-                        </p>
-                        <p>{simulationError}</p>
-                      </div>
+                      <ErrorNotice error={simulationError} />
                     ) : simulationFinished && latestRun ? (
                       <>
                         <div className="flex flex-col gap-3 border border-success/40 bg-background/80 p-3">
@@ -1903,7 +1999,7 @@ export default function SimulatorPage() {
                                 riskToSeverity(latestRun.projectedRisk),
                               )}
                             >
-                              {labelForRisk(latestRun.projectedRisk)} risk
+                              {labelForRisk(latestRun.projectedRisk)} likelihood of high vibration
                             </Badge>
                           </div>
 
@@ -1922,7 +2018,7 @@ export default function SimulatorPage() {
                           <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1">
                             <div className="border border-success/30 bg-background/80 p-3">
                               <span className="text-xs text-muted-foreground">
-                                Risk level
+                                Likelihood of high vibration
                               </span>
                               <p className="mt-1 text-lg font-semibold">
                                 {labelForRisk(latestRun?.projectedRisk ?? 0)}
@@ -1930,7 +2026,7 @@ export default function SimulatorPage() {
                             </div>
                             <div className="border border-success/30 bg-background/80 p-3">
                               <span className="text-xs text-muted-foreground">
-                                Failure probability
+                                Probability of high vibration
                               </span>
                               <p className="mt-1 text-lg font-semibold">
                                 {latestRun?.failureProbability !== undefined &&
@@ -1951,13 +2047,10 @@ export default function SimulatorPage() {
                             </div>
                             <div className="border border-success/30 bg-background/80 p-3">
                               <span className="text-xs text-muted-foreground">
-                                Predicted future label
+                                Predicted vibration level
                               </span>
                               <p className="mt-1 text-lg font-semibold">
-                                {latestRun?.projectedLabel ??
-                                  machineStateForRisk(
-                                    latestRun?.projectedRisk ?? 0,
-                                  )}
+                                {projectedVibrationLevel(latestRun)}
                               </p>
                             </div>
                           </div>
@@ -1991,20 +2084,16 @@ export default function SimulatorPage() {
                           <>
                             <div className="flex flex-col gap-3 border border-success/40 bg-background/80 p-3">
                               <div className="flex flex-wrap items-start justify-between gap-3">
-                                  <div>
-                                    <p className="font-medium">
-                                      Actual vs Simulated Sensor Readings
-                                    </p>
+                                <div>
+                                  <p className="font-medium">
+                                    Actual vs Simulated Sensor Readings
+                                  </p>
                                   <p className="text-muted-foreground">
                                     Compare recent actual sensor readings with
                                     the future simulated values generated by
                                     this run.
-                                    </p>
-                                  </div>
-                                  <div className="flex flex-wrap gap-3 text-xs text-muted-foreground" aria-label="Data provenance legend">
-                                    <span>Observed/client-derived fixture</span>
-                                    <span>Synthetic forecast</span>
-                                  </div>
+                                  </p>
+                                </div>
                               </div>
 
                               <div className="grid gap-2 sm:grid-cols-3 xl:grid-cols-1">
@@ -2289,7 +2378,9 @@ export default function SimulatorPage() {
                             {run.scenarioName}
                           </span>
                           <Badge variant="outline">
-                            {run.projectedRisk}% risk
+                            {usesVibrationLevelLabels({ entityId: run.machineId })
+                              ? `${run.projectedRisk}% high vibration`
+                              : `${run.projectedRisk}% risk`}
                           </Badge>
                         </div>
                         <p className="text-muted-foreground">
@@ -2315,8 +2406,8 @@ export default function SimulatorPage() {
               </div>
             </div>
           </>
-        )}
-      </TabsContent>
-    </Tabs>
+        ) : null}
+      </section>
+    </div>
   );
 }

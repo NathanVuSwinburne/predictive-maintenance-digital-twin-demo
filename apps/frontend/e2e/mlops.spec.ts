@@ -11,7 +11,7 @@ test("walks a machine from raw columns to an approved model", async ({ page }) =
   page.on("pageerror", (error) => errors.push(error.message));
 
   await page.goto("/mlops");
-  await expect(page.getByRole("heading", { name: "Machine Registry" })).toBeVisible();
+  await expect(page.locator("h1", { hasText: "Machine Registry" })).toBeVisible();
 
   // Step 1, the registry, shaped like the production one: a list and a register form.
   await expect(page.getByRole("button", { name: /Register machine/i })).toBeDisabled();
