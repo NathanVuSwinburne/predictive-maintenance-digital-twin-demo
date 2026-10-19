@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useDeferredValue, useMemo, useState, useSyncExternalStore } from "react";
+import { Suspense, useCallback, useDeferredValue, useMemo, useState, useSyncExternalStore } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   ArrowClockwiseIcon,
   FileTextIcon,
@@ -10,6 +11,7 @@ import {
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
 
+import { ErrorNotice } from "@/components/feedback/error-notice";
 import { GraphCanvas, namespaceColor } from "@/components/knowledge/graph-canvas";
 import { HistoryPanel } from "@/components/knowledge/history-panel";
 import { LintPanel } from "@/components/knowledge/lint-panel";
@@ -40,6 +42,7 @@ import {
   VaultError,
 } from "@/lib/demo-knowledge/store";
 import type { GraphNode } from "@/lib/demo-knowledge/types";
+import type { UserFacingError } from "@/lib/errors/user-facing-error";
 import { cn } from "@/lib/utils";
 
 /** The right column shows one of four things at a time; the page is the default. */
@@ -56,10 +59,32 @@ const NAMESPACE_BLURB: Record<string, string> = {
 };
 
 export default function KnowledgePage() {
+  return (
+    <Suspense fallback={<p className="text-sm text-muted-foreground">Loading the knowledge base…</p>}>
+      <KnowledgePageInner />
+    </Suspense>
+  );
+}
+
+/** Vault refusals are written for the reader, so they are shown as the notice's sentence. */
+function vaultError(error: unknown, title: string): UserFacingError {
+  return {
+    title,
+    message: error instanceof VaultError ? error.message : "Try again. Your text is still in the editor.",
+  };
+}
+
+function KnowledgePageInner() {
+  const searchParams = useSearchParams();
+  const requestedNote = searchParams.get("note");
+  const [pageError, setPageError] = useState<UserFacingError | null>(null);
   // The vault lives outside React so an edit here survives a walk to the MLOps workspace and back.
   const snapshot = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
-  const [noteId, setNoteId] = useState<string>("index");
+  // A deep link (the AI Assistant's "Saved to Knowledge Base" confirmation) opens that page.
+  const [noteId, setNoteId] = useState<string>(() =>
+    requestedNote && getNote(resolve(requestedNote)) ? resolve(requestedNote) : "index",
+  );
   const [query, setQuery] = useState("");
   const [namespace, setNamespace] = useState<string | null>(null);
   const [includeWanted, setIncludeWanted] = useState(true);
@@ -143,7 +168,7 @@ export default function KnowledgePage() {
   const openNote = useCallback((target: string) => {
     const id = resolve(target);
     if (!getNote(id)) {
-      toast.error(`No page at ${id} yet.`);
+      setPageError({ title: "That page is not written yet", message: `Nothing exists at ${id}. Use New page to write it.` });
       return;
     }
     setNoteId(id);
@@ -166,7 +191,7 @@ export default function KnowledgePage() {
         setNoteId(id);
         setRightPane("note");
       } catch (error) {
-        toast.error(error instanceof VaultError ? error.message : "Unable to create that page");
+        setPageError(vaultError(error, "The knowledge page could not be created"));
       }
     },
     [namespace, note?.namespace],
@@ -193,19 +218,14 @@ export default function KnowledgePage() {
   }
 
   return (
-    <div className="flex flex-col gap-5">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div className="flex flex-col gap-1">
-          <p className="instrument-label">Agent memory</p>
-          <h1 className="text-2xl font-semibold tracking-[-0.04em] md:text-3xl">
-            Agent knowledge wiki
-          </h1>
-          <p className="max-w-2xl text-sm text-muted-foreground">
-            Interlinked markdown the assistant reads before it answers and writes to when a turn
-            produced something durable. The graph is not stored anywhere. It is derived from the
-            pages on read, so an edit here changes the shape of it in the same frame.
-          </p>
-        </div>
+    <div className="flex flex-col gap-3">
+      {pageError ? <ErrorNotice error={pageError} actionLabel="Dismiss" onAction={() => setPageError(null)} /> : null}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="max-w-3xl text-sm text-muted-foreground">
+          Interlinked pages the AI Assistant reads before it answers and writes to when a
+          conversation produced something worth keeping. The graph is derived from the pages, so
+          an edit here changes its shape straight away.
+        </p>
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"
@@ -415,7 +435,7 @@ export default function KnowledgePage() {
                   toast.success("Restored", { description: `Back to the version from ${stamp}.` });
                   setRightPane("note");
                 } catch (error) {
-                  toast.error(error instanceof VaultError ? error.message : "Unable to restore");
+                  setPageError(vaultError(error, "This version could not be restored"));
                 }
               }}
               onClose={() => setRightPane("note")}
@@ -433,7 +453,7 @@ export default function KnowledgePage() {
                     description: "The assistant reads the new text on its next turn.",
                   });
                 } catch (error) {
-                  toast.error(error instanceof VaultError ? error.message : "Unable to save");
+                  setPageError(vaultError(error, "The knowledge page could not be saved"));
                 }
               }}
               onDelete={() => {
@@ -447,7 +467,7 @@ export default function KnowledgePage() {
                   });
                   setNoteId("index");
                 } catch (error) {
-                  toast.error(error instanceof VaultError ? error.message : "Unable to delete");
+                  setPageError(vaultError(error, "The knowledge page could not be moved to trash"));
                 }
               }}
               onNavigate={openNote}

@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { useMemo } from "react";
 import { ArrowRightIcon, DatabaseIcon, PlugsConnectedIcon, WarningIcon } from "@phosphor-icons/react";
 
@@ -208,6 +210,23 @@ export function MachineDataStage({ machine, onContinue }: Props) {
               </CardContent>
             </Card>
           ))}
+
+          <Card>
+            <CardHeader className="gap-1">
+              <p className="instrument-label">Live MQTT source</p>
+              <CardTitle className="text-base">Recordings from a live feed</CardTitle>
+              <CardDescription>
+                In production a machine can also stream over MQTT, and an operator can record a
+                labelled capture, download it as CSV and train from it. That needs a broker and
+                the training worker, so it is not available in this demo.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Link href="/monitor" className="text-sm underline underline-offset-2">
+                Watch the replayed live feeds in Live Monitor
+              </Link>
+            </CardContent>
+          </Card>
 
           {readiness.map((item) => (
             <Card key={item.capability}>

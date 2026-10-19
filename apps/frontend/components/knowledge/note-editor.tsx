@@ -303,21 +303,18 @@ export function NoteEditor({
       )}
 
       {!isEditing && (note.backlinks.length > 0 || note.outbound.length > 0) && (
-        <div
-          className="max-h-44 shrink-0 overflow-auto border-t bg-muted/15 p-3 text-[11px]"
-          data-testid="note-links"
-        >
+        // Related links are secondary to the note: collapsed by default, reset per note, and
+        // scrolling inside a cap when open, as in production.
+        <details key={note.id} className="shrink-0 border-t bg-muted/15 text-[11px]" data-testid="note-links">
+          <summary className="cursor-pointer p-3 text-xs font-medium text-muted-foreground hover:bg-muted/40 focus-visible:outline-2 focus-visible:outline-ring">
+            <LinkSimpleIcon className="mr-1 inline" aria-hidden="true" />
+            <span>{backlinkPages === 1 ? "1 page points here" : `${backlinkPages} pages point here`}</span>
+            {note.backlinks.length > backlinkPages && <span> via {note.backlinks.length} links</span>}
+            {note.outbound.length > 0 && <span> · {note.outbound.length} links out</span>}
+          </summary>
+          <div className="max-h-40 overflow-y-auto px-3 pb-3">
           {note.backlinks.length > 0 && (
             <div className="mb-2">
-              <p className="instrument-label mb-1.5 flex items-center gap-1">
-                <LinkSimpleIcon />
-                {backlinkPages === 1 ? "1 page points here" : `${backlinkPages} pages point here`}
-                {note.backlinks.length > backlinkPages && (
-                  <span className="font-normal normal-case tracking-normal">
-                    via {note.backlinks.length} links
-                  </span>
-                )}
-              </p>
               <div className="flex flex-wrap gap-1">
                 {note.backlinks.map((link) => (
                   <button
@@ -359,7 +356,8 @@ export function NoteEditor({
               </div>
             </>
           )}
-        </div>
+          </div>
+        </details>
       )}
     </div>
   );
