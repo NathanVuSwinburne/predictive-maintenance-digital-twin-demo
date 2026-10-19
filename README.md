@@ -32,7 +32,7 @@ Connected pages, not a sequence. Read it straight through or drop into the part 
 | [Then make the signal predictive](#then-make-the-signal-predictive) → [what survived](#what-survived-the-experiments) | The models, and the results that held up |
 | [A trained model is not yet a workflow](#a-trained-model-is-not-yet-a-workflow) | **MLOps**: getting from a trained model to a workflow anyone can rerun |
 | [A prediction you can challenge](#a-prediction-is-more-useful-when-you-can-challenge-it) | The digital twin: baseline against simulated intervention |
-| [The dashboard needed a brain](#the-dashboard-needed-a-brain) | The supervisor agent, its tools, and its visible traces |
+| [The dashboard needed a brain](#the-dashboard-needed-a-brain) | The machine health agent, its tools, and its visible traces |
 | [Memory the agent can read](#memory-the-agent-can-read-and-so-can-you) | **Knowledge wiki**: why the agent's memory is readable pages and not a numeric index |
 | [Close the loop](#close-the-loop-with-live-ingestion) | **Live Monitor**: live readings, vibration in 3D, and a one-hour outlook |
 | [The demo, in pictures](#the-demo-in-pictures) | Every screen, and where it is explained |
@@ -273,7 +273,7 @@ The product question stops being **"Will it fail?"** and becomes **"What do we d
 
 > **In plain terms:** the first assistant was a long list of if-this-then-that rules, which broke a little more with every question we added. It was replaced by an agent that picks its own tools for each request and shows you which ones it used.
 
-The replacement is a single **supervisor agent**. There is no router, no intent classifier and no sub-agent: on every turn it decides what evidence the question needs, calls the tools that gather it, and tells you what it used. Through eleven tools it can:
+The replacement is one **machine health agent**: an ordinary tool-calling agent whose job is to keep an eye on the health of the machines. There is no router, no intent classifier and no sub-agent: on every turn it decides what evidence the question needs, calls the tools that gather it, and tells you what it used. Through eleven tools it can:
 
 - look up the fleet, a machine's sensors, its telemetry, its events, and whether a live machine is streaming right now
 - run failure predictions and what-if simulations, using only models a person approved
@@ -282,7 +282,7 @@ The replacement is a single **supervisor agent**. There is no router, no intent 
 - answer aggregate questions through a constrained, read-only SQL tool, for administrators only
 - keep working memory across conversation turns
 
-![The agentic architecture: one supervisor agent with working memory and a switchable LLM provider, five groups of tools, and what each group reaches](assets/agentic-architecture.drawio.png)
+![The agentic architecture: one machine health agent with working memory and a switchable LLM provider, five groups of tools, and what each group reaches](assets/agentic-architecture.drawio.png)
 
 <sub>Editable source: [`assets/agentic-architecture.drawio`](assets/agentic-architecture.drawio). The PNG also embeds the diagram, so it opens directly in [draw.io](https://app.diagrams.net).</sub>
 
@@ -290,7 +290,7 @@ An earlier version handed database questions to a separate SQL sub-agent. Its on
 
 ### From a complaint to an investigation
 
-An operator asks **"why was this machine so noisy yesterday?"** and the supervisor turns it into an investigation:
+An operator asks **"why was this machine so noisy yesterday?"** and the agent turns it into an investigation:
 
 1. Read the machine capabilities and maintenance guidance from the Obsidian LLM wiki.
 2. Identify noise as a possible vibration signal.
@@ -305,7 +305,7 @@ It reaches each machine through the same tools the app itself uses, so the answe
     <td width="50%">
       <img src="assets/chatbot_telemetry_retrieval.png" alt="Assistant retrieving and summarizing Machine C vibration telemetry" />
       <br />
-      <strong>Ask in plain English.</strong> The supervisor retrieves evidence and turns it into an operational summary.
+      <strong>Ask in plain English.</strong> The agent retrieves evidence and turns it into an operational summary.
     </td>
     <td width="50%">
       <img src="assets/chatbot_example_message_2.png" alt="AI assistant rendering machine telemetry as dashboard components" />
@@ -320,7 +320,7 @@ It reaches each machine through the same tools the app itself uses, so the answe
     <td width="50%">
       <img src="assets/demo_chat_trace.png" alt="The assistant answering whether Packaging Drive 01 is running, with its two-step trace: listed the fleet, checked the live feed" />
       <br />
-      <strong>Show the actions.</strong> The trace shows which tools the supervisor called, what each one returned, and how the result reached the final response.
+      <strong>Show the actions.</strong> The trace shows which tools the agent called, what each one returned, and how the result reached the final response.
     </td>
     <td width="50%">
       <img src="assets/chatbot_example_message.png" alt="Assistant recalling earlier maintenance context from working memory" />
@@ -343,7 +343,7 @@ The team measured roughly a **75% improvement in typical response time** after t
 
 > **In plain terms:** most AI systems store their reference material as unreadable numbers and fetch passages that *sound* like the question. Here it is ordinary markdown pages that link to each other, so the agent can follow a trail from one page to the next, and so a person can read, check and correct the very same pages.
 
-The [supervisor](#the-dashboard-needed-a-brain) reads from a maintenance wiki. Why a **wiki**, and not the usual numeric search index?
+The [machine health agent](#the-dashboard-needed-a-brain) reads from a maintenance wiki. Why a **wiki**, and not the usual numeric search index?
 
 The design was inspired by **["Retrieval as Reasoning: Self-Evolving Agent-Native Retrieval via LLM-Wiki"](https://arxiv.org/abs/2605.25480)**, which argues for knowledge an agent *walks through* rather than only searches, and reports promising results on questions whose answer is spread across several documents. The paper inspired the design here; this project has not reproduced its benchmarks and does not claim its results.
 
@@ -459,7 +459,7 @@ flowchart LR
     API --> DB[(PostgreSQL)]
     API --> UI["Next.js digital twin<br/>fleet · machine · simulation · chat"]
     Live["Live CMTK feed<br/>MQTT · 5 s level · 1 h outlook"] --> API
-    Wiki["Knowledge wiki<br/>markdown · wikilinks · BM25"] --> Agent["Supervisor agent"]
+    Wiki["Knowledge wiki<br/>markdown · wikilinks · BM25"] --> Agent["Machine health agent"]
     DB --> Agent
     Models --> Agent
     Agent --> UI
@@ -478,7 +478,7 @@ One interface, `DigitalTwinDataProvider`, decides where data comes from. Everyth
 | Frontend | Next.js 16 · React 19 · TypeScript · Tailwind CSS · Recharts |
 | Backend | FastAPI · SQLAlchemy · Pydantic · PostgreSQL |
 | ML | PyTorch LSTM · XGBoost · Random Forest · scikit-learn · pandas · NumPy |
-| Agent system | Single supervisor · eleven tools · admin-only read-only SQL fallback · working memory · knowledge wiki · persisted traces |
+| Agent system | One tool-calling agent · eleven tools · admin-only read-only SQL fallback · working memory · knowledge wiki · persisted traces |
 | Machine registry | Registry schema versions · frozen recipes with content digests · JSON training configuration · in-browser logistic regression, CART forest, gradient boosting, MLP and ridge-lag forecaster · quality gates |
 | Knowledge wiki | Markdown + YAML frontmatter corpus · `[[wikilinks]]` · BM25 retrieval · d3-force graph · lint and provenance |
 | Quality | Vitest · Playwright · linting · production build checks |
@@ -608,7 +608,7 @@ Every term this README uses, in one sentence. Nothing here assumes you have trai
 |---|---|
 | **Agent** | A language model that can take actions, not just produce text. |
 | **Tool call** | One of those actions: run a query, run a prediction, read a page. Each one is shown in the trace. |
-| **Supervisor agent** | The agent that decides which tools a request needs, replacing a fixed set of rules. |
+| **Machine health agent** | The tool-calling agent that decides which tools a question needs, replacing a fixed set of rules. |
 | **Embeddings / vector index** | The usual way to give an AI reference material: text is turned into lists of numbers, and passages that *sound* like the question are pulled back. Effective, but not readable by a person. |
 | **BM25** | Classic keyword search ranking, the kind used before embeddings. Fast, exact and inspectable. |
 | **Wikilink** | A `[[page name]]` written inside a page. Here, these links are the connections in the knowledge graph. |
@@ -622,7 +622,7 @@ Every term this README uses, in one sentence. Nothing here assumes you have trai
 
 A sanitized portfolio repository from Swinburne University **COS40005 Computing Technology Project A/B**, built by a six-person team.
 
-I owned the **ML/AI engineering layer**: diagnosing the original router's limits, migrating the assistant to a native tool-calling supervisor, the read-only SQL sub-agent (later folded into the supervisor as a fenced fallback tool), the knowledge wiki and its connection to the agent, visible agent traces, session-level working memory, and moving the bespoke Machine C pipeline onto a generic machine schema with a visible preprocessing, training and approval workflow.
+I owned the **ML/AI engineering layer**: diagnosing the original router's limits, migrating the assistant to a native tool-calling agent, the read-only SQL sub-agent (later folded into that agent as a fenced fallback tool), the knowledge wiki and its connection to the agent, visible agent traces, session-level working memory, and moving the bespoke Machine C pipeline onto a generic machine schema with a visible preprocessing, training and approval workflow.
 
 The full team and individual contributions are documented in [CONTRIBUTORS.md](CONTRIBUTORS.md).
 
