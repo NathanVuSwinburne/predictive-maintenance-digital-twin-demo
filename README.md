@@ -273,16 +273,20 @@ The product question stops being **"Will it fail?"** and becomes **"What do we d
 
 > **In plain terms:** the first assistant was a long list of if-this-then-that rules, which broke a little more with every question we added. It was replaced by an agent that picks its own tools for each request and shows you which ones it used.
 
-The replacement is a **supervisor agent**: it picks tools at runtime and hands specialist work to sub-agents. It can:
+The replacement is a single **supervisor agent**. There is no router, no intent classifier and no sub-agent: on every turn it decides what evidence the question needs, calls the tools that gather it, and tells you what it used. Through eleven tools it can:
 
-- run failure predictions and what-if simulations
-- extract useful signals from operator complaints
-- create maintenance proposals
-- delegate database questions to a read-only SQL sub-agent
-- read machine and maintenance knowledge from a Karpathy-style LLM wiki stored in an Obsidian vault
+- look up the fleet, a machine's sensors, its telemetry, its events, and whether a live machine is streaming right now
+- run failure predictions and what-if simulations, using only models a person approved
+- draft maintenance proposals, which a person approves or rejects; the agent never acts on its own
+- read machine and maintenance knowledge from a Karpathy-style LLM wiki stored in an Obsidian vault, and write what it learned back
+- answer aggregate questions through a constrained, read-only SQL tool, for administrators only
 - keep working memory across conversation turns
 
-![Supervisor agent architecture with action tools, a read-only SQL sub-agent, and a knowledge wiki](assets/chatbot_architecture.png)
+![The agentic architecture: one supervisor agent with working memory and a switchable LLM provider, five groups of tools, and what each group reaches](assets/agentic-architecture.drawio.png)
+
+<sub>Editable source: [`assets/agentic-architecture.drawio`](assets/agentic-architecture.drawio). The PNG also embeds the diagram, so it opens directly in [draw.io](https://app.diagrams.net).</sub>
+
+An earlier version handed database questions to a separate SQL sub-agent. Its only guard against reading another user's machines was a sentence in its prompt, which is not access control: a free-text query cannot be limited to one caller's machines. Purpose-built fleet tools now answer those questions with access checked in code, and SQL survives only as a fallback that refuses non-administrators and can reach an allowlist of machine, model and event tables, never credentials or sessions.
 
 ### From a complaint to an investigation
 
@@ -290,7 +294,7 @@ An operator asks **"why was this machine so noisy yesterday?"** and the supervis
 
 1. Read the machine capabilities and maintenance guidance from the Obsidian LLM wiki.
 2. Identify noise as a possible vibration signal.
-3. Delegate a read-only historical telemetry query to the SQL sub-agent.
+3. Pull the historical telemetry window for that machine.
 4. Pass the retrieved row or time window to the prediction tool.
 5. Combine the evidence into a clear explanation and useful next action.
 
@@ -316,7 +320,7 @@ It reaches each machine through the same tools the app itself uses, so the answe
     <td width="50%">
       <img src="assets/chatbot_tracing.png" alt="Visible four-step agent tool trace" />
       <br />
-      <strong>Show the actions.</strong> The trace shows which tool the supervisor selected, what it delegated to the SQL sub-agent, and how the result reached the final response.
+      <strong>Show the actions.</strong> The trace shows which tools the supervisor called, what each one returned, and how the result reached the final response.
     </td>
     <td width="50%">
       <img src="assets/chatbot_example_message.png" alt="Assistant recalling earlier maintenance context from working memory" />
@@ -329,7 +333,7 @@ It reaches each machine through the same tools the app itself uses, so the answe
 The team measured roughly a **75% improvement in typical response time** after the redesign. Internal estimate, not a controlled benchmark, but it matched what the design predicted: less rigid routing, fewer wasted steps, tools chosen when they were needed.
 
 > [!NOTE]
-> The trace shows which tools ran, what was handed to a sub-agent, and what came back. It does not expose the model's private reasoning. In the frontend-only demo these traces are scripted examples of the real response format. Running the full stack connects the same workflow to FastAPI, PostgreSQL, the model services, and the Obsidian knowledge vault.
+> The trace shows which tools ran and what came back. It does not expose the model's private reasoning. In the frontend-only demo these traces are scripted examples of the real response format. Running the full stack connects the same workflow to FastAPI, PostgreSQL, the model services, and the Obsidian knowledge vault.
 
 <sub>↑ [Map](#start-anywhere) · → **Next:** [Memory the agent can read](#memory-the-agent-can-read-and-so-can-you) · ↔ **Related:** [Under the hood](#under-the-hood)</sub>
 
@@ -454,7 +458,7 @@ One interface, `DigitalTwinDataProvider`, decides where data comes from. Everyth
 | Frontend | Next.js 16 · React 19 · TypeScript · Tailwind CSS · Recharts |
 | Backend | FastAPI · SQLAlchemy · Pydantic · PostgreSQL |
 | ML | PyTorch LSTM · XGBoost · Random Forest · scikit-learn · pandas · NumPy |
-| Agent system | Supervisor · six domain tools · read-only SQL sub-agent · working memory · knowledge wiki · persisted traces |
+| Agent system | Single supervisor · eleven tools · admin-only read-only SQL fallback · working memory · knowledge wiki · persisted traces |
 | Machine registry | Registry schema versions · frozen recipes with content digests · JSON training configuration · in-browser logistic regression, CART forest, gradient boosting, MLP and ridge-lag forecaster · quality gates |
 | Knowledge wiki | Markdown + YAML frontmatter corpus · `[[wikilinks]]` · BM25 retrieval · d3-force graph · lint and provenance |
 | Quality | Vitest · Playwright · linting · production build checks |
@@ -584,7 +588,7 @@ Every term this README uses, in one sentence. Nothing here assumes you have trai
 |---|---|
 | **Agent** | A language model that can take actions, not just produce text. |
 | **Tool call** | One of those actions: run a query, run a prediction, read a page. Each one is shown in the trace. |
-| **Supervisor agent** | The agent that decides which tool or sub-agent should handle a request, replacing a fixed set of rules. |
+| **Supervisor agent** | The agent that decides which tools a request needs, replacing a fixed set of rules. |
 | **Embeddings / vector index** | The usual way to give an AI reference material: text is turned into lists of numbers, and passages that *sound* like the question are pulled back. Effective, but not readable by a person. |
 | **BM25** | Classic keyword search ranking, the kind used before embeddings. Fast, exact and inspectable. |
 | **Wikilink** | A `[[page name]]` written inside a page. Here, these links are the connections in the knowledge graph. |
@@ -598,7 +602,7 @@ Every term this README uses, in one sentence. Nothing here assumes you have trai
 
 A sanitized portfolio repository from Swinburne University **COS40005 Computing Technology Project A/B**, built by a six-person team.
 
-I owned the **ML/AI engineering layer**: diagnosing the original router's limits, migrating the assistant to a native tool-calling supervisor, the read-only SQL sub-agent, the knowledge wiki and its connection to the agent, visible agent traces, session-level working memory, and moving the bespoke Machine C pipeline onto a generic machine schema with a visible preprocessing, training and approval workflow.
+I owned the **ML/AI engineering layer**: diagnosing the original router's limits, migrating the assistant to a native tool-calling supervisor, the read-only SQL sub-agent (later folded into the supervisor as a fenced fallback tool), the knowledge wiki and its connection to the agent, visible agent traces, session-level working memory, and moving the bespoke Machine C pipeline onto a generic machine schema with a visible preprocessing, training and approval workflow.
 
 The full team and individual contributions are documented in [CONTRIBUTORS.md](CONTRIBUTORS.md).
 
