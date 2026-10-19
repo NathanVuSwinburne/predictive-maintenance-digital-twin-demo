@@ -6,6 +6,7 @@ import type {
   MachineSummary,
   MaintenanceRecommendation,
   ManualPredictionResult,
+  ModelReadiness,
   Prediction,
   PredictionConfig,
   Session,
@@ -154,6 +155,57 @@ export const testPredictions = [
   },
 ] satisfies Prediction[];
 
+export const testModelReadiness = {
+  machineId: "machine-c",
+  profileId: "machine-c-forecast-v1",
+  state: "collecting-data",
+  canInfer: false,
+  summary: "Collecting data",
+  reason: "Prediction will start when the input window is complete and valid.",
+  nextAction: "Collect 720 more observations.",
+  evaluatedAt: now,
+  latestSampleAt: now,
+  progress: {
+    observedRows: 1680,
+    requiredRows: 2400,
+    percent: 70,
+    observedDurationSeconds: 840,
+    requiredDurationSeconds: 1200,
+    estimatedRemainingSeconds: 360,
+  },
+  sensors: [
+    ["VibrationX", "Vibration X", "g"],
+    ["VibrationY", "Vibration Y", "g"],
+    ["VibrationZ", "Vibration Z", "g"],
+    ["Temperature", "Temperature", "°C"],
+  ].map(([name, label, unit]) => ({
+    name,
+    label,
+    unit,
+    status: "receiving" as const,
+    validRows: 1680,
+    requiredRows: 2400,
+    detail: `Receiving valid ${label} values.`,
+  })),
+  checks: {
+    windowLength: {
+      status: "in-progress",
+      label: "Window length",
+      detail: "1,680 of 2,400 observations collected.",
+    },
+    cadence: {
+      status: "pass",
+      label: "Sample cadence",
+      detail: "Valid at the expected 500 ms cadence.",
+    },
+    freshness: {
+      status: "pass",
+      label: "Latest sample",
+      detail: "Fresh within the 15-second limit.",
+    },
+  },
+} satisfies ModelReadiness;
+
 export const testRecommendations = [
   {
     id: "recommendation-c-1",
@@ -174,8 +226,8 @@ export const testHistory = [
     type: "fault-prediction",
     machineId: "machine-c",
     userId: "user-002",
-    title: "High vibration risk detected",
-    description: "Machine C exceeded the vibration risk threshold.",
+    title: "High vibration level detected",
+    description: "Machine C stayed at the high vibration level.",
     severity: "high",
   },
   {
@@ -196,7 +248,7 @@ export const testChatThread = {
   machineId: "machine-c",
   updatedAt: now,
   userId: "user-002",
-  promptSuggestions: ["Summarize Machine C risk"],
+  promptSuggestions: ["Summarize Machine C vibration"],
   followUpSuggestions: ["Open simulator"],
 } satisfies ChatThread;
 
@@ -209,7 +261,7 @@ export const testChatMessages = [
     contentBlocks: [
       {
         type: "text",
-        content: "Machine C is trending toward elevated vibration risk.",
+        content: "Machine C is trending toward a high vibration level.",
       },
     ],
   },
@@ -289,7 +341,7 @@ export const testSimulationRun = {
   scenarioName: "Bearing load test",
   projectedRisk: 72,
   projectedDowntimeHours: 2.4,
-  summary: "Machine C remains elevated risk over the selected horizon.",
+  summary: "Machine C stays at a high vibration level over the selected horizon.",
   recommendations: ["Inspect the bearing assembly."],
   projectedLabel: "high",
   failureProbability: 0.72,
@@ -343,6 +395,49 @@ export const testPredictionConfig = {
         recommendedMin: 307,
         recommendedMax: 312,
         typicalValue: 310,
+      },
+      options: null,
+    },
+  ],
+} satisfies PredictionConfig;
+
+export const testMachineCPredictionConfig = {
+  machineId: "machine-c",
+  machineType: "real-sensor",
+  title: "Machine C prediction",
+  description: "Manual vibration and temperature inputs.",
+  failureThreshold: null,
+  warnings: [],
+  fields: [
+    {
+      key: "vibration_x",
+      label: "Vibration X",
+      type: "number",
+      unit: "g",
+      required: true,
+      step: 0.001,
+      range: {
+        observedMin: 0,
+        observedMax: 1,
+        recommendedMin: 0.1,
+        recommendedMax: 0.5,
+        typicalValue: 0.25,
+      },
+      options: null,
+    },
+    {
+      key: "temperature",
+      label: "Temperature",
+      type: "number",
+      unit: "°C",
+      required: true,
+      step: 0.1,
+      range: {
+        observedMin: 20,
+        observedMax: 60,
+        recommendedMin: 25,
+        recommendedMax: 45,
+        typicalValue: 35,
       },
       options: null,
     },

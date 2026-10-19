@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -22,18 +22,24 @@ import {
   ChatCenteredTextIcon,
   ChatCircleDotsIcon,
   DotsThreeVerticalIcon,
-  GearIcon,
-  KeyIcon,
   LinkIcon,
   LightningIcon,
   PaperPlaneTiltIcon,
   PlusIcon,
   RobotIcon,
+  SpinnerIcon,
   UserIcon,
+  XIcon,
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
 
 import { useAuth } from "@/components/auth/auth-context";
+import { ErrorNotice } from "@/components/feedback/error-notice";
+import { SaveToWikiButton } from "@/components/knowledge/save-to-wiki-button";
+import {
+  mergeInformationProvenance,
+  SourceAttribution,
+} from "@/components/provenance/source-attribution";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -79,6 +85,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   Empty,
+  EmptyContent,
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
@@ -93,7 +100,6 @@ import {
 } from "@/components/ui/input-group";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
 import {
   Select,
   SelectContent,
@@ -106,51 +112,94 @@ import type {
   AgentTraceStep,
   ChatContentBlock,
   ChatMessage,
+  ChatStreamEvent,
   ChatThread,
-  LlmProvider,
   MachineSummary,
-  QueryMode,
   Severity,
 } from "@/lib/domain/types";
 import {
   badgeVariantForSeverity,
   formatDateTime,
 } from "@/lib/domain/presentation";
+import { isThreadBusy } from "@/lib/data/fastapi-provider";
 import { cn } from "@/lib/utils";
+import {
+  toUserFacingError,
+  type UserFacingError,
+} from "@/lib/errors/user-facing-error";
 
-function AgentTracePanel({ trace }: { trace: AgentTraceStep[] }) {
+function SourcesAndActionsPanel({ trace }: { trace: AgentTraceStep[] }) {
   const [open, setOpen] = useState(false);
+  const contentId = useId();
+
   return (
-    <div className="mt-1 border-t border-border/40 pt-2">
+    <div className="mt-1 border-t border-border/60 pt-2">
       <button
+        type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+        className="flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+        aria-expanded={open}
+        aria-controls={contentId}
       >
-        {open ? <CaretDownIcon size={11} /> : <CaretRightIcon size={11} />}
-        Agent trace · {trace.length} action{trace.length !== 1 ? "s" : ""}
+        {open ? (
+          <CaretDownIcon className="size-3.5" aria-hidden="true" />
+        ) : (
+          <CaretRightIcon className="size-3.5" aria-hidden="true" />
+        )}
+        Sources &amp; Actions Used
+        <span className="text-xs">· {trace.length}</span>
       </button>
       {open && (
-        <ol className="mt-2 space-y-2">
-          {trace.map((s) => (
-            <li key={s.step} className="flex gap-2.5 text-[11px] leading-snug">
-              <span className="flex size-5 shrink-0 items-center justify-center rounded-full border border-border bg-muted/50 text-[10px] font-medium text-muted-foreground tabular-nums">
-                {s.step}
-              </span>
-              <div className="min-w-0 flex-1 rounded-md border border-border/60 bg-muted/20 px-2.5 py-2">
-                {(s.actor || s.target) && (
-                  <div className="mb-1 flex flex-wrap items-center gap-1 text-[10px] font-medium uppercase tracking-wide text-primary/80">
-                    <span>{s.actor ?? "Supervisor"}</span>
-                    {s.target && <span aria-hidden="true">→</span>}
-                    {s.target && <span>{s.target}</span>}
+        <ol
+          id={contentId}
+          className="mt-2 space-y-2"
+        >
+          {trace.map((step) => {
+            const didNotComplete = step.summary
+              .trimStart()
+              .toLowerCase()
+              .startsWith("error:");
+            const summary = didNotComplete
+              ? step.summary.replace(/^\s*error:\s*/i, "")
+              : step.summary;
+
+            return (
+              <li
+                key={step.step}
+                className={cn(
+                  "flex gap-3 border border-border bg-muted/20 p-3 text-sm",
+                  didNotComplete &&
+                    "border-destructive/25 bg-destructive/5",
+                )}
+              >
+                <span
+                  className={cn(
+                    "flex size-6 shrink-0 items-center justify-center border border-border bg-background text-xs font-medium text-muted-foreground tabular-nums",
+                    didNotComplete &&
+                      "border-destructive/30 text-destructive",
+                  )}
+                  aria-hidden="true"
+                >
+                  {step.step}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-medium text-foreground">
+                      {step.label}
+                    </span>
+                    {didNotComplete && (
+                      <Badge variant="destructive">Not Completed</Badge>
+                    )}
                   </div>
-                )}
-                <span className="font-semibold text-foreground/80">{s.label}</span>
-                {s.summary && (
-                  <span className="mt-0.5 block text-muted-foreground">{s.summary}</span>
-                )}
-              </div>
-            </li>
-          ))}
+                  {summary && (
+                    <p className="mt-1 break-words leading-relaxed text-muted-foreground">
+                      {summary}
+                    </p>
+                  )}
+                </div>
+              </li>
+            );
+          })}
         </ol>
       )}
     </div>
@@ -162,12 +211,20 @@ type ChatWorkspaceProps = {
 };
 
 type ChatChartBlock = Extract<ChatContentBlock, { type: "chart" }>;
-type PendingToolKind =
-  | "simulation"
-  | "prediction"
-  | "maintenance"
-  | "data_lookup"
-  | "tools";
+
+/**
+ * What the agent is doing right now, as it reported it.
+ *
+ * This used to be guessed here: a regex over the user's own words picked one of
+ * five "routing" labels, and the UI displayed it as though it were the agent's
+ * decision. It was never the agent's decision — the supervisor chooses its
+ * tools turn by turn, and the label was a client-side prediction of a choice
+ * that had not been made yet. The stream reports the real one.
+ */
+type AgentActivity = {
+  label: string;
+  phase: "running" | "finished";
+};
 
 type ChatChartSpec = {
   metricKey:
@@ -195,80 +252,6 @@ const defaultChartConfig = {
     color: "var(--chart-4)",
   },
 } satisfies ChartConfig;
-
-const advancedModeLabels: Record<QueryMode, string> = {
-  auto: "Auto",
-  data_lookup: "Data lookup",
-  prediction: "Failure prediction",
-  simulation: "Scenario simulation",
-  maintenance: "Maintenance guidance",
-  telemetry: "Data lookup",
-  recommendation: "Maintenance guidance",
-  general: "General fallback",
-};
-
-function inferPendingToolKind(text: string, queryMode: QueryMode): PendingToolKind {
-  const lowerPrompt = text.toLowerCase();
-  const conditionalScenario =
-    /\b(if|what if|would|scenario|simulate|simulation)\b/.test(lowerPrompt) &&
-    /\b(machine\s*[- ]?[a-z]|machine-[a-z])\b/.test(lowerPrompt) &&
-    /\b(at|with|under|if|was|were|would)\b/.test(lowerPrompt);
-
-  if (
-    queryMode === "simulation" ||
-    conditionalScenario ||
-    /\b(simulate|simulation|what if|scenario|generate .*data)\b/.test(
-      lowerPrompt,
-    )
-  ) {
-    return "simulation";
-  }
-
-  if (
-    queryMode === "prediction" ||
-    /\b(predict|prediction|failure probability|forecast|likely fault|remaining useful life)\b/.test(
-      lowerPrompt,
-    )
-  ) {
-    return "prediction";
-  }
-
-  if (
-    queryMode === "maintenance" ||
-    /\b(recommend|maintenance|repair|fix|replace|what should i do)\b/.test(
-      lowerPrompt,
-    )
-  ) {
-    return "maintenance";
-  }
-
-  if (
-    queryMode === "data_lookup" ||
-    /\b(telemetry|temperature|vibration|pressure|power|status|health|latest|which machines)\b/.test(
-      lowerPrompt,
-    )
-  ) {
-    return "data_lookup";
-  }
-
-  return "tools";
-}
-
-function pendingRouteLabel(kind: PendingToolKind, queryMode: QueryMode) {
-  if (queryMode !== "auto") {
-    return `Override: ${advancedModeLabels[queryMode]}`;
-  }
-
-  return (
-    {
-      simulation: "Routing: scenario",
-      prediction: "Routing: prediction",
-      maintenance: "Routing: maintenance",
-      data_lookup: "Routing: data",
-      tools: "Routing automatically",
-    } satisfies Record<PendingToolKind, string>
-  )[kind];
-}
 
 function riskSeverity(risk: number): Severity {
   if (risk >= 80) return "critical";
@@ -534,6 +517,7 @@ function ChatGaugeChart({ block }: { block: ChatChartBlock }) {
           <Badge variant={badgeVariantForSeverity(severity)}>
             {describeMetricState(spec, summary.latest.value)}
           </Badge>
+          <SourceAttribution provenance={block.provenance} />
         </div>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
@@ -568,7 +552,7 @@ function ChatGaugeChart({ block }: { block: ChatChartBlock }) {
           </div>
 
           <div className="grid gap-3">
-            <div className="rounded-lg border border-border/70 bg-muted/30 p-3">
+            <div className="rounded-none border border-border bg-muted/30 p-3">
               <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
                 <span>Operating scale</span>
                 <span>
@@ -614,6 +598,7 @@ function ChatTrendChart({ block }: { block: ChatChartBlock }) {
           <Badge variant={badgeVariantForSeverity(latestSeverity)}>
             {describeMetricState(spec, summary.latest.value)}
           </Badge>
+          <SourceAttribution provenance={block.provenance} />
         </div>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
@@ -850,6 +835,7 @@ function MessageBlocks({ blocks }: { blocks: ChatContentBlock[] }) {
               <Badge variant={badgeVariantForSeverity(block.severity)}>
                 {block.status}
               </Badge>
+              <SourceAttribution provenance={block.provenance} />
             </div>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
@@ -881,7 +867,10 @@ function MessageBlocks({ blocks }: { blocks: ChatContentBlock[] }) {
       renderedBlocks.push(
         <div key={index} className="overflow-x-auto border border-border">
           <div className="border-b border-border bg-muted/40 px-3 py-2">
-            <p className="text-sm font-medium">{block.title}</p>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-sm font-medium">{block.title}</p>
+              <SourceAttribution provenance={block.provenance} />
+            </div>
             <p className="text-xs text-muted-foreground">
               {block.baselineLabel} vs {block.scenarioLabel}
             </p>
@@ -916,8 +905,11 @@ function MessageBlocks({ blocks }: { blocks: ChatContentBlock[] }) {
       renderedBlocks.push(
         <div
           key={index}
-          className="overflow-x-auto rounded-lg border border-border/70"
+          className="overflow-x-auto rounded-none border border-border"
         >
+          <div className="border-b border-border p-2">
+            <SourceAttribution provenance={block.provenance} />
+          </div>
           <Table>
             <TableHeader>
               <TableRow>
@@ -954,12 +946,13 @@ function MessageBlocks({ blocks }: { blocks: ChatContentBlock[] }) {
           <div className="flex items-center gap-2 text-sm font-medium">
             <LinkIcon />
             Related links
+            <SourceAttribution provenance={block.provenance} />
           </div>
           {block.links.map((item, linkIndex) => (
             <Link
               key={`${item.href}-${linkIndex}`}
               href={item.href}
-              className="flex flex-col gap-1 rounded-lg border border-border/70 p-2 transition-colors hover:bg-muted"
+              className="flex flex-col gap-1 rounded-none border border-border p-2 hover:bg-muted"
             >
               <span className="text-sm font-medium text-primary">
                 {item.label}
@@ -979,6 +972,94 @@ function MessageBlocks({ blocks }: { blocks: ChatContentBlock[] }) {
   return <div className="flex flex-col gap-3">{renderedBlocks}</div>;
 }
 
+
+/**
+ * The prose of an assistant answer, for filing into the wiki.
+ *
+ * Only text and the summary lines of structured blocks — a chart's raw series
+ * is not knowledge, and pasting it into a wiki page produces noise nobody reads.
+ */
+function plainTextOf(blocks: ChatContentBlock[]): string {
+  const parts: string[] = [];
+  for (const block of blocks) {
+    if (block.type === "text") {
+      parts.push(block.content);
+    } else if (block.type === "status-card") {
+      parts.push(`**${block.title}** — ${block.summary}`);
+      parts.push(
+        block.metrics
+          .map(
+            (metric) =>
+              `- ${metric.label}: ${metric.value}${metric.detail ? ` (${metric.detail})` : ""}`,
+          )
+          .join("\n"),
+      );
+    } else if ("title" in block && typeof block.title === "string") {
+      parts.push(`**${block.title}**`);
+    }
+  }
+  return parts.filter(Boolean).join("\n\n").trim();
+}
+
+function MessageSourceSummary({ blocks }: { blocks: ChatContentBlock[] }) {
+  const provenance = mergeInformationProvenance(
+    blocks.map((block) => block.provenance),
+  );
+  if (!provenance) return null;
+
+  const basisProvenance = provenance.basisSources.length
+    ? {
+        outputSources: provenance.basisSources,
+        basisSources: [],
+        evidence: provenance.evidence,
+      }
+    : null;
+
+  return (
+    <span className="ml-auto inline-flex flex-wrap items-center justify-end gap-1.5">
+      {basisProvenance && (
+        <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+          Based on
+          <SourceAttribution provenance={basisProvenance} />
+        </span>
+      )}
+      <SourceAttribution provenance={provenance} />
+    </span>
+  );
+}
+
+function titleFromPrompt(prompt: string): string {
+  const title = prompt.replace(/\s+/g, " ").trim();
+  return title.length <= 60 ? title : `${title.slice(0, 59).trimEnd()}…`;
+}
+
+function isUntitledThread(title: string): boolean {
+  return (
+    title === "New Conversation" ||
+    /^(?:Thread|Chat) \d{1,2}:\d{2}(?: [ap]m)?$/i.test(title)
+  );
+}
+
+function threadReadStateKey(userId: string): string {
+  return `chat_thread_read_at:${userId}`;
+}
+
+function readThreadTimestamps(userId: string): Record<string, string> {
+  try {
+    return JSON.parse(
+      localStorage.getItem(threadReadStateKey(userId)) ?? "{}",
+    ) as Record<string, string>;
+  } catch {
+    return {};
+  }
+}
+
+function writeThreadReadTimestamp(userId: string, thread: ChatThread): void {
+  const readAt = readThreadTimestamps(userId);
+  readAt[thread.id] = thread.updatedAt;
+  localStorage.setItem(threadReadStateKey(userId), JSON.stringify(readAt));
+}
+
 export function ChatWorkspace({ className }: ChatWorkspaceProps) {
   const dataProvider = useDataProvider();
   const { activePersona } = useAuth();
@@ -990,45 +1071,43 @@ export function ChatWorkspace({ className }: ChatWorkspaceProps) {
   const [isLoadingThreads, setIsLoadingThreads] = useState(false);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [isSending, setIsSending] = useState(false);
-  const [assistantProgressText, setAssistantProgressText] = useState(
-    "AI Assistant is planning the request...",
+  const [thinkingThreadId, setThinkingThreadId] = useState<string | null>(null);
+  const [unreadThreadIds, setUnreadThreadIds] = useState<Set<string>>(
+    () => new Set(),
   );
-  const [pendingToolKind, setPendingToolKind] =
-    useState<PendingToolKind>("tools");
+  // What the agent last told us it was doing, and the answer as it is typed.
+  // Both are cleared when a turn starts and again when it ends.
+  const [activity, setActivity] = useState<AgentActivity | null>(null);
+  const [streamedAnswer, setStreamedAnswer] = useState("");
   const [prompt, setPrompt] = useState("");
-  const [queryMode, setQueryMode] = useState<QueryMode>("auto");
-  const [advancedMachineId, setAdvancedMachineId] = useState<string>("auto");
+  const [pinnedMachineId, setPinnedMachineId] = useState<string>("auto");
   const [machines, setMachines] = useState<MachineSummary[]>([]);
+  const [threadError, setThreadError] = useState<UserFacingError | null>(null);
+  const [conversationError, setConversationError] = useState<UserFacingError | null>(null);
+  const [composerError, setComposerError] = useState<UserFacingError | null>(null);
 
-  // API key / LLM provider settings
-  const [apiKey, setApiKey] = useState<string>(() =>
-    typeof window !== "undefined"
-      ? (localStorage.getItem("chat_api_key") ?? "")
-      : "",
-  );
-  const [llmProvider, setLlmProvider] = useState<LlmProvider>(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("chat_llm_provider");
-      if (stored === "openai" || stored === "gemini" || stored === "ollama" || stored === "deepseek")
-        return stored;
-    }
-    return "openai";
-  });
-  const [apiKeyDraft, setApiKeyDraft] = useState("");
-  const [llmProviderDraft, setLlmProviderDraft] =
-    useState<LlmProvider>("openai");
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const [isCreatingThread, setIsCreatingThread] = useState(false);
+  const creatingThreadRef = useRef(false);
 
   // Rename dialog state
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
   const [renamingThread, setRenamingThread] = useState<ChatThread | null>(null);
   const [renameValue, setRenameValue] = useState("");
+  const activeThreadIdRef = useRef<string | null>(null);
 
   const activeThread = useMemo(
     () => threads.find((thread) => thread.id === activeThreadId) ?? null,
     [threads, activeThreadId],
   );
+  const pinnedMachine = useMemo(
+    () => machines.find((machine) => machine.id === pinnedMachineId) ?? null,
+    [machines, pinnedMachineId],
+  );
+
+  useEffect(() => {
+    activeThreadIdRef.current = activeThreadId;
+  }, [activeThreadId]);
+
   useEffect(() => {
     if (!activePersona) {
       return;
@@ -1046,11 +1125,33 @@ export function ChatWorkspace({ className }: ChatWorkspaceProps) {
         }
 
         setThreads(loadedThreads);
+        const storedReadAt = readThreadTimestamps(activeUserId);
+        if (Object.keys(storedReadAt).length === 0) {
+          localStorage.setItem(
+            threadReadStateKey(activeUserId),
+            JSON.stringify(
+              Object.fromEntries(
+                loadedThreads.map((thread) => [thread.id, thread.updatedAt]),
+              ),
+            ),
+          );
+          setUnreadThreadIds(new Set());
+        } else {
+          setUnreadThreadIds(
+            new Set(
+              loadedThreads
+                .filter(
+                  (thread) =>
+                    storedReadAt[thread.id] === undefined ||
+                    storedReadAt[thread.id] < thread.updatedAt,
+                )
+                .map((thread) => thread.id),
+            ),
+          );
+        }
         setActiveThreadId((current) => current ?? loadedThreads[0]?.id ?? null);
       } catch (error) {
-        toast.error(
-          error instanceof Error ? error.message : "Unable to load threads",
-        );
+        setThreadError(toUserFacingError(error, "chat.load"));
       } finally {
         if (active) {
           setIsLoadingThreads(false);
@@ -1064,6 +1165,24 @@ export function ChatWorkspace({ className }: ChatWorkspaceProps) {
       active = false;
     };
   }, [activePersona, dataProvider]);
+
+  useEffect(() => {
+    if (
+      !activePersona ||
+      !activeThread ||
+      document.visibilityState !== "visible"
+    ) {
+      return;
+    }
+
+    writeThreadReadTimestamp(activePersona.id, activeThread);
+    setUnreadThreadIds((current) => {
+      if (!current.has(activeThread.id)) return current;
+      const next = new Set(current);
+      next.delete(activeThread.id);
+      return next;
+    });
+  }, [activePersona, activeThread]);
 
   useEffect(() => {
     if (!activePersona) {
@@ -1085,9 +1204,10 @@ export function ChatWorkspace({ className }: ChatWorkspaceProps) {
           setMachines(loadedMachines);
         }
       } catch (error) {
-        toast.error(
-          error instanceof Error ? error.message : "Unable to load machines",
-        );
+        setComposerError(toUserFacingError(error, "data.load", {
+          title: "Machine choices could not be loaded",
+          message: "Try again later or continue with automatic machine selection.",
+        }));
       }
     }
 
@@ -1117,9 +1237,7 @@ export function ChatWorkspace({ className }: ChatWorkspaceProps) {
 
         setMessages(loaded.messages);
       } catch (error) {
-        toast.error(
-          error instanceof Error ? error.message : "Unable to load messages",
-        );
+        setConversationError(toUserFacingError(error, "chat.load"));
       } finally {
         if (active) {
           setIsLoadingMessages(false);
@@ -1143,63 +1261,33 @@ export function ChatWorkspace({ className }: ChatWorkspaceProps) {
       messageScrollAreaRef.current.scrollHeight;
   }, [messages]);
 
-  useEffect(() => {
-    if (!isSending) {
-      return;
-    }
-
-    setAssistantProgressText("AI Assistant is planning the request...");
-    const planningTimer = window.setTimeout(() => {
-      setAssistantProgressText(
-        pendingToolKind === "simulation"
-          ? "AI Assistant has triggered the simulation. Waiting for the simulator to finish..."
-          : pendingToolKind === "prediction"
-            ? "AI Assistant is running the prediction..."
-            : pendingToolKind === "maintenance"
-              ? "AI Assistant is gathering maintenance guidance..."
-              : pendingToolKind === "data_lookup"
-                ? "AI Assistant is checking machine data..."
-                : "AI Assistant is running the required tool and waiting for results...",
-      );
-    }, 1600);
-    const longRunningTimer = window.setTimeout(() => {
-      setAssistantProgressText(
-        pendingToolKind === "simulation"
-          ? "Simulation is still running. This can take a while for longer horizons..."
-          : pendingToolKind === "maintenance"
-            ? "Still gathering the relevant maintenance context..."
-            : "Still waiting for the backend result...",
-      );
-    }, 7000);
-
-    return () => {
-      window.clearTimeout(planningTimer);
-      window.clearTimeout(longRunningTimer);
-    };
-  }, [isSending, pendingToolKind]);
-
   async function createThread() {
-    if (!activePersona) {
+    if (!activePersona || creatingThreadRef.current) {
       return;
     }
+    creatingThreadRef.current = true;
+    setIsCreatingThread(true);
+    setThreadError(null);
 
     try {
       const newThread = await dataProvider.createThread({
         userId: activePersona.id,
-        title: `Thread ${new Date().toLocaleTimeString("en-AU", {
-          hour: "2-digit",
-          minute: "2-digit",
-        })}`,
+        title: "New Conversation",
       });
 
       setThreads((current) => [newThread, ...current]);
+      activeThreadIdRef.current = newThread.id;
       setActiveThreadId(newThread.id);
+      writeThreadReadTimestamp(activePersona.id, newThread);
       setMessages([]);
       toast.success("New thread created");
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Unable to create thread",
-      );
+      setThreadError(toUserFacingError(error, "data.create", {
+        title: "A new conversation could not be created",
+      }));
+    } finally {
+      creatingThreadRef.current = false;
+      setIsCreatingThread(false);
     }
   }
 
@@ -1220,13 +1308,12 @@ export function ChatWorkspace({ className }: ChatWorkspaceProps) {
         current.map((t) => (t.id === updated.id ? updated : t)),
       );
       toast.success("Thread renamed");
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Unable to rename thread",
-      );
-    } finally {
       setRenameDialogOpen(false);
       setRenamingThread(null);
+    } catch (error) {
+      setThreadError(toUserFacingError(error, "data.save", {
+        title: "The conversation could not be renamed",
+      }));
     }
   }
 
@@ -1241,29 +1328,32 @@ export function ChatWorkspace({ className }: ChatWorkspaceProps) {
       }
       toast.success("Thread deleted");
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Unable to delete thread",
-      );
+      setThreadError(toUserFacingError(error, "data.delete", {
+        title: "The conversation could not be deleted",
+      }));
     }
   }
 
-  function openSettings() {
-    setApiKeyDraft(apiKey);
-    setLlmProviderDraft(llmProvider);
-    setSettingsOpen(true);
-  }
-
-  function saveSettings() {
-    setApiKey(apiKeyDraft);
-    setLlmProvider(llmProviderDraft);
-    localStorage.setItem("chat_api_key", apiKeyDraft);
-    localStorage.setItem("chat_llm_provider", llmProviderDraft);
-    setSettingsOpen(false);
-    toast.success("Settings saved");
-  }
-
   async function sendPrompt(text: string) {
+    // Creating a thread must finish before a send can choose its destination.
+    // Guard keyboard sends synchronously too, and preserve the draft.
+    if (creatingThreadRef.current) return;
     if (!activePersona) {
+      return;
+    }
+
+    // The Send button is disabled while a turn is in flight; Ctrl+Enter was
+    // not, so the keyboard could start a second turn on top of the first. Two
+    // turns on one thread interleave: they share `streamedAnswer`, the first to
+    // finish clears `isSending` for both, and the last to finish wins the
+    // `setMessages` that replaces the list. The backend rejects the overlap
+    // too — this stops the client asking for something it knows will be denied.
+    if (isSending) {
+      toast.info(
+        thinkingThreadId === activeThreadId
+          ? "The AI Assistant is still answering this conversation."
+          : "The AI Assistant is answering another conversation. Try again when it finishes.",
+      );
       return;
     }
 
@@ -1275,32 +1365,45 @@ export function ChatWorkspace({ className }: ChatWorkspaceProps) {
     setPrompt("");
 
     // Auto-create thread if none exists
-    let threadId = activeThreadId;
+    let threadId = activeThreadIdRef.current;
     if (!threadId) {
-      if (isCreatingThread) return; // Prevent race condition
+      creatingThreadRef.current = true;
       setIsCreatingThread(true);
 
       try {
         const newThread = await dataProvider.createThread({
           userId: activePersona.id,
-          title: `Chat ${new Date().toLocaleTimeString("en-AU", {
-            hour: "2-digit",
-            minute: "2-digit",
-          })}`,
+          title: "New Conversation",
         });
         setThreads((current) => [newThread, ...current]);
         threadId = newThread.id;
+        activeThreadIdRef.current = newThread.id;
         setActiveThreadId(newThread.id);
         toast.success("New conversation started");
       } catch (error) {
+        creatingThreadRef.current = false;
         setIsCreatingThread(false);
-        toast.error(
-          error instanceof Error ? error.message : "Unable to create thread",
-        );
+        setPrompt(value);
+        setComposerError(toUserFacingError(error, "data.create", {
+          title: "A new conversation could not be started",
+          message: "Your message is still in the composer. Try sending it again.",
+        }));
         return;
       }
+      creatingThreadRef.current = false;
       setIsCreatingThread(false);
     }
+
+    const generatedTitle = titleFromPrompt(value);
+    setThreads((current) =>
+      current.map((thread) =>
+        thread.id === threadId &&
+        messages.length === 0 &&
+        isUntitledThread(thread.title)
+          ? { ...thread, title: generatedTitle }
+          : thread,
+      ),
+    );
 
     // Optimistically show the user message immediately
     const optimisticMessage: ChatMessage = {
@@ -1311,21 +1414,36 @@ export function ChatWorkspace({ className }: ChatWorkspaceProps) {
       createdAt: new Date().toISOString(),
     };
     setMessages((current) => [...current, optimisticMessage]);
-    setPendingToolKind(inferPendingToolKind(value, queryMode));
+    setActivity(null);
+    setStreamedAnswer("");
     setIsSending(true);
+    setThinkingThreadId(threadId);
+    setComposerError(null);
 
     try {
-      const updated = await dataProvider.sendMessage({
-        threadId: threadId,
-        userId: activePersona.id,
-        text: value,
-        queryMode,
-        machineId: advancedMachineId !== "auto" ? advancedMachineId : undefined,
-        apiKey: apiKey || undefined,
-        llmProvider,
-      });
+      const updated = await dataProvider.sendMessageStreamed(
+        {
+          threadId: threadId,
+          userId: activePersona.id,
+          text: value,
+          machineId:
+            pinnedMachineId !== "auto" ? pinnedMachineId : undefined,
+        },
+        (event: ChatStreamEvent) => {
+          if (event.type === "status") {
+            setActivity({ label: event.label, phase: event.phase });
+          } else if (event.type === "delta") {
+            setStreamedAnswer((current) => current + event.text);
+          }
+        },
+      );
 
-      setMessages(updated.messages);
+      if (activeThreadIdRef.current === threadId) {
+        setMessages(updated.messages);
+        writeThreadReadTimestamp(activePersona.id, updated.thread);
+      } else {
+        setUnreadThreadIds((current) => new Set(current).add(threadId));
+      }
       setThreads((current) =>
         current
           .map((thread) =>
@@ -1338,11 +1456,21 @@ export function ChatWorkspace({ className }: ChatWorkspaceProps) {
       setMessages((current) =>
         current.filter((m) => m.id !== optimisticMessage.id),
       );
-      toast.error(
-        error instanceof Error ? error.message : "Unable to send message",
-      );
+      // A 409 is not a failure the user needs the stack of — the thread is busy
+      // and the message simply was not sent. Say that, and put the text back in
+      // the box so it is not lost.
+      if (isThreadBusy(error)) {
+        setPrompt(value);
+        toast.info("Still answering your previous message. Try again in a moment.");
+      } else {
+        setPrompt(value);
+        setComposerError(toUserFacingError(error, "chat.send"));
+      }
     } finally {
       setIsSending(false);
+      setThinkingThreadId(null);
+      setActivity(null);
+      setStreamedAnswer("");
     }
   }
 
@@ -1360,9 +1488,9 @@ export function ChatWorkspace({ className }: ChatWorkspaceProps) {
               <ChatCircleDotsIcon />
               My Chats
             </CardTitle>
-            <Button size="xs" onClick={() => void createThread()}>
+            <Button size="xs" onClick={() => void createThread()} disabled={isCreatingThread}>
               <PlusIcon data-icon="inline-start" />
-              New
+              {isCreatingThread ? "Creating…" : "New"}
             </Button>
           </div>
           <CardDescription className="text-sm">
@@ -1370,24 +1498,54 @@ export function ChatWorkspace({ className }: ChatWorkspaceProps) {
           </CardDescription>
         </CardHeader>
         <CardContent className="min-h-0">
-          <ScrollArea className="h-136 pr-2">
-            <div className="flex flex-col gap-2">
+          {threadError ? <ErrorNotice className="mb-3" error={threadError} /> : null}
+          <ScrollArea className="h-136 pr-2 [&_[data-slot=scroll-area-viewport]]:overflow-x-hidden">
+            <div className="flex w-full min-w-0 max-w-full flex-col gap-2">
               {threads.map((thread) => (
                 <div
                   key={thread.id}
                   className={cn(
-                    "group flex items-start gap-1 rounded-lg border border-border/70 text-sm transition-colors hover:bg-muted",
-                    thread.id === activeThreadId && "border-primary",
+                    "group flex w-full min-w-0 max-w-full items-start gap-1 overflow-hidden rounded-none border border-border text-sm transition-colors hover:bg-muted",
+                    thread.id === activeThreadId &&
+                      "border-primary bg-primary/5 shadow-sm",
                   )}
                 >
                   <button
                     type="button"
-                    className="flex min-w-0 flex-1 flex-col gap-1 p-3 text-left"
-                    onClick={() => setActiveThreadId(thread.id)}
+                    className="flex w-0 min-w-0 flex-1 flex-col gap-1 p-3 text-left"
+                    onClick={() => {
+                      activeThreadIdRef.current = thread.id;
+                      setActiveThreadId(thread.id);
+                    }}
+                    aria-pressed={thread.id === activeThreadId}
                   >
-                    <span className="truncate font-medium">{thread.title}</span>
-                    <span className="text-sm text-muted-foreground">
-                      {formatDateTime(thread.updatedAt)}
+                    <span className="block w-full truncate font-medium">
+                      {thread.title}
+                    </span>
+                    <span className="flex w-full min-w-0 items-center justify-between gap-2">
+                      <span className="min-w-0 truncate text-sm text-muted-foreground">
+                        {formatDateTime(thread.updatedAt)}
+                      </span>
+                      {thinkingThreadId === thread.id ? (
+                        <span
+                          className="flex shrink-0 items-center gap-1 text-xs font-medium text-muted-foreground"
+                          role="status"
+                        >
+                          <SpinnerIcon
+                            className="size-3 animate-spin"
+                            aria-hidden="true"
+                          />
+                          Thinking…
+                        </span>
+                      ) : unreadThreadIds.has(thread.id) ? (
+                        <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-primary">
+                          <span
+                            className="size-1.5 rounded-full bg-primary"
+                            aria-hidden="true"
+                          />
+                          New
+                        </span>
+                      ) : null}
                     </span>
                   </button>
                   <DropdownMenu>
@@ -1395,8 +1553,8 @@ export function ChatWorkspace({ className }: ChatWorkspaceProps) {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="mt-1 mr-1 size-7 shrink-0 opacity-0 group-hover:opacity-100 focus:opacity-100"
-                        aria-label="Thread options"
+                        className="mt-1 mr-1 size-7 shrink-0 opacity-60 hover:opacity-100 focus-visible:opacity-100"
+                        aria-label={`Options for ${thread.title}`}
                       >
                         <DotsThreeVerticalIcon />
                       </Button>
@@ -1445,30 +1603,11 @@ export function ChatWorkspace({ className }: ChatWorkspaceProps) {
         </CardHeader>
 
         <CardContent className="flex h-full min-h-0 flex-col gap-3">
-          {activeThread && (
-            <div>
-              {process.env.NEXT_PUBLIC_DEMO_MODE === "true" && (
-                <p className="mb-2 text-xs text-muted-foreground">Try a suggested prompt to see telemetry tables, charts, prediction, or simulation.</p>
-              )}
-              <div className="flex flex-wrap gap-2">{activeThread.promptSuggestions.map((suggestion) => (
-                <Button
-                  key={suggestion}
-                  variant="outline"
-                  size="xs"
-                  onClick={() => setPrompt(suggestion)}
-                >
-                  <LightningIcon data-icon="inline-start" />
-                  {suggestion}
-                </Button>
-              ))}</div>
-            </div>
-          )}
-
-          <Separator />
+          {conversationError ? <ErrorNotice error={conversationError} /> : null}
 
           <div
             ref={messageScrollAreaRef}
-            className="h-[60rem] overflow-y-auto rounded-xl border border-border/70 bg-background/45 p-4"
+            className="h-[60rem] overflow-y-auto rounded-none border border-border p-3"
           >
             <div className="flex flex-col gap-3 pr-3">
               {isLoadingMessages && (
@@ -1489,6 +1628,28 @@ export function ChatWorkspace({ className }: ChatWorkspaceProps) {
                       maintenance concern.
                     </EmptyDescription>
                   </EmptyHeader>
+                  {activeThread &&
+                    activeThread.promptSuggestions.length > 0 && (
+                      <EmptyContent className="max-w-2xl gap-3">
+                        <p className="text-sm font-medium text-foreground">
+                          Try a Starter Prompt
+                        </p>
+                        <div className="grid w-full gap-2 md:grid-cols-2">
+                          {activeThread.promptSuggestions.map((suggestion) => (
+                            <Button
+                              key={suggestion}
+                              variant="outline"
+                              className="h-auto min-h-12 justify-center whitespace-normal px-3 py-2.5 text-center"
+                              onClick={() => setPrompt(suggestion)}
+                            >
+                              <span className="min-w-0 leading-snug">
+                                {suggestion}
+                              </span>
+                            </Button>
+                          ))}
+                        </div>
+                      </EmptyContent>
+                    )}
                 </Empty>
               )}
 
@@ -1496,62 +1657,118 @@ export function ChatWorkspace({ className }: ChatWorkspaceProps) {
                 <div
                   key={message.id}
                   className={cn(
-                    "flex max-w-[88%] flex-col gap-2 rounded-xl border border-border/70 p-3.5 text-sm shadow-sm",
+                    "flex max-w-[95%] flex-col gap-2 rounded-none border border-border p-3 text-sm",
                     message.role === "assistant"
                       ? "self-start bg-card"
                       : "self-end bg-primary/10",
                   )}
                 >
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    {message.role === "assistant" ? (
-                      <RobotIcon />
-                    ) : (
-                      <UserIcon />
+                  <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                    <span className="flex items-center gap-2">
+                      {message.role === "assistant" ? (
+                        <RobotIcon aria-hidden="true" />
+                      ) : (
+                        <UserIcon aria-hidden="true" />
+                      )}
+                      {message.role === "assistant" ? "AI Assistant" : "You"}
+                    </span>
+                    {message.role === "assistant" && (
+                      <MessageSourceSummary blocks={message.contentBlocks} />
                     )}
-                    {message.role === "assistant" ? "AI Assistant" : "You"}
                   </div>
                   <MessageBlocks blocks={message.contentBlocks} />
                   {message.role === "assistant" &&
                     message.agentTrace &&
                     message.agentTrace.length > 0 && (
-                      <AgentTracePanel trace={message.agentTrace} />
+                      <SourcesAndActionsPanel trace={message.agentTrace} />
                     )}
+                  {/* A good answer is worth writing down once instead of being
+                      re-derived next week. This files it into the wiki. */}
+                  {message.role === "assistant" && (
+                    <SaveToWikiButton
+                      messageId={message.id}
+                      text={plainTextOf(message.contentBlocks)}
+                    />
+                  )}
                 </div>
               ))}
 
-              {isSending && (
-                <div className="flex max-w-[88%] flex-col gap-2 self-start rounded-xl border border-border/70 bg-card p-3.5 text-sm shadow-sm">
+              {isSending && thinkingThreadId === activeThreadId && (
+                <div className="flex max-w-[95%] flex-col gap-2 self-start rounded-none border border-border bg-card p-3 text-sm">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <RobotIcon />
                     AI Assistant
-                    <span className="ml-1 border-l border-border/70 pl-2 text-[11px] font-normal text-muted-foreground">
-                      {pendingRouteLabel(pendingToolKind, queryMode)}
-                    </span>
+                    {activity && (
+                      <span className="ml-1 rounded-none border-l border-border/70 pl-2 text-[11px] font-normal text-muted-foreground">
+                        {activity.label}
+                        {activity.phase === "running" ? "..." : ""}
+                      </span>
+                    )}
                   </div>
-                  <p className="animate-pulse text-sm text-muted-foreground">
-                    {assistantProgressText}
-                  </p>
+                  {streamedAnswer ? (
+                    <p className="whitespace-pre-wrap text-sm">
+                      {streamedAnswer}
+                    </p>
+                  ) : (
+                    <p className="animate-pulse text-sm text-muted-foreground">
+                      {activity
+                        ? `${activity.label}...`
+                        : "AI Assistant is reading your message..."}
+                    </p>
+                  )}
                 </div>
               )}
             </div>
           </div>
 
-          {activeThread && activeThread.followUpSuggestions.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {activeThread.followUpSuggestions.map((suggestion) => (
-                <Button
-                  key={suggestion}
-                  variant="ghost"
-                  size="xs"
-                  onClick={() => setPrompt(suggestion)}
-                >
-                  {suggestion}
-                </Button>
-              ))}
-            </div>
-          )}
+          {activeThread &&
+            messages.some((message) => message.role === "assistant") &&
+            activeThread.followUpSuggestions.length > 0 && (
+              <div
+                className="flex flex-wrap gap-2 border-t border-border pt-3"
+                aria-label="Additional prompts"
+              >
+                {activeThread.followUpSuggestions.map((suggestion) => (
+                  <Button
+                    key={suggestion}
+                    variant="outline"
+                    size="sm"
+                    className="h-auto whitespace-normal text-left"
+                    onClick={() => setPrompt(suggestion)}
+                  >
+                    <LightningIcon
+                      className="size-3.5 text-muted-foreground"
+                      aria-hidden="true"
+                    />
+                    {suggestion}
+                  </Button>
+                ))}
+              </div>
+            )}
 
+          {composerError ? <ErrorNotice error={composerError} /> : null}
           <InputGroup className="min-h-28 items-start">
+            {pinnedMachineId !== "auto" && (
+              <InputGroupAddon
+                align="block-start"
+                className="w-full border-b border-border"
+              >
+                <Badge
+                  variant="outline"
+                  className="gap-1.5 border-foreground/20 bg-muted px-2 py-1 font-normal text-foreground"
+                >
+                  Machine: {pinnedMachine?.name ?? pinnedMachineId}
+                  <button
+                    type="button"
+                    className="ml-0.5 text-foreground/70 transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    onClick={() => setPinnedMachineId("auto")}
+                    aria-label="Remove pinned machine"
+                  >
+                    <XIcon className="size-3" aria-hidden="true" />
+                  </button>
+                </Badge>
+              </InputGroupAddon>
+            )}
             <InputGroupTextarea
               aria-label="Prompt"
               placeholder="Ask the AI Assistant to diagnose machine condition or run a scenario..."
@@ -1572,181 +1789,42 @@ export function ChatWorkspace({ className }: ChatWorkspaceProps) {
                 Ctrl+Enter to send
               </span>
               <div className="ml-auto flex items-center gap-2">
-                <Popover
-                  open={settingsOpen}
-                  onOpenChange={(open) => {
-                    if (open) openSettings();
-                    else setSettingsOpen(false);
-                  }}
-                >
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7"
-                      aria-label="API key settings"
-                    >
-                      {apiKey ? (
-                        <KeyIcon className="text-primary" />
-                      ) : (
-                        <GearIcon />
-                      )}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent align="end" className="w-80">
-                    <div className="flex flex-col gap-3">
-                      <div className="flex flex-col gap-1">
-                        <p className="text-sm font-medium">LLM Settings</p>
-                        <p className="text-xs text-muted-foreground">
-                          Enter your API key to use your own account. Keys are
-                          stored locally and never sent to our servers.
-                        </p>
-                      </div>
-                      <div className="flex flex-col gap-1.5">
-                        <Label
-                          htmlFor="llm-provider-select"
-                          className="text-xs"
-                        >
-                          Provider
-                        </Label>
-                        <Select
-                          value={llmProviderDraft}
-                          onValueChange={(value) =>
-                            setLlmProviderDraft(value as LlmProvider)
-                          }
-                        >
-                          <SelectTrigger
-                            id="llm-provider-select"
-                            className="h-8 rounded-lg text-xs"
-                          >
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="openai">OpenAI</SelectItem>
-                            <SelectItem value="gemini">
-                              Google Gemini
-                            </SelectItem>
-                            <SelectItem value="deepseek">DeepSeek</SelectItem>
-                            <SelectItem value="ollama">
-                              Ollama (local)
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      {llmProviderDraft !== "ollama" && (
-                        <div className="flex flex-col gap-1.5">
-                          <Label htmlFor="api-key-input" className="text-xs">
-                            API Key
-                          </Label>
-                          <Input
-                            id="api-key-input"
-                            type="password"
-                            placeholder={
-                              llmProviderDraft === "gemini"
-                                ? "AIza..."
-                                : llmProviderDraft === "deepseek"
-                                  ? "sk-... (DeepSeek key)"
-                                  : "sk-..."
-                            }
-                            value={apiKeyDraft}
-                            onChange={(e) => setApiKeyDraft(e.target.value)}
-                            className="h-8 rounded-lg text-xs font-mono"
-                          />
-                        </div>
-                      )}
-                      <Button
-                        size="sm"
-                        className="w-full"
-                        onClick={saveSettings}
-                      >
-                        Save
-                      </Button>
-                      {apiKey && (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="w-full text-destructive hover:text-destructive"
-                          onClick={() => {
-                            setApiKeyDraft("");
-                            saveSettings();
-                          }}
-                        >
-                          Clear saved key
-                        </Button>
-                      )}
-                    </div>
-                  </PopoverContent>
-                </Popover>
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-7">
-                      {queryMode === "auto"
-                        ? "Advanced"
-                        : advancedModeLabels[queryMode]}
+                    <Button variant="outline" size="sm" className="h-7">
+                      Choose Machine
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent align="end" className="w-80">
                     <div className="flex flex-col gap-3">
                       <div className="flex flex-col gap-1">
-                        <p className="text-sm font-medium">Advanced routing</p>
+                        <p className="text-sm font-medium">Choose Machine</p>
                         <p className="text-xs text-muted-foreground">
-                          Leave this on Auto unless you need to override the
-                          assistant&apos;s tool choice.
+                          This is an advanced setting. Leave it as Automatic for
+                          most questions. Pin a machine only when your prompt is
+                          ambiguous or does not identify one.
                         </p>
-                      </div>
-                      <div className="flex flex-col gap-1.5">
-                        <Label htmlFor="chat-mode-select" className="text-xs">
-                          Task override
-                        </Label>
-                        <Select
-                          value={queryMode}
-                          onValueChange={(value) =>
-                            setQueryMode(value as QueryMode)
-                          }
-                        >
-                          <SelectTrigger
-                            id="chat-mode-select"
-                            className="h-8 rounded-lg text-xs"
-                          >
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="auto">Auto</SelectItem>
-                            <SelectItem value="data_lookup">
-                              Data lookup
-                            </SelectItem>
-                            <SelectItem value="prediction">
-                              Failure prediction
-                            </SelectItem>
-                            <SelectItem value="simulation">
-                              Scenario simulation
-                            </SelectItem>
-                            <SelectItem value="maintenance">
-                              Maintenance guidance
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
                       </div>
                       <div className="flex flex-col gap-1.5">
                         <Label
                           htmlFor="chat-machine-select"
                           className="text-xs"
                         >
-                          Machine override
+                          Machine Context (Advanced)
                         </Label>
                         <Select
-                          value={advancedMachineId}
-                          onValueChange={setAdvancedMachineId}
+                          value={pinnedMachineId}
+                          onValueChange={setPinnedMachineId}
                         >
                           <SelectTrigger
                             id="chat-machine-select"
-                            className="h-8 rounded-lg text-xs"
+                            className="h-8 rounded-none text-xs"
                           >
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="auto">
-                              Infer from message
+                              Automatic from message
                             </SelectItem>
                             {machines.map((machine) => (
                               <SelectItem key={machine.id} value={machine.id}>
@@ -1760,11 +1838,24 @@ export function ChatWorkspace({ className }: ChatWorkspaceProps) {
                   </PopoverContent>
                 </Popover>
                 <InputGroupButton
+                  variant="default"
+                  size="sm"
                   onClick={() => void sendPrompt(prompt)}
-                  disabled={isSending}
+                  disabled={isCreatingThread || (isSending && thinkingThreadId === activeThreadId)}
+                  aria-disabled={isCreatingThread || isSending}
+                  className={cn(
+                    "h-8 px-3",
+                    isSending &&
+                      thinkingThreadId !== activeThreadId &&
+                      "opacity-50",
+                  )}
                 >
                   <PaperPlaneTiltIcon data-icon="inline-start" />
-                  {isSending ? "Sending..." : "Send"}
+                  {isCreatingThread
+                    ? "Creating conversation…"
+                    : isSending && thinkingThreadId === activeThreadId
+                      ? "Sending…"
+                      : "Send"}
                 </InputGroupButton>
               </div>
             </InputGroupAddon>

@@ -1,123 +1,121 @@
-"use client"
+"use client";
 
-import { FormEvent, useEffect, useState } from "react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { FormEvent, useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { ShieldCheckIcon } from "@phosphor-icons/react";
+
+import { AuthPageBackground } from "@/components/auth/auth-page-background";
+import { useAuth } from "@/components/auth/auth-context";
+import { ErrorNotice } from "@/components/feedback/error-notice";
+import { Button } from "@/components/ui/button";
 import {
-  LockKeyOpenIcon,
-  ShieldCheckIcon,
-  WarningCircleIcon,
-} from "@phosphor-icons/react"
-
-import { useAuth } from "@/components/auth/auth-context"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Field, FieldDescription, FieldGroup, FieldLabel, FieldTitle } from "@/components/ui/field"
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Field,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
 import {
   InputOTP,
   InputOTPGroup,
   InputOTPSeparator,
   InputOTPSlot,
-} from "@/components/ui/input-otp"
-import { Input } from "@/components/ui/input"
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+} from "@/components/ui/input-otp";
+import { Input } from "@/components/ui/input";
+import { toUserFacingError, type UserFacingError } from "@/lib/errors/user-facing-error";
 
 type MfaFormProps = {
-  nextPath: string
-}
+  nextPath: string;
+};
 
 export function MfaForm({ nextPath }: MfaFormProps) {
-  const router = useRouter()
-  const { isAuthenticated, isBootstrapping, pendingMfaMethods, pendingMfaToken, verifyMfa } =
-    useAuth()
+  const router = useRouter();
+  const {
+    isAuthenticated,
+    isBootstrapping,
+    pendingMfaMethods,
+    pendingMfaToken,
+    verifyMfa,
+  } = useAuth();
 
-  const [method, setMethod] = useState<"totp" | "backup-code">("totp")
-  const [totpCode, setTotpCode] = useState("")
-  const [backupCode, setBackupCode] = useState("")
-  const [error, setError] = useState<string | null>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [selectedMethod, setSelectedMethod] = useState<"totp" | "backup-code">(
+    "totp",
+  );
+  const [totpCode, setTotpCode] = useState("");
+  const [backupCode, setBackupCode] = useState("");
+  const [error, setError] = useState<UserFacingError | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (isBootstrapping || isAuthenticated) {
-      return
+      return;
     }
 
     if (!pendingMfaToken) {
-      router.replace("/login")
+      router.replace("/login");
     }
-  }, [isAuthenticated, isBootstrapping, pendingMfaToken, router])
+  }, [isAuthenticated, isBootstrapping, pendingMfaToken, router]);
 
-  useEffect(() => {
-    if (!pendingMfaMethods.includes(method) && pendingMfaMethods.length > 0) {
-      setMethod(pendingMfaMethods[0])
-    }
-  }, [method, pendingMfaMethods])
+  const method = pendingMfaMethods.includes(selectedMethod)
+    ? selectedMethod
+    : pendingMfaMethods.includes("totp")
+      ? "totp"
+      : pendingMfaMethods.includes("backup-code")
+        ? "backup-code"
+        : selectedMethod;
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    setError(null)
-    setIsSubmitting(true)
+    event.preventDefault();
+    setError(null);
+    setIsSubmitting(true);
 
     try {
       await verifyMfa({
         method,
         code: method === "totp" ? totpCode : backupCode,
-      })
+      });
 
-      router.push(nextPath)
-      router.refresh()
+      router.push(nextPath);
+      router.refresh();
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : "Unable to verify MFA")
+      setError(toUserFacingError(submitError, "auth.verify-mfa"));
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
   }
 
   return (
-    <div className="grid min-h-screen place-items-center bg-[radial-gradient(circle_at_8%_10%,_var(--accent)_0,_transparent_35%),radial-gradient(circle_at_90%_80%,_var(--secondary)_0,_transparent_40%),linear-gradient(var(--background),var(--background))] p-6">
-      <Card className="w-full max-w-lg">
-        <CardHeader>
-          <CardTitle className="text-lg">Multi-factor Verification</CardTitle>
-          <CardDescription className="text-xs">
-            Confirm your identity with authenticator or backup verification code.
+    <AuthPageBackground>
+      <Card className="w-full max-w-lg p-6">
+        <CardHeader className="text-center">
+          <CardTitle className="text-lg">Verify your identity</CardTitle>
+          <CardDescription className="text-xs text-muted-foreground">
+            Enter the code from your authenticator app to continue.
           </CardDescription>
         </CardHeader>
 
-        <CardContent>
-          <form className="flex flex-col gap-5" onSubmit={onSubmit}>
+        <CardContent className="px-6 pb-2">
+          <form className="flex flex-col gap-6" onSubmit={onSubmit}>
             <FieldGroup>
-              <Field orientation="horizontal">
-                <FieldTitle id="verification-method">Verification Method</FieldTitle>
-                <ToggleGroup
-                  type="single"
-                  value={method}
-                  onValueChange={(value) => {
-                    if (value === "totp" || value === "backup-code") {
-                      setMethod(value)
-                    }
-                  }}
-                  aria-labelledby="verification-method"
-                  spacing={2}
-                >
-                  {pendingMfaMethods.includes("totp") && (
-                    <ToggleGroupItem value="totp">Authenticator</ToggleGroupItem>
-                  )}
-                  {pendingMfaMethods.includes("backup-code") && (
-                    <ToggleGroupItem value="backup-code">Backup Code</ToggleGroupItem>
-                  )}
-                </ToggleGroup>
-              </Field>
-
               {method === "totp" ? (
-                <Field>
-                  <FieldLabel htmlFor="totp-code">6-digit code</FieldLabel>
+                <Field className="items-center text-center">
+                  <FieldLabel className="sr-only" htmlFor="totp-code">
+                    Authenticator code
+                  </FieldLabel>
                   <InputOTP
                     id="totp-code"
                     maxLength={6}
                     value={totpCode}
                     onChange={setTotpCode}
                     autoFocus
+                    containerClassName="justify-center"
                   >
                     <InputOTPGroup>
                       <InputOTPSlot index={0} />
@@ -131,49 +129,78 @@ export function MfaForm({ nextPath }: MfaFormProps) {
                       <InputOTPSlot index={5} />
                     </InputOTPGroup>
                   </InputOTP>
-                  <FieldDescription>
-                    Enter the current code from your authenticator app.
-                  </FieldDescription>
                 </Field>
               ) : (
-                <Field>
-                  <FieldLabel htmlFor="backup-code">Backup code</FieldLabel>
+                <Field className="items-center text-center">
+                  <FieldLabel className="sr-only" htmlFor="backup-code">
+                    Backup code
+                  </FieldLabel>
                   <Input
                     id="backup-code"
+                    className="max-w-xs"
                     value={backupCode}
                     onChange={(event) => setBackupCode(event.target.value)}
                     placeholder="Enter backup code"
                     autoFocus
                   />
-                  <FieldDescription>
-                    Use a one-time backup code when authenticator is unavailable.
+                  <FieldDescription className="text-center text-xs text-muted-foreground/80">
+                    Use a one-time backup code when authenticator is
+                    unavailable.
                   </FieldDescription>
                 </Field>
               )}
             </FieldGroup>
 
-            {error && (
-              <Alert variant="destructive">
-                <WarningCircleIcon />
-                <AlertTitle>Verification failed</AlertTitle>
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
+            {error ? <ErrorNotice error={error} /> : null}
 
-            <Button type="submit" size="lg" disabled={isSubmitting}>
+            <Button
+              type="submit"
+              size="lg"
+              className="mx-auto w-full max-w-sm"
+              disabled={isSubmitting}
+            >
               <ShieldCheckIcon data-icon="inline-start" />
-              {isSubmitting ? "Verifying..." : "Complete sign in"}
+              {isSubmitting ? "Verifying…" : "Complete sign in"}
             </Button>
 
-            <Button variant="ghost" asChild>
-              <Link href="/login">
-                <LockKeyOpenIcon data-icon="inline-start" />
-                Back to login
-              </Link>
-            </Button>
+            <div className="mx-auto grid w-full max-w-sm gap-2 border-t border-border pt-4">
+              {pendingMfaMethods.includes("totp") &&
+              pendingMfaMethods.includes("backup-code") ? (
+                method === "totp" ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="lg"
+                    className="w-full"
+                    onClick={() => setSelectedMethod("backup-code")}
+                  >
+                    Use a backup code instead
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="lg"
+                    className="w-full"
+                    onClick={() => setSelectedMethod("totp")}
+                  >
+                    Use authenticator app instead
+                  </Button>
+                )
+              ) : null}
+
+              <Button
+                variant="outline"
+                size="lg"
+                className="w-full bg-muted/50 hover:bg-muted"
+                asChild
+              >
+                <Link href="/login">Back to sign in</Link>
+              </Button>
+            </div>
           </form>
         </CardContent>
       </Card>
-    </div>
-  )
+    </AuthPageBackground>
+  );
 }

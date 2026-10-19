@@ -59,5 +59,24 @@ export async function currentUserCanAccessMachine(machineId: string) {
     return false
   }
 
-  return getDataProvider().userHasMachineAccess(context.user.id, machineId)
+  const machines = await getDataProvider().listMachines()
+  return context.user.role === "admin" || machines.some((machine) => machine.id === machineId)
+}
+
+/**
+ * Live Monitor access: the legacy catalog check, or the backend's own authorisation of
+ * the entity's live feed (machines registered only in Machine Registry are not in the
+ * catalog, but the backend still scopes `/live` to the signed-in user).
+ */
+export async function currentUserCanMonitorEntity(entityId: string) {
+  if (await currentUserCanAccessMachine(entityId)) {
+    return true
+  }
+
+  try {
+    await getDataProvider().getEntityLiveStatus(entityId, { limit: 1 })
+    return true
+  } catch {
+    return false
+  }
 }

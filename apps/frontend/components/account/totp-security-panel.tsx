@@ -11,11 +11,11 @@ import {
   QrCodeIcon,
   ShieldCheckIcon,
   ShieldSlashIcon,
-  WarningCircleIcon,
 } from "@phosphor-icons/react";
 import QRCode from "qrcode";
 import { toast } from "sonner";
 
+import { ErrorNotice } from "@/components/feedback/error-notice";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -55,6 +55,7 @@ import type {
   TotpSetupResult,
   TotpStatus,
 } from "@/lib/domain/types";
+import { toUserFacingError, type UserFacingError } from "@/lib/errors/user-facing-error";
 
 type PasswordAction = "enable" | "disable" | "regenerate";
 
@@ -102,10 +103,11 @@ export function TotpSecurityPanel() {
     null,
   );
   const [password, setPassword] = useState("");
-  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<UserFacingError | null>(null);
   const [confirmCode, setConfirmCode] = useState("");
-  const [confirmError, setConfirmError] = useState<string | null>(null);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const [confirmError, setConfirmError] = useState<UserFacingError | null>(null);
+  const [loadError, setLoadError] = useState<UserFacingError | null>(null);
+  const [actionError, setActionError] = useState<UserFacingError | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmittingPassword, setIsSubmittingPassword] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
@@ -122,10 +124,10 @@ export function TotpSecurityPanel() {
     try {
       setStatus(await provider.getTotpStatus());
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Unable to load TOTP status";
-      setLoadError(message);
-      toast.error(message);
+      setLoadError(toUserFacingError(error, "data.load", {
+        title: "Security settings could not be loaded",
+        message: "Authenticator and backup-code status is unavailable.",
+      }));
     } finally {
       setIsLoading(false);
     }
@@ -179,11 +181,12 @@ export function TotpSecurityPanel() {
   }
 
   async function copyText(text: string, successMessage: string) {
+    setActionError(null);
     try {
       await navigator.clipboard.writeText(text);
       toast.success(successMessage);
     } catch {
-      toast.error("Unable to copy to clipboard");
+      setActionError(toUserFacingError(null, "clipboard.copy"));
     }
   }
 
@@ -221,9 +224,9 @@ export function TotpSecurityPanel() {
       setPasswordAction(null);
       setPassword("");
     } catch (error) {
-      setPasswordError(
-        error instanceof Error ? error.message : "Unable to confirm password",
-      );
+      setPasswordError(toUserFacingError(error, "auth.security", {
+        title: "Password could not be confirmed",
+      }));
     } finally {
       setIsSubmittingPassword(false);
     }
@@ -250,9 +253,10 @@ export function TotpSecurityPanel() {
       setConfirmCode("");
       toast.success("TOTP enabled");
     } catch (error) {
-      setConfirmError(
-        error instanceof Error ? error.message : "Unable to verify TOTP code",
-      );
+      setConfirmError(toUserFacingError(error, "auth.security", {
+        title: "Authenticator setup could not be completed",
+        message: "The verification code was not accepted and two-factor authentication remains unchanged.",
+      }));
     } finally {
       setIsConfirming(false);
     }
@@ -274,6 +278,7 @@ export function TotpSecurityPanel() {
           </CardHeader>
 
           <CardContent className="flex flex-col gap-4 p-5">
+            {actionError ? <ErrorNotice error={actionError} /> : null}
             {isLoading ? (
               <div className="flex flex-col gap-2">
                 <Skeleton className="h-6 w-32" />
@@ -281,11 +286,7 @@ export function TotpSecurityPanel() {
                 <Skeleton className="h-9 w-36" />
               </div>
             ) : loadError ? (
-              <Alert variant="destructive">
-                <WarningCircleIcon />
-                <AlertTitle>Unable to load security settings</AlertTitle>
-                <AlertDescription>{loadError}</AlertDescription>
-              </Alert>
+              <ErrorNotice error={loadError} actionLabel="Try Again" onAction={() => void loadStatus()} />
             ) : (
               <div className="flex flex-col gap-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
@@ -431,11 +432,7 @@ export function TotpSecurityPanel() {
               </FieldGroup>
 
               {confirmError && (
-                <Alert variant="destructive">
-                  <WarningCircleIcon />
-                  <AlertTitle>Unable to enable TOTP</AlertTitle>
-                  <AlertDescription>{confirmError}</AlertDescription>
-                </Alert>
+                <ErrorNotice error={confirmError} />
               )}
 
               <div className="flex flex-wrap gap-2">
@@ -537,11 +534,7 @@ export function TotpSecurityPanel() {
             </Field>
 
             {passwordError && (
-              <Alert variant="destructive">
-                <WarningCircleIcon />
-                <AlertTitle>Confirmation failed</AlertTitle>
-                <AlertDescription>{passwordError}</AlertDescription>
-              </Alert>
+              <ErrorNotice error={passwordError} />
             )}
 
             <DialogFooter>

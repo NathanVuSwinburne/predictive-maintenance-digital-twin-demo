@@ -1,10 +1,10 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { CheckCircleIcon, WarningCircleIcon } from "@phosphor-icons/react";
-import { toast } from "sonner";
+import { ErrorNotice } from "@/components/feedback/error-notice";
 
-import { Badge } from "@/components/ui/badge";
+import { PredictionResult } from "@/components/simulator/prediction-result";
+import { ModelReadinessPanel } from "@/components/machines/model-readiness-panel";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -22,18 +22,20 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useDataProvider } from "@/hooks/use-data-provider";
-import { badgeVariantForSeverity, formatDateTime } from "@/lib/domain/presentation";
+import { useModelReadiness } from "@/hooks/use-model-readiness";
 import type {
   MachineSummary,
   ManualPredictionResult,
   Prediction,
   PredictionConfig,
 } from "@/lib/domain/types";
+import { toUserFacingError, type UserFacingError } from "@/lib/errors/user-facing-error";
 
 type Props = {
   machines: MachineSummary[];
   requestedMachineId?: string;
   requestedPredictionId?: string;
+  showMachineSelector?: boolean;
 };
 
 function formatRange(config: PredictionConfig, key: string) {
@@ -45,10 +47,6 @@ function formatRange(config: PredictionConfig, key: string) {
 
   const decimals = field.step && field.step < 1 ? 3 : 1;
   return `Observed ${range.observedMin.toFixed(decimals)} - ${range.observedMax.toFixed(decimals)} ${field.unit ?? ""} · Typical ${range.typicalValue.toFixed(decimals)} ${field.unit ?? ""}`;
-}
-
-function isMachineCType(machineType?: string | null) {
-  return machineType === "real-sensor" || machineType === "kaggle";
 }
 
 function predictionToManualResult(
@@ -67,6 +65,7 @@ function predictionToManualResult(
     warnings: [],
     breachedFields: [],
     generatedAt: prediction.generatedAt,
+    provenance: prediction.provenance,
   };
 }
 
@@ -74,6 +73,7 @@ export function ManualPredictionPanel({
   machines,
   requestedMachineId,
   requestedPredictionId,
+  showMachineSelector = true,
 }: Props) {
   const provider = useDataProvider();
   const supportedMachines = useMemo(
@@ -81,7 +81,6 @@ export function ManualPredictionPanel({
       machines.filter(
         (machine) =>
           machine.machineType === "ai4i" ||
-          machine.machineType === "sensor" ||
           machine.machineType === "real-sensor" ||
           machine.machineType === "kaggle",
       ),
@@ -92,8 +91,19 @@ export function ManualPredictionPanel({
   const [config, setConfig] = useState<PredictionConfig | null>(null);
   const [values, setValues] = useState<Record<string, string>>({});
   const [result, setResult] = useState<ManualPredictionResult | null>(null);
+  const [historicalResult, setHistoricalResult] = useState(false);
   const [loadingConfig, setLoadingConfig] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [operationError, setOperationError] = useState<UserFacingError | null>(null);
+  const effectiveMachineId =
+    machineId || supportedMachines[0]?.id || "";
+  const modelReadiness = useModelReadiness(effectiveMachineId || undefined);
+  // The legacy Machine C adapter (real-sensor / kaggle) classifies vibration intensity, not failure risk.
+  const effectiveMachineType = supportedMachines.find(
+    (machine) => machine.id === effectiveMachineId,
+  )?.machineType;
+  const vibrationLevel =
+    effectiveMachineType === "real-sensor" || effectiveMachineType === "kaggle";
 
   useEffect(() => {
     if (supportedMachines.length === 0) {
@@ -112,12 +122,12 @@ export function ManualPredictionPanel({
     setMachineId((current) =>
       supportedMachines.some((machine) => machine.id === current)
         ? current
-        : (supportedMachines[0]?.id ?? ""),
+        : "",
     );
   }, [requestedMachineId, supportedMachines]);
 
   useEffect(() => {
-    if (!machineId) {
+    if (!effectiveMachineId) {
       setConfig(null);
       setValues({});
       return;
@@ -127,8 +137,10 @@ export function ManualPredictionPanel({
 
     async function loadConfig() {
       setLoadingConfig(true);
+      setResult(null);
+      setHistoricalResult(false);
       try {
-        const nextConfig = await provider.getPredictionConfig(machineId);
+        const nextConfig = await provider.getPredictionConfig(effectiveMachineId);
         if (!active) {
           return;
         }
@@ -145,16 +157,14 @@ export function ManualPredictionPanel({
             ]),
           ),
         );
-        setResult(null);
       } catch (error) {
         if (!active) {
           return;
         }
-        toast.error(
-          error instanceof Error
-            ? error.message
-            : "Unable to load prediction inputs",
-        );
+        setOperationError(toUserFacingError(error, "data.load", {
+          title: "Prediction inputs could not be loaded",
+          message: "The required sensor fields are unavailable.",
+        }));
         setConfig(null);
       } finally {
         if (active) {
@@ -167,15 +177,15 @@ export function ManualPredictionPanel({
     return () => {
       active = false;
     };
-  }, [machineId, provider]);
+  }, [effectiveMachineId, provider]);
 
   useEffect(() => {
-    if (!requestedPredictionId || !machineId) {
+    if (!requestedPredictionId || !effectiveMachineId) {
       return;
     }
 
     const selectedMachine = supportedMachines.find(
-      (machine) => machine.id === machineId,
+      (machine) => machine.id === effectiveMachineId,
     );
     if (!selectedMachine) {
       return;
@@ -186,7 +196,7 @@ export function ManualPredictionPanel({
 
     async function loadLinkedPrediction() {
       try {
-        const predictions = await provider.getMachinePredictions(machineId);
+        const predictions = await provider.getMachinePredictions(effectiveMachineId);
         if (!active) {
           return;
         }
@@ -201,15 +211,15 @@ export function ManualPredictionPanel({
         setResult(
           predictionToManualResult(linkedPrediction, selectedMachineType),
         );
+        setHistoricalResult(true);
       } catch (error) {
         if (!active) {
           return;
         }
-        toast.error(
-          error instanceof Error
-            ? error.message
-            : "Unable to load linked prediction result",
-        );
+        setOperationError(toUserFacingError(error, "data.load", {
+          title: "Prediction result could not be loaded",
+          message: "The linked historical result is unavailable.",
+        }));
       }
     }
 
@@ -218,10 +228,11 @@ export function ManualPredictionPanel({
     return () => {
       active = false;
     };
-  }, [machineId, provider, requestedPredictionId, supportedMachines]);
+  }, [effectiveMachineId, provider, requestedPredictionId, supportedMachines]);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setOperationError(null);
     if (!config) {
       return;
     }
@@ -232,7 +243,10 @@ export function ManualPredictionPanel({
       if (field.type === "number") {
         const numericValue = Number(rawValue);
         if (!Number.isFinite(numericValue)) {
-          toast.error(`${field.label} must be a valid number.`);
+          setOperationError(toUserFacingError(null, "simulation.run", {
+            title: `Review ${field.label}`,
+            message: `${field.label} must be a valid number. Correct the highlighted value and try again.`,
+          }));
           return;
         }
         payloadValues[field.key] = numericValue;
@@ -247,10 +261,12 @@ export function ManualPredictionPanel({
         values: payloadValues,
       });
       setResult(response);
+      setHistoricalResult(false);
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Prediction failed",
-      );
+      setOperationError(toUserFacingError(error, "simulation.run", {
+        title: "Prediction could not be generated",
+        message: "Review the sensor values and try again. No new result was saved.",
+      }));
     } finally {
       setSubmitting(false);
     }
@@ -260,9 +276,10 @@ export function ManualPredictionPanel({
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm">Predict</CardTitle>
+          <CardTitle className="text-base">Prediction isn&apos;t available for this machine</CardTitle>
           <CardDescription className="text-sm">
-            Manual prediction is only available for Machine A and Machine C.
+            Manual prediction is only available for Machine A and Machine C. Choose one of those
+            machines above, or set up a prediction model for this machine in Machine Registry.
           </CardDescription>
         </CardHeader>
       </Card>
@@ -270,21 +287,37 @@ export function ManualPredictionPanel({
   }
 
   return (
-    <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
+    <div className="flex flex-col gap-4">
+      {operationError ? <ErrorNotice error={operationError} /> : null}
+      <ModelReadinessPanel
+        compact
+        readiness={modelReadiness.readiness}
+        isLoading={modelReadiness.isLoading}
+        error={modelReadiness.error}
+      />
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm">Predict</CardTitle>
+            <CardTitle className="text-base">
+              {vibrationLevel ? "Check vibration level" : "Check failure risk"}
+            </CardTitle>
             <CardDescription className="text-sm">
-              Enter machine values directly and get an immediate model label plus confidence.
+              {vibrationLevel
+                ? "Enter sensor values to classify how strongly the machine is vibrating (low, medium or high)."
+                : "Enter sensor values to get the model's risk assessment."}
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
-            <div className="grid gap-2">
+            {showMachineSelector && <div className="grid gap-2">
               <span className="text-xs font-medium text-muted-foreground">
                 Machine
               </span>
-              <Select value={machineId} onValueChange={setMachineId}>
+              <Select
+                value={effectiveMachineId}
+                onValueChange={setMachineId}
+                disabled={supportedMachines.length === 0}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select a machine" />
                 </SelectTrigger>
@@ -296,7 +329,7 @@ export function ManualPredictionPanel({
                   ))}
                 </SelectContent>
               </Select>
-            </div>
+            </div>}
 
             {config ? (
               <>
@@ -383,111 +416,8 @@ export function ManualPredictionPanel({
         </Card>
       </form>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm">Prediction Result</CardTitle>
-          <CardDescription className="text-sm">
-            {isMachineCType(config?.machineType)
-              ? "The predicted label, high-risk probability, and predicted-label confidence."
-              : "The predicted label plus model confidence."}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-3 text-sm">
-          {result ? (
-            <>
-              {requestedPredictionId ? (
-                <div className="border border-success/40 bg-success/5 p-3 text-muted-foreground">
-                  Loaded the prediction result that was created from chat.
-                </div>
-              ) : null}
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge variant={badgeVariantForSeverity(result.severity)}>
-                  {result.severity}
-                </Badge>
-                <span className="font-medium">{result.predictedLabel}</span>
-                {result.failureType ? (
-                  <Badge variant="outline">{result.failureType}</Badge>
-                ) : null}
-              </div>
-
-              <div className="grid gap-2 md:grid-cols-2">
-                <div className="border border-border p-3">
-                  <p className="text-xs text-muted-foreground">
-                    {isMachineCType(result.machineType)
-                      ? "High-risk probability"
-                      : "Failure probability"}
-                  </p>
-                  <p className="mt-1 text-lg font-semibold">
-                    {(result.failureProbability * 100).toFixed(1)}%
-                  </p>
-                </div>
-                <div className="border border-border p-3">
-                  <p className="text-xs text-muted-foreground">
-                    {isMachineCType(result.machineType)
-                      ? "Predicted-label confidence"
-                      : "Confidence"}
-                  </p>
-                  <p className="mt-1 text-lg font-semibold">
-                    {(result.confidence * 100).toFixed(1)}%
-                  </p>
-                </div>
-              </div>
-
-              {isMachineCType(result.machineType) ? (
-                <div className="border border-border p-3 text-muted-foreground">
-                  <p>
-                    High-risk probability is <strong>P(high)</strong>. Predicted-label
-                    confidence is the probability of the returned label.
-                  </p>
-                </div>
-              ) : null}
-
-              {result.machineType === "ai4i" ? (
-                <div className="border border-border p-3 text-muted-foreground">
-                  {result.thresholdTriggered ? (
-                    <p>
-                      The binary stage crossed the failure threshold, so the failure type is shown.
-                    </p>
-                  ) : (
-                    <p>
-                      The binary stage stayed below the failure threshold, so no failure type is surfaced.
-                    </p>
-                  )}
-                </div>
-              ) : null}
-
-              {result.warnings.length > 0 ? (
-                <div className="border border-warning/40 bg-warning/10 p-3 text-muted-foreground">
-                  <div className="flex items-center gap-2 font-medium text-foreground">
-                    <WarningCircleIcon />
-                    Out-of-range warning
-                  </div>
-                  {result.warnings.map((warning) => (
-                    <p key={warning} className="mt-1">
-                      {warning}
-                    </p>
-                  ))}
-                </div>
-              ) : (
-                <div className="border border-success/40 bg-success/5 p-3 text-muted-foreground">
-                  <div className="flex items-center gap-2 font-medium text-foreground">
-                    <CheckCircleIcon />
-                    Inputs stayed within the observed dataset range.
-                  </div>
-                </div>
-              )}
-
-              <p className="text-xs text-muted-foreground">
-                Generated {formatDateTime(result.generatedAt)}
-              </p>
-            </>
-          ) : (
-            <div className="border border-dashed border-border p-4 text-muted-foreground">
-              Submit a machine input set to see the model label and confidence.
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <PredictionResult result={result} historical={historicalResult} vibrationLevel={vibrationLevel} />
+      </div>
     </div>
   );
 }

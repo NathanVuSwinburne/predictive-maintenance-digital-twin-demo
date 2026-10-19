@@ -1,0 +1,47 @@
+import type { MqttHealth } from "@/lib/domain/types";
+
+export const healthyMqttHealth: MqttHealth = {
+  pipelineId: "machine-c-live-ingestion",
+  targetMachineId: "machine-c",
+  observedAt: "2026-08-21T01:00:00Z",
+  processStartedAt: "2026-08-21T00:00:00Z",
+  lastEventAt: "2026-08-21T00:59:59Z",
+  status: "healthy",
+  summary: "MQTT is connected, subscribed, and receiving messages normally.",
+  broker: {
+    state: "connected",
+    connectedAt: "2026-08-21T00:55:00Z",
+    disconnectedAt: null,
+    lastError: null,
+  },
+  subscription: {
+    state: "subscribed",
+    topic: "machines/machine-c/telemetry",
+    qos: 1,
+    subscribedAt: "2026-08-21T00:55:01Z",
+    lastError: null,
+  },
+  messages: {
+    flowState: "healthy",
+    receivedTotal: 7_200,
+    acceptedTotal: 7_190,
+    invalidTotal: 7,
+    rejectedTotal: 3,
+    receivedPerMinute: 120,
+    acceptedPerMinute: 120,
+    expectedPerMinute: 120,
+    problemRatio: 0,
+    lastReceivedAt: "2026-08-21T00:59:59Z",
+    lastAcceptedAt: "2026-08-21T00:59:59Z",
+    lastProblemAt: "2026-08-21T00:40:00Z",
+    lastProblemReason: "missing VibrationZ",
+  },
+  reconnect: {
+    attemptsTotal: 2,
+    attemptsInWindow: 0,
+    consecutiveFailures: 0,
+    abnormal: false,
+    lastAttemptAt: "2026-08-21T00:30:00Z",
+    lastError: null,
+  },
+};

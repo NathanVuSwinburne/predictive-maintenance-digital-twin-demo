@@ -2,16 +2,16 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ArrowsDownUpIcon,
   MagnifyingGlassIcon,
   SquaresFourIcon,
   TableIcon,
 } from "@phosphor-icons/react";
-import { toast } from "sonner";
 
 import { useAuth } from "@/components/auth/auth-context";
+import { ErrorNotice } from "@/components/feedback/error-notice";
 import { NoMachineAccessState } from "@/components/machines/no-machine-access-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -43,10 +43,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useDataProvider } from "@/hooks/use-data-provider";
 import { badgeVariantForMachineStatus } from "@/lib/domain/presentation";
 import type { MachineSummary, MachineStatus } from "@/lib/domain/types";
+import { toUserFacingError, type UserFacingError } from "@/lib/errors/user-facing-error";
 
 export default function MachinesPage() {
   const provider = useDataProvider();
@@ -56,13 +58,16 @@ export default function MachinesPage() {
   const [machines, setMachines] = useState<MachineSummary[]>([]);
   const [search, setSearch] = useState("");
   const [line, setLine] = useState("all");
+  const [lines, setLines] = useState<string[]>(["all"]);
   const [status, setStatus] = useState<MachineStatus | "all">("all");
   const [sortBy, setSortBy] = useState<"risk" | "health" | "name" | "uptime">(
     "risk",
   );
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [viewMode, setViewMode] = useState<"table" | "cards">("table");
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<UserFacingError | null>(null);
+  const [loadAttempt, setLoadAttempt] = useState(0);
 
   useEffect(() => {
     if (!activePersona) {
@@ -74,6 +79,7 @@ export default function MachinesPage() {
 
     async function loadMachines() {
       setIsLoading(true);
+      setLoadError(null);
       try {
         const loadedMachines = await provider.listMachines({
           search,
@@ -87,11 +93,19 @@ export default function MachinesPage() {
 
         if (active) {
           setMachines(loadedMachines);
+          const loadedLines = loadedMachines.map((machine) => machine.line);
+          setLines((previous) => Array.from(new Set([
+            ...(!search && line === "all" && status === "all" ? ["all"] : previous),
+            ...loadedLines,
+          ])));
         }
       } catch (error) {
-        toast.error(
-          error instanceof Error ? error.message : "Unable to load machines",
-        );
+        if (active) {
+          setLoadError(toUserFacingError(error, "data.load", {
+            title: "Machines could not be loaded",
+            message: "The machine list is unavailable.",
+          }));
+        }
       } finally {
         if (active) {
           setIsLoading(false);
@@ -104,100 +118,104 @@ export default function MachinesPage() {
     return () => {
       active = false;
     };
-  }, [activePersona, line, provider, search, sortBy, sortDirection, status]);
+  }, [activePersona, line, loadAttempt, provider, search, sortBy, sortDirection, status]);
 
-  const lines = useMemo(() => {
-    const allLines = new Set(machines.map((machine) => machine.line));
-    return ["all", ...Array.from(allLines)];
-  }, [machines]);
+  const hasFilters = Boolean(search || line !== "all" || status !== "all");
 
-  if (!isLoading && activePersona?.role === "user" && machines.length === 0) {
+  if (!hasFilters && !isLoading && !loadError && activePersona?.role === "user" && machines.length === 0) {
     return <NoMachineAccessState />;
   }
 
   return (
-    <div className="flex flex-col gap-5">
-      <div className="flex flex-col gap-1">
-        <p className="instrument-label">Asset registry</p>
-        <h1 className="text-2xl font-semibold tracking-[-0.04em] md:text-3xl">Machine fleet</h1>
-        <p className="max-w-2xl text-sm text-muted-foreground">Search, filter, and compare the current condition of every monitored asset.</p>
-      </div>
+    <div className="flex flex-col gap-4">
+      {loadError ? (
+        <ErrorNotice error={loadError} actionLabel="Try Again" onAction={() => setLoadAttempt((value) => value + 1)} />
+      ) : null}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-sm">Fleet filters</CardTitle>
-        </CardHeader>
-
         <CardContent className="flex flex-col gap-3">
-          <div className="grid gap-3 lg:grid-cols-[2fr_1fr_1fr_1fr_auto]">
-            <InputGroup>
-              <InputGroupAddon align="inline-start">
-                <MagnifyingGlassIcon />
-              </InputGroupAddon>
-              <InputGroupInput
-                aria-label="Search machines"
-                placeholder="Search by name, ID, model, or line"
-                className="text-sm"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-              />
-            </InputGroup>
+          <div className="grid gap-3 items-end lg:grid-cols-[2fr_1fr_1fr_1fr_auto]">
+            <div className="flex min-w-0 flex-col gap-2">
+              <label htmlFor="machine-search" className="text-sm font-medium">Search machines</label>
+              <InputGroup>
+                <InputGroupAddon align="inline-start">
+                  <MagnifyingGlassIcon />
+                </InputGroupAddon>
+                <InputGroupInput
+                  id="machine-search"
+                  placeholder="Search by name, ID, model, or line"
+                  className="text-sm"
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                />
+              </InputGroup>
 
-            <Select value={line} onValueChange={setLine}>
-              <SelectTrigger className="w-full text-sm">
-                <SelectValue placeholder="Line" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  {lines.map((lineOption) => (
-                    <SelectItem key={lineOption} value={lineOption}>
-                      {lineOption === "all" ? "All lines" : lineOption}
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
+            </div>
+            <div className="flex min-w-0 flex-col gap-2">
+              <label htmlFor="machine-line" className="text-sm font-medium">Line</label>
+              <Select value={line} onValueChange={setLine}>
+                <SelectTrigger id="machine-line" className="w-full text-sm">
+                  <SelectValue placeholder="Line" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {lines.map((lineOption) => (
+                      <SelectItem key={lineOption} value={lineOption}>
+                        {lineOption === "all" ? "All lines" : lineOption}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
 
-            <Select
-              value={status}
-              onValueChange={(value) =>
-                setStatus(value as MachineStatus | "all")
-              }
-            >
-              <SelectTrigger className="w-full text-sm">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  <SelectItem value="all">All status</SelectItem>
-                  <SelectItem value="healthy">Healthy</SelectItem>
-                  <SelectItem value="watch">Watch</SelectItem>
-                  <SelectItem value="risk">Risk</SelectItem>
-                  <SelectItem value="offline">Offline</SelectItem>
-                </SelectGroup>
-              </SelectContent>
-            </Select>
+            </div>
+            <div className="flex min-w-0 flex-col gap-2">
+              <label htmlFor="machine-status" className="text-sm font-medium">Status</label>
+              <Select
+                value={status}
+                onValueChange={(value) =>
+                  setStatus(value as MachineStatus | "all")
+                }
+              >
+                <SelectTrigger id="machine-status" className="w-full text-sm">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectItem value="all">All status</SelectItem>
+                    <SelectItem value="healthy">Healthy</SelectItem>
+                    <SelectItem value="watch">Watch</SelectItem>
+                    <SelectItem value="risk">Risk</SelectItem>
+                    <SelectItem value="offline">Offline</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
 
-            <Select
-              value={sortBy}
-              onValueChange={(value) =>
-                setSortBy(value as "risk" | "health" | "name" | "uptime")
-              }
-            >
-              <SelectTrigger className="w-full text-sm">
-                <ArrowsDownUpIcon />
-                <SelectValue placeholder="Sort" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  <SelectItem value="risk">Risk score</SelectItem>
-                  <SelectItem value="health">Health score</SelectItem>
-                  <SelectItem value="name">Name</SelectItem>
-                  <SelectItem value="uptime">Uptime</SelectItem>
-                </SelectGroup>
-              </SelectContent>
-            </Select>
+            </div>
+            <div className="flex min-w-0 flex-col gap-2">
+              <label htmlFor="machine-sort" className="text-sm font-medium">Sort by</label>
+              <Select
+                value={sortBy}
+                onValueChange={(value) =>
+                  setSortBy(value as "risk" | "health" | "name" | "uptime")
+                }
+              >
+                <SelectTrigger id="machine-sort" className="w-full text-sm">
+                  <ArrowsDownUpIcon />
+                  <SelectValue placeholder="Sort" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectItem value="risk">Risk score</SelectItem>
+                    <SelectItem value="health">Health score</SelectItem>
+                    <SelectItem value="name">Name</SelectItem>
+                    <SelectItem value="uptime">Uptime</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
 
+            </div>
             <ToggleGroup
+              aria-label="Machine view"
               type="single"
               value={viewMode}
               onValueChange={(value) => {
@@ -218,8 +236,15 @@ export default function MachinesPage() {
             </ToggleGroup>
           </div>
 
-          <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <span>{machines.length} machines match current filters.</span>
+          <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+              <span role="status">{isLoading ? "Loading machines…" : loadError ? "Machine results unavailable." : `${machines.length} ${machines.length === 1 ? "machine matches" : "machines match"} current filters.`}</span>
+              <Button variant="ghost" size="xs" disabled={!hasFilters} onClick={() => {
+                setSearch("");
+                setLine("all");
+                setStatus("all");
+              }}>Clear filters</Button>
+            </div>
             <Button
               variant="ghost"
               size="xs"
@@ -234,6 +259,17 @@ export default function MachinesPage() {
             </Button>
           </div>
 
+          {!isLoading && !loadError && machines.length === 0 && (
+            <Empty className="border border-dashed border-border">
+              <EmptyHeader>
+                <EmptyTitle>{hasFilters ? "No machines match your filters" : "No machines available"}</EmptyTitle>
+                <EmptyDescription className="text-sm">{hasFilters ? "Try a different search, line, or status, or clear the filters." : "Add a machine through Machine Registry to get started."}</EmptyDescription>
+              </EmptyHeader>
+            </Empty>
+          )}
+          {(isLoading || loadError) && machines.length > 0 && (
+            <p className="text-sm text-muted-foreground">Showing previously loaded machines; they may not match the selected filters.</p>
+          )}
           {viewMode === "table" ? (
             <div className="overflow-x-auto border border-border">
               <Table className="text-sm">
@@ -256,7 +292,7 @@ export default function MachinesPage() {
                     >
                       <TableCell>
                         <div className="flex flex-col">
-                          <span className="font-medium">{machine.name}</span>
+                          <Link href={`/machines/${machine.id}`} onClick={(event) => event.stopPropagation()} className="w-fit font-medium underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-ring">{machine.name}</Link>
                           <span className="text-sm text-muted-foreground">
                             {machine.id}
                           </span>
@@ -284,7 +320,7 @@ export default function MachinesPage() {
                 <Link
                   key={machine.id}
                   href={`/machines/${machine.id}`}
-                  className="block"
+                  className="block focus-visible:outline-2 focus-visible:outline-ring"
                 >
                   <Card className="transition-colors hover:bg-muted/60">
                     <CardHeader>

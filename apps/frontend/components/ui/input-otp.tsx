@@ -1,6 +1,10 @@
 "use client"
 
 import * as React from "react"
+// input-otp must stay >= 1.5.0. Up to 1.4.2 the effect that re-syncs the caret
+// scheduled timers at 0/10/50ms and never cleared them, so an unmounted OTP set
+// state after the test environment was gone: "window is not defined", raised as
+// an unhandled error that failed CI while every test still passed.
 import { OTPInput, OTPInputContext } from "input-otp"
 
 import { cn } from "@/lib/utils"

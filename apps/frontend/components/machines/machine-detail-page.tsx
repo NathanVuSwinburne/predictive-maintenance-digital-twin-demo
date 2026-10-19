@@ -11,9 +11,13 @@ import {
   ToolboxIcon,
   WrenchIcon,
 } from "@phosphor-icons/react"
-import { toast } from "sonner"
+import { ErrorNotice } from "@/components/feedback/error-notice"
 
 import { Badge } from "@/components/ui/badge"
+import { LiveMachinePanel } from "@/components/live/live-machine-panel"
+import { SourceAttribution } from "@/components/provenance/source-attribution"
+import { LiveTelemetrySummary } from "@/components/telemetry/live-telemetry-summary"
+import { ModelReadinessPanel } from "@/components/machines/model-readiness-panel"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -31,6 +35,8 @@ import {
 import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useDataProvider } from "@/hooks/use-data-provider"
+import { useLiveTelemetry } from "@/hooks/use-live-telemetry"
+import { useModelReadiness } from "@/hooks/use-model-readiness"
 import {
   badgeVariantForMachineStatus,
   badgeVariantForSeverity,
@@ -41,8 +47,9 @@ import type {
   MachineDetail,
   MaintenanceRecommendation,
   Prediction,
-  TelemetryPoint,
 } from "@/lib/domain/types"
+import { toUserFacingError, type UserFacingError } from "@/lib/errors/user-facing-error"
+import { formatAppAxisTime } from "@/lib/time"
 
 const telemetryConfig = {
   temperature: {
@@ -65,29 +72,31 @@ const telemetryConfig = {
 
 export function MachineDetailPage({ machineId }: { machineId: string }) {
   const provider = useDataProvider()
+  const liveTelemetry = useLiveTelemetry(machineId)
+  const modelReadiness = useModelReadiness(machineId)
 
   const [machine, setMachine] = useState<MachineDetail | null>(null)
-  const [telemetry, setTelemetry] = useState<TelemetryPoint[]>([])
   const [predictions, setPredictions] = useState<Prediction[]>([])
   const [recommendations, setRecommendations] = useState<
     MaintenanceRecommendation[]
   >([])
   const [history, setHistory] = useState<HistoryEvent[]>([])
+  const [loadError, setLoadError] = useState<UserFacingError | null>(null)
+  const [loadAttempt, setLoadAttempt] = useState(0)
 
   useEffect(() => {
     let active = true
 
     async function loadMachine() {
+      setLoadError(null)
       try {
         const [
           detail,
-          telemetryData,
           predictionData,
           recommendationData,
           historyData,
         ] = await Promise.all([
           provider.getMachineDetail(machineId),
-          provider.getMachineTelemetry(machineId),
           provider.getMachinePredictions(machineId),
           provider.getMaintenanceRecommendations(machineId),
           provider.listHistoryEvents({ machineId }),
@@ -98,16 +107,14 @@ export function MachineDetailPage({ machineId }: { machineId: string }) {
         }
 
         setMachine(detail)
-        setTelemetry(telemetryData)
         setPredictions(predictionData)
         setRecommendations(recommendationData)
         setHistory(historyData.slice(0, 6))
       } catch (error) {
-        toast.error(
-          error instanceof Error
-            ? error.message
-            : "Unable to load machine detail"
-        )
+        if (active) setLoadError(toUserFacingError(error, "data.load", {
+          title: "Machine details could not be loaded",
+          message: "Telemetry, predictions, and recommendations are unavailable.",
+        }))
       }
     }
 
@@ -116,12 +123,16 @@ export function MachineDetailPage({ machineId }: { machineId: string }) {
     return () => {
       active = false
     }
-  }, [machineId, provider])
+  }, [loadAttempt, machineId, provider])
 
-  const compactTelemetry = useMemo(() => telemetry.slice(-14), [telemetry])
+  const compactTelemetry = useMemo(
+    () => liveTelemetry.telemetry.slice(-14),
+    [liveTelemetry.telemetry],
+  )
 
   return (
     <div className="flex flex-col gap-4">
+      {loadError ? <ErrorNotice error={loadError} actionLabel="Try Again" onAction={() => setLoadAttempt((value) => value + 1)} /> : null}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
           <Button asChild variant="ghost" size="sm">
@@ -181,6 +192,10 @@ export function MachineDetailPage({ machineId }: { machineId: string }) {
         </CardContent>
       </Card>
 
+      {/* The route's machineId is already the canonical entity id (catalog-backed);
+          the panel hides itself for machines without an MQTT source. */}
+      <LiveMachinePanel entityId={machineId} machineName={machine?.name} />
+
       <Tabs defaultValue="telemetry">
         <TabsList>
           <TabsTrigger value="telemetry">Telemetry</TabsTrigger>
@@ -197,6 +212,14 @@ export function MachineDetailPage({ machineId }: { machineId: string }) {
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
+              <LiveTelemetrySummary
+                latestPoint={liveTelemetry.latestPoint}
+                connectionState={liveTelemetry.connectionState}
+                isStale={liveTelemetry.isStale}
+                lastCheckedAt={liveTelemetry.lastCheckedAt}
+                provenance={liveTelemetry.provenance}
+                machineType={machine?.machineType}
+              />
               <ChartContainer config={telemetryConfig} className="h-72 w-full">
                 <LineChart data={compactTelemetry}>
                   <CartesianGrid vertical={false} />
@@ -204,12 +227,7 @@ export function MachineDetailPage({ machineId }: { machineId: string }) {
                     dataKey="timestamp"
                     tickLine={false}
                     axisLine={false}
-                    tickFormatter={(value) =>
-                      new Date(value).toLocaleTimeString("en-AU", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })
-                    }
+                    tickFormatter={(value) => formatAppAxisTime(value)}
                   />
                   <ChartTooltip content={<ChartTooltipContent />} />
                   <Line
@@ -232,12 +250,7 @@ export function MachineDetailPage({ machineId }: { machineId: string }) {
                     dataKey="timestamp"
                     tickLine={false}
                     axisLine={false}
-                    tickFormatter={(value) =>
-                      new Date(value).toLocaleTimeString("en-AU", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })
-                    }
+                    tickFormatter={(value) => formatAppAxisTime(value)}
                   />
                   <ChartTooltip content={<ChartTooltipContent />} />
                   <Area
@@ -259,23 +272,35 @@ export function MachineDetailPage({ machineId }: { machineId: string }) {
         </TabsContent>
 
         <TabsContent value="predictions" className="mt-4">
-          <Card>
+          <div className="flex flex-col gap-4">
+            <ModelReadinessPanel
+              readiness={modelReadiness.readiness}
+              isLoading={modelReadiness.isLoading}
+              error={modelReadiness.error}
+            />
+            <Card>
             <CardHeader>
-              <CardTitle className="text-sm">Fault Predictions</CardTitle>
+              <CardTitle className="text-sm">Prediction history</CardTitle>
               <CardDescription className="text-sm">
-                Current model output with confidence and failure horizon.
+                Previously generated results for reference. These are not current model output.
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-2">
-              {predictions.map((prediction) => (
+              {predictions.length === 0 ? (
+                <div className="border border-dashed border-border p-4 text-sm text-muted-foreground">
+                  No prediction history is available for this machine.
+                </div>
+              ) : predictions.map((prediction) => (
                 <div
                   key={prediction.id}
                   className="border border-border p-3 text-sm"
                 >
                   <div className="flex flex-wrap items-center gap-2">
+                    <Badge variant="outline">Historical result · not current</Badge>
                     <Badge variant={badgeVariantForSeverity(prediction.severity)}>
                       {prediction.severity}
                     </Badge>
+                    <SourceAttribution provenance={prediction.provenance} />
                     <span className="font-medium">{prediction.failureMode}</span>
                     <span className="text-muted-foreground">
                       {prediction.horizonHours}h horizon
@@ -291,7 +316,8 @@ export function MachineDetailPage({ machineId }: { machineId: string }) {
                 </div>
               ))}
             </CardContent>
-          </Card>
+            </Card>
+          </div>
         </TabsContent>
 
         <TabsContent value="recommendations" className="mt-4">
@@ -313,6 +339,7 @@ export function MachineDetailPage({ machineId }: { machineId: string }) {
                     <Badge variant={badgeVariantForSeverity(recommendation.priority)}>
                       {recommendation.priority}
                     </Badge>
+                    <SourceAttribution provenance={recommendation.provenance} />
                     <span className="font-medium">{recommendation.title}</span>
                   </div>
                   <p className="mt-2 text-muted-foreground">
@@ -353,6 +380,7 @@ export function MachineDetailPage({ machineId }: { machineId: string }) {
                 <div className="flex items-center gap-2">
                   <ThermometerSimpleIcon />
                   <span className="font-medium">{event.title}</span>
+                  <SourceAttribution provenance={event.provenance} />
                 </div>
                 <span className="text-muted-foreground">
                   {formatDateTime(event.timestamp)}

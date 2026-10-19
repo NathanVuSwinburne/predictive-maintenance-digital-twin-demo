@@ -1,45 +1,48 @@
-"use client"
+"use client";
 
-import { useMemo } from "react"
-import { usePathname, useRouter } from "next/navigation"
+import { useMemo } from "react";
+import { usePathname, useRouter } from "next/navigation";
 
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const adminLinks = [
   { href: "/admin", label: "Overview", value: "overview" },
   { href: "/admin/users", label: "Users", value: "users" },
   { href: "/admin/machines", label: "Machines", value: "machines" },
-  { href: "/admin/models", label: "Model approvals", value: "models" },
-]
+  { href: "/admin/managemqtt", label: "Manage MQTT", value: "managemqtt" },
+];
 
 export function AdminNavigation() {
-  const pathname = usePathname()
-  const router = useRouter()
+  const pathname = usePathname();
+  const router = useRouter();
 
   const activeTab = useMemo(() => {
     if (pathname.startsWith("/admin/users")) {
-      return "users"
+      return "users";
     }
 
     if (pathname.startsWith("/admin/machines")) {
-      return "machines"
+      return "machines";
     }
 
-    if (pathname.startsWith("/admin/models")) {
-      return "models"
+    if (pathname.startsWith("/admin/managemqtt")) {
+      return "managemqtt";
     }
 
-    return "overview"
-  }, [pathname])
+    return "overview";
+  }, [pathname]);
 
   return (
-    <Tabs value={activeTab} onValueChange={(value) => {
-      const nextLink = adminLinks.find((item) => item.value === value)
+    <Tabs
+      value={activeTab}
+      onValueChange={(value) => {
+        const nextLink = adminLinks.find((item) => item.value === value);
 
-      if (nextLink) {
-        router.push(nextLink.href)
-      }
-    }}>
+        if (nextLink) {
+          router.push(nextLink.href);
+        }
+      }}
+    >
       <TabsList variant="line">
         {adminLinks.map((item) => (
           <TabsTrigger key={item.value} value={item.value}>
@@ -48,5 +51,5 @@ export function AdminNavigation() {
         ))}
       </TabsList>
     </Tabs>
-  )
+  );
 }

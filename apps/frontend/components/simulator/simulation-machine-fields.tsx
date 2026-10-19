@@ -28,6 +28,7 @@ type SimulationMachineFieldsProps = {
   scenarioNameError?: string;
   onMachineIdChange: (value: string) => void;
   onScenarioNameChange: (value: string) => void;
+  showMachineSelector?: boolean;
 };
 
 export function SimulationMachineFields({
@@ -38,10 +39,11 @@ export function SimulationMachineFields({
   scenarioNameError,
   onMachineIdChange,
   onScenarioNameChange,
+  showMachineSelector = true,
 }: SimulationMachineFieldsProps) {
   return (
     <FieldGroup>
-      <Field>
+      {showMachineSelector ? <Field>
         <FieldLabel htmlFor="machine">Machine</FieldLabel>
         <Select value={machineId} onValueChange={onMachineIdChange}>
           <SelectTrigger id="machine" className="w-full text-sm">
@@ -59,7 +61,7 @@ export function SimulationMachineFields({
           </SelectContent>
         </Select>
         <FieldDescription>{machineDescription}</FieldDescription>
-      </Field>
+      </Field> : null}
 
       <Field data-invalid={scenarioNameError ? true : undefined}>
         <FieldLabel htmlFor="scenario-name">Scenario name</FieldLabel>

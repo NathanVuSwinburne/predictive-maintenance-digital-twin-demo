@@ -2,10 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { MagnifyingGlassIcon } from "@phosphor-icons/react"
-import { toast } from "sonner"
 
 import { MachineAssignmentsDialog } from "@/components/admin/machine-assignments-dialog"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { ErrorNotice } from "@/components/feedback/error-notice"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -31,6 +30,7 @@ import {
 } from "@/components/ui/table"
 import { useDataProvider } from "@/hooks/use-data-provider"
 import type { MachineSummary, UserPersona } from "@/lib/domain/types"
+import { toUserFacingError, type UserFacingError } from "@/lib/errors/user-facing-error"
 
 type AssignedUsersMap = Record<string, UserPersona[]>
 
@@ -44,7 +44,7 @@ export default function AdminMachinesPage() {
   const [selectedMachineId, setSelectedMachineId] = useState<string | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
-  const [loadError, setLoadError] = useState<string | null>(null)
+  const [loadError, setLoadError] = useState<UserFacingError | null>(null)
 
   const loadData = useCallback(async () => {
     setIsLoading(true)
@@ -65,10 +65,10 @@ export default function AdminMachinesPage() {
       setMachines(loadedMachines)
       setAssignedUsersByMachineId(Object.fromEntries(assignmentEntries))
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Unable to load machines"
-      setLoadError(message)
-      toast.error(message)
+      setLoadError(toUserFacingError(error, "data.load", {
+        title: "Machine assignments could not be loaded",
+        message: "Machines and their assigned users are unavailable.",
+      }))
     } finally {
       setIsLoading(false)
     }
@@ -118,13 +118,7 @@ export default function AdminMachinesPage() {
             />
           </InputGroup>
 
-          {loadError && (
-            <Alert variant="destructive">
-              <MagnifyingGlassIcon />
-              <AlertTitle>Unable to load machine assignments</AlertTitle>
-              <AlertDescription>{loadError}</AlertDescription>
-            </Alert>
-          )}
+          {loadError ? <ErrorNotice error={loadError} actionLabel="Try Again" onAction={() => void loadData()} /> : null}
 
           <div className="overflow-x-auto border border-border">
             <Table>
