@@ -135,7 +135,11 @@ export function drawVibrationScene({ canvas, points, scale, camera, unit, isLive
     const dx = end.x - origin.x;
     const dy = end.y - origin.y;
     const length = Math.hypot(dx, dy) || 1;
-    context.fillText(label, end.x + (dx / length) * 6 + 2, end.y + (dy / length) * 6 + 4);
+    // Keep each label inside the canvas, whichever way the camera points the axis.
+    const labelWidth = context.measureText(label).width;
+    const labelX = Math.min(width - labelWidth - 4, Math.max(4, end.x + (dx / length) * 6 + 2));
+    const labelY = Math.min(height - 4, Math.max(14, end.y + (dy / length) * 6 + 4));
+    context.fillText(label, labelX, labelY);
   }
   context.fillStyle = muted;
   context.fillText(scale.symmetric ? `−${formatComponent(hi)}` : "0", origin.x - 10, origin.y + 14);

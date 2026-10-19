@@ -96,20 +96,44 @@ function phaseOf(machineId: string) {
   return getDemoAsset(machineId).phase;
 }
 
+/** How the load shares out across the axes in each operating mode the drive switches between. */
+const OPERATING_MODES: Array<[number, number, number]> = [
+  [1, 1, 1],
+  [1.2, 0.8, 0.94],
+  [0.84, 1.22, 1.04],
+  [0.94, 0.88, 1.24],
+];
+const MODE_SECONDS = 75;
+const MODE_EASE_SECONDS = 12;
+
+/** The axis mix at a second: one mode per block, easing smoothly from the previous one. */
+function modeMixAt(machineId: string, second: number): [number, number, number] {
+  const block = Math.floor(second / MODE_SECONDS);
+  const pick = (index: number) => OPERATING_MODES[hash(`${machineId}:mode:${index}`) % OPERATING_MODES.length];
+  const from = pick(block - 1);
+  const to = pick(block);
+  const t = Math.min(1, (second - block * MODE_SECONDS) / MODE_EASE_SECONDS);
+  const eased = t * t * (3 - 2 * t);
+  return [0, 1, 2].map((axis) => from[axis] + (to[axis] - from[axis]) * eased) as [number, number, number];
+}
+
 /** The smooth part of the signal: what a forecaster could reasonably learn. */
 function trend(machineId: string, second: number, outlook = false) {
   const profile = profileOf(machineId);
   const phase = phaseOf(machineId);
   const cycle = Math.sin((2 * Math.PI * second) / profile.cycleSeconds + phase);
-  // Short per-axis wobbles make the 3D cloud a cloud rather than a line. A one-hour outlook
-  // at 30 s steps cannot resolve them (they would alias into a fake oscillation), so it omits them.
+  // Operating-mode switches and a slow X/Y orbit give the 3D cloud real shape. A one-hour
+  // outlook at 30 s steps cannot resolve them (they would alias into a fake oscillation),
+  // so it omits them.
   const wobble = (period: number, offset: number) => (outlook ? 0 : Math.sin((2 * Math.PI * second) / period + phase * offset));
+  const orbit = (period: number) => (outlook ? 0 : Math.cos((2 * Math.PI * second) / period + phase));
+  const [mx, my, mz] = outlook ? [1, 1, 1] : modeMixAt(machineId, second);
   const lift = 1 + profile.swing * cycle;
   const [bx, by, bz] = profile.base;
   return {
-    VibrationX: bx * lift * (1 + 0.1 * wobble(47, 2)),
-    VibrationY: by * (1 + profile.swing * 0.8 * cycle) * (1 + 0.12 * wobble(83, 3)),
-    VibrationZ: bz * lift * (1 + 0.1 * wobble(59, 5)),
+    VibrationX: bx * lift * mx * (1 + 0.14 * wobble(41, 1) + 0.05 * wobble(13, 2)),
+    VibrationY: by * (1 + profile.swing * 0.8 * cycle) * my * (1 + 0.14 * orbit(41) + 0.05 * wobble(17, 3)),
+    VibrationZ: bz * lift * mz * (1 + 0.12 * wobble(67, 5) + 0.05 * wobble(11, 4)),
     Temperature: profile.temperature + 4.5 * Math.sin((2 * Math.PI * second) / (profile.cycleSeconds * 3) + phase) + 1.8 * cycle,
   };
 }
@@ -119,9 +143,9 @@ export function liveSampleAt(machineId: string, second: number): Record<string, 
   const smooth = trend(machineId, second);
   const key = `${machineId}:${second}`;
   return {
-    VibrationX: round(Math.max(0.05, smooth.VibrationX * (1 + 0.22 * noise(`${key}:x`)))),
-    VibrationY: round(Math.max(0.05, smooth.VibrationY * (1 + 0.22 * noise(`${key}:y`)))),
-    VibrationZ: round(Math.max(0.05, smooth.VibrationZ * (1 + 0.22 * noise(`${key}:z`)))),
+    VibrationX: round(Math.max(0.05, smooth.VibrationX * (1 + 0.16 * noise(`${key}:x`)))),
+    VibrationY: round(Math.max(0.05, smooth.VibrationY * (1 + 0.16 * noise(`${key}:y`)))),
+    VibrationZ: round(Math.max(0.05, smooth.VibrationZ * (1 + 0.16 * noise(`${key}:z`)))),
     Temperature: round(smooth.Temperature + 0.25 * noise(`${key}:t`), 2),
   };
 }
